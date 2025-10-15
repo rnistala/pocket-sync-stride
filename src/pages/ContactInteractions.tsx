@@ -297,7 +297,7 @@ const ContactInteractions = () => {
                 </div>
                 <div>
                   <Label>Next Follow-Up Date</Label>
-                  <div className="space-y-2">
+                  <div className="relative">
                     <Input
                       type="date"
                       value={nextFollowUpDate ? format(nextFollowUpDate, "yyyy-MM-dd") : ""}
@@ -306,22 +306,20 @@ const ContactInteractions = () => {
                         setNextFollowUpDate(date);
                       }}
                       min={format(new Date(), "yyyy-MM-dd")}
-                      className="w-full"
+                      className="w-full pr-10"
                     />
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !nextFollowUpDate && "text-muted-foreground"
-                          )}
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full"
                         >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {nextFollowUpDate ? format(nextFollowUpDate, "PPP") : <span>Or pick from calendar</span>}
+                          <CalendarIcon className="h-4 w-4" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0" align="end">
                         <Calendar
                           mode="single"
                           selected={nextFollowUpDate}
