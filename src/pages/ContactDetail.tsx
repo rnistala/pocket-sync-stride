@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useLeadStorage } from "@/hooks/useLeadStorage";
+import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 const ContactDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts } = useLeadStorage();
+  const { contacts } = useLeadContext();
   
   const contact = contacts.find((c) => c.id === id);
 

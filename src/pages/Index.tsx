@@ -1,14 +1,14 @@
 import { NetworkStatus } from "@/components/NetworkStatus";
 import { SyncButton } from "@/components/SyncButton";
 import { ContactList } from "@/components/ContactList";
-import { useLeadStorage } from "@/hooks/useLeadStorage";
+import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 
 const Index = () => {
-  const { contacts, syncData, lastSync, isLoading } = useLeadStorage();
+  const { contacts, syncData, lastSync, isLoading } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
 

@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useLeadStorage } from "@/hooks/useLeadStorage";
+import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail, MessageSquare, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 const ContactInteractions = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions, addInteraction } = useLeadStorage();
+  const { contacts, getContactInteractions, addInteraction } = useLeadContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
