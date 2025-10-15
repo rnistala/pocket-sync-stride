@@ -3,7 +3,7 @@ import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail, RefreshCw, Cloud } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,9 +12,58 @@ const ContactDetail = () => {
   const navigate = useNavigate();
   const { contacts, getContactInteractions, markInteractionsAsSynced } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   const contact = contacts.find((c) => c.id === id);
   const interactions = contact ? getContactInteractions(contact.id) : [];
+
+  // Fetch interaction history on first load if not already cached
+  useEffect(() => {
+    const fetchInteractionHistory = async () => {
+      if (!contact || interactions.length > 0 || isLoadingHistory) return;
+      
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      setIsLoadingHistory(true);
+      try {
+        const response = await fetch(
+          `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: 4,
+              offset: 0,
+              limit: 100,
+              extra: [{
+                operator: "in",
+                value: contact.id,
+                tablename: "contact",
+                columnname: "id",
+                function: "",
+                datatype: "Selection",
+                enable: "true",
+                show: contact.name,
+                extracolumn: "name"
+              }]
+            }),
+          }
+        );
+
+        if (response.ok) {
+          console.log("Interaction history fetched for contact", contact.id);
+        }
+      } catch (error) {
+        console.error("Error fetching interaction history:", error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    fetchInteractionHistory();
+  }, [contact?.id]);
+
 
   const handleSyncInteractions = async () => {
     if (!contact) return;

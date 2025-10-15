@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon, Cloud } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,10 +24,59 @@ const ContactInteractions = () => {
   const [notes, setNotes] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   // Find contact by either id or contact_id (for backward compatibility)
   const contact = contacts.find((c) => c.id === id || c.contact_id === id);
   const interactions = getContactInteractions(contact?.id || "");
+
+  // Fetch interaction history on first load if not already cached
+  useEffect(() => {
+    const fetchInteractionHistory = async () => {
+      if (!contact || interactions.length > 0 || isLoadingHistory) return;
+      
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      setIsLoadingHistory(true);
+      try {
+        const response = await fetch(
+          `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: 4,
+              offset: 0,
+              limit: 100,
+              extra: [{
+                operator: "in",
+                value: contact.id,
+                tablename: "contact",
+                columnname: "id",
+                function: "",
+                datatype: "Selection",
+                enable: "true",
+                show: contact.name,
+                extracolumn: "name"
+              }]
+            }),
+          }
+        );
+
+        if (response.ok) {
+          console.log("Interaction history fetched for contact", contact.id);
+        }
+      } catch (error) {
+        console.error("Error fetching interaction history:", error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    fetchInteractionHistory();
+  }, [contact?.id]);
+
 
   if (!contact) {
     return <div className="p-4">Contact not found</div>;
