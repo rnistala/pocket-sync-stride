@@ -2,6 +2,7 @@ import { NetworkStatus } from "@/components/NetworkStatus";
 import { SyncButton } from "@/components/SyncButton";
 import { ContactList } from "@/components/ContactList";
 import { BackToTop } from "@/components/BackToTop";
+import { AddContactForm } from "@/components/AddContactForm";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -87,11 +88,14 @@ const Index = () => {
                 </span>
               )}
             </div>
-            <SyncButton
-              onSync={syncData}
-              lastSync={lastSync}
-              isOnline={isOnline}
-            />
+            <div className="flex items-center gap-2">
+              <AddContactForm />
+              <SyncButton
+                onSync={syncData}
+                lastSync={lastSync}
+                isOnline={isOnline}
+              />
+            </div>
           </div>
         </header>
 
