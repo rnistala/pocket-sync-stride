@@ -20,10 +20,9 @@ const Login = () => {
       const response = await fetch("https://demo.opterix.in/api/public/token", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "Cookie": "opterix"
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, cookie: "opterix" }),
       });
 
       const data = await response.json();
