@@ -18,11 +18,15 @@ const Index = () => {
     if (!searchQuery.trim()) return contacts;
     
     const query = searchQuery.toLowerCase();
-    return contacts.filter(contact => 
-      contact.name.toLowerCase().includes(query) ||
-      contact.company.toLowerCase().includes(query) ||
-      contact.city.toLowerCase().includes(query)
-    );
+    return contacts.filter(contact => {
+      const followUpDate = new Date(contact.nextFollowUp).toLocaleDateString().toLowerCase();
+      return (
+        contact.name.toLowerCase().includes(query) ||
+        contact.company.toLowerCase().includes(query) ||
+        contact.city.toLowerCase().includes(query) ||
+        followUpDate.includes(query)
+      );
+    });
   }, [contacts, searchQuery]);
 
   useEffect(() => {
@@ -94,7 +98,7 @@ const Index = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search by name, company, or city..."
+            placeholder="Search by name, company, city, or follow-up date..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
