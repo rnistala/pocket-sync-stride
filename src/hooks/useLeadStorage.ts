@@ -33,12 +33,37 @@ export const useLeadStorage = () => {
   useEffect(() => {
     const storedContacts = localStorage.getItem(CONTACTS_KEY);
     if (storedContacts) {
-      setContacts(JSON.parse(storedContacts));
+      try {
+        const parsed = JSON.parse(storedContacts);
+        // Validate that it's an array before setting
+        if (Array.isArray(parsed)) {
+          setContacts(parsed);
+        } else {
+          // Clear corrupted data
+          localStorage.removeItem(CONTACTS_KEY);
+          setContacts([]);
+        }
+      } catch (e) {
+        // Clear corrupted data on parse error
+        localStorage.removeItem(CONTACTS_KEY);
+        setContacts([]);
+      }
     }
 
     const storedInteractions = localStorage.getItem(INTERACTIONS_KEY);
     if (storedInteractions) {
-      setInteractions(JSON.parse(storedInteractions));
+      try {
+        const parsed = JSON.parse(storedInteractions);
+        if (Array.isArray(parsed)) {
+          setInteractions(parsed);
+        } else {
+          localStorage.removeItem(INTERACTIONS_KEY);
+          setInteractions([]);
+        }
+      } catch (e) {
+        localStorage.removeItem(INTERACTIONS_KEY);
+        setInteractions([]);
+      }
     }
 
     const syncTime = localStorage.getItem("last-sync");
