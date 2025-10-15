@@ -2,15 +2,28 @@ import { NetworkStatus } from "@/components/NetworkStatus";
 import { SyncButton } from "@/components/SyncButton";
 import { ContactList } from "@/components/ContactList";
 import { useLeadContext } from "@/contexts/LeadContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, Search } from "lucide-react";
 
 const Index = () => {
   const { contacts, syncData, lastSync, isLoading } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery.trim()) return contacts;
+    
+    const query = searchQuery.toLowerCase();
+    return contacts.filter(contact => 
+      contact.name.toLowerCase().includes(query) ||
+      contact.company.toLowerCase().includes(query) ||
+      contact.city.toLowerCase().includes(query)
+    );
+  }, [contacts, searchQuery]);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -61,8 +74,13 @@ const Index = () => {
             <div className="text-sm">
               <span className="text-muted-foreground">Total contacts:</span>
               <span className="ml-2 font-semibold text-foreground">
-                {contacts.length}
+                {filteredContacts.length}
               </span>
+              {searchQuery && (
+                <span className="text-muted-foreground text-xs ml-1">
+                  (of {contacts.length})
+                </span>
+              )}
             </div>
             <SyncButton
               onSync={syncData}
@@ -72,12 +90,23 @@ const Index = () => {
           </div>
         </header>
 
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search by name, company, or city..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground">
             Loading contacts...
           </div>
         ) : (
-          <ContactList contacts={contacts} />
+          <ContactList contacts={filteredContacts} />
         )}
       </div>
     </div>
