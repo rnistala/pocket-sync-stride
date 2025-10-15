@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Search } from "lucide-react";
+import { LogOut, Search, X } from "lucide-react";
 
 const Index = () => {
   const { contacts, syncData, lastSync, isLoading, searchQuery, setSearchQuery } = useLeadContext();
@@ -101,8 +101,18 @@ const Index = () => {
             placeholder="Search by name, company, city, or follow-up date..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 pr-10"
           />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full"
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
 
         {isLoading ? (
