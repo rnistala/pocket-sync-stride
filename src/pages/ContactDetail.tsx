@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 const ContactDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions } = useLeadContext();
+  const { contacts, getContactInteractions, markInteractionsAsSynced } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
   
   const contact = contacts.find((c) => c.id === id);
@@ -74,6 +74,9 @@ const ContactDetail = () => {
             body: JSON.stringify(payload),
           });
         }
+
+        // Mark interactions as synced
+        await markInteractionsAsSynced(contact.id);
       }
 
       // Step 2: Fetch interaction history for this contact

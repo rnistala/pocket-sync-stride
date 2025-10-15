@@ -160,6 +160,7 @@ interface LeadContextType {
   addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string, nextFollowUp?: string) => Promise<void>;
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
+  markInteractionsAsSynced: (contactId: string) => Promise<void>;
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -254,6 +255,16 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const getContactInteractions = useCallback((contactId: string) => {
     return interactionsByContact.get(contactId) || [];
   }, [interactionsByContact]);
+
+  const markInteractionsAsSynced = useCallback(async (contactId: string) => {
+    const updatedInteractions = interactions.map(i => 
+      (i.contactId === contactId && i.dirty) 
+        ? { ...i, dirty: false, syncStatus: "synced" as const } 
+        : i
+    );
+    await saveInteractions(updatedInteractions);
+    setInteractions(updatedInteractions);
+  }, [interactions, saveInteractions]);
 
   const syncData = useCallback(async () => {
     const userId = localStorage.getItem("userId");
@@ -444,7 +455,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     addInteraction,
     getContactInteractions,
     syncData,
-  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData]);
+    markInteractionsAsSynced,
+  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced]);
 
   return (
     <LeadContext.Provider value={value}>

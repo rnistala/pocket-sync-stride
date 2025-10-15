@@ -18,7 +18,7 @@ import { toast } from "sonner";
 const ContactInteractions = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions, addInteraction } = useLeadContext();
+  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced } = useLeadContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
@@ -122,6 +122,9 @@ const ContactInteractions = () => {
             body: JSON.stringify(payload),
           });
         }
+
+        // Mark interactions as synced
+        await markInteractionsAsSynced(contact.id);
       }
 
       // Step 2: Fetch interaction history for this contact
