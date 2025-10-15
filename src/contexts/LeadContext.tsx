@@ -305,7 +305,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               },
               data: [{
                 body: [{
-                  contact: contact.id,
+                  contact: contact.id, // Using contact.id (not contact_id)
                   contact_status: "",
                   notes: interaction.notes,
                   next_meeting: interaction.nextFollowUp || "",
