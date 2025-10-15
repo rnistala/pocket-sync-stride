@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { Contact, Interaction } from "@/hooks/useLeadStorage";
 
 const DB_NAME = "LeadManagerDB";
@@ -174,17 +174,17 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     loadData();
   }, []);
 
-  const saveContacts = async (newContacts: Contact[]) => {
+  const saveContacts = useCallback(async (newContacts: Contact[]) => {
     await dbManager.saveContacts(newContacts);
     setContacts(newContacts);
-  };
+  }, []);
 
-  const saveInteractions = async (newInteractions: Interaction[]) => {
+  const saveInteractions = useCallback(async (newInteractions: Interaction[]) => {
     await dbManager.saveInteractions(newInteractions);
     setInteractions(newInteractions);
-  };
+  }, []);
 
-  const addInteraction = async (contactId: string, type: Interaction["type"], notes: string) => {
+  const addInteraction = useCallback(async (contactId: string, type: Interaction["type"], notes: string) => {
     const newInteraction: Interaction = {
       id: crypto.randomUUID(),
       contactId,
@@ -195,16 +195,16 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     };
     
     await dbManager.addInteraction(newInteraction);
-    setInteractions([...interactions, newInteraction]);
-  };
+    setInteractions(prev => [...prev, newInteraction]);
+  }, []);
 
-  const getContactInteractions = (contactId: string) => {
+  const getContactInteractions = useCallback((contactId: string) => {
     return interactions
       .filter((i) => i.contactId === contactId)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  };
+  }, [interactions]);
 
-  const syncData = async () => {
+  const syncData = useCallback(async () => {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
@@ -259,29 +259,32 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       await saveContacts(allContacts);
     }
 
-    const syncedInteractions = interactions.map((i) => ({
-      ...i,
-      syncStatus: "synced" as const,
-    }));
-    await saveInteractions(syncedInteractions);
+    setInteractions(prev => {
+      const syncedInteractions = prev.map((i) => ({
+        ...i,
+        syncStatus: "synced" as const,
+      }));
+      saveInteractions(syncedInteractions);
+      return syncedInteractions;
+    });
 
     const now = new Date();
     setLastSync(now);
     await dbManager.setMetadata("lastSync", now.toISOString());
-  };
+  }, [saveContacts, saveInteractions]);
+
+  const value = useMemo(() => ({
+    contacts,
+    interactions,
+    lastSync,
+    isLoading,
+    addInteraction,
+    getContactInteractions,
+    syncData,
+  }), [contacts, interactions, lastSync, isLoading, addInteraction, getContactInteractions, syncData]);
 
   return (
-    <LeadContext.Provider
-      value={{
-        contacts,
-        interactions,
-        lastSync,
-        isLoading,
-        addInteraction,
-        getContactInteractions,
-        syncData,
-      }}
-    >
+    <LeadContext.Provider value={value}>
       {children}
     </LeadContext.Provider>
   );
