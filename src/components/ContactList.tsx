@@ -2,7 +2,8 @@ import { Contact } from "@/hooks/useLeadStorage";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
+import { useLeadContext } from "@/contexts/LeadContext";
 
 interface ContactListProps {
   contacts: Contact[];
@@ -12,50 +13,33 @@ const ITEMS_PER_PAGE = 50;
 
 export const ContactList = ({ contacts }: ContactListProps) => {
   const navigate = useNavigate();
-  const [displayCount, setDisplayCount] = useState(() => {
-    const saved = sessionStorage.getItem('contactListDisplayCount');
-    return saved ? parseInt(saved, 10) : ITEMS_PER_PAGE;
-  });
+  const { scrollPosition, displayCount, setScrollPosition, setDisplayCount } = useLeadContext();
   const observerTarget = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const hasRestoredScroll = useRef(false);
 
   // Restore scroll position on mount
   useEffect(() => {
-    const savedScroll = sessionStorage.getItem('contactListScrollPosition');
-    if (savedScroll && containerRef.current) {
-      setTimeout(() => {
-        window.scrollTo(0, parseInt(savedScroll, 10));
-      }, 0);
+    if (scrollPosition > 0 && !hasRestoredScroll.current) {
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollPosition);
+        hasRestoredScroll.current = true;
+      });
     }
-  }, []);
+  }, [scrollPosition]);
 
-  // Save scroll position and display count when navigating away
-  useEffect(() => {
-    const saveScrollPosition = () => {
-      sessionStorage.setItem('contactListScrollPosition', window.scrollY.toString());
-      sessionStorage.setItem('contactListDisplayCount', displayCount.toString());
-    };
-
-    window.addEventListener('beforeunload', saveScrollPosition);
-    return () => {
-      saveScrollPosition();
-      window.removeEventListener('beforeunload', saveScrollPosition);
-    };
-  }, [displayCount]);
-
+  // Reset when contacts change (e.g., after search/sync)
   useEffect(() => {
     if (contacts.length === 0) {
       setDisplayCount(ITEMS_PER_PAGE);
-      sessionStorage.removeItem('contactListDisplayCount');
-      sessionStorage.removeItem('contactListScrollPosition');
+      setScrollPosition(0);
     }
-  }, [contacts]);
+  }, [contacts, setDisplayCount, setScrollPosition]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && displayCount < contacts.length) {
-          setDisplayCount((prev) => Math.min(prev + ITEMS_PER_PAGE, contacts.length));
+          setDisplayCount(Math.min(displayCount + ITEMS_PER_PAGE, contacts.length));
         }
       },
       { threshold: 0.1 }
@@ -74,8 +58,7 @@ export const ContactList = ({ contacts }: ContactListProps) => {
   }, [displayCount, contacts.length]);
 
   const handleContactTap = (contactId: string) => {
-    sessionStorage.setItem('contactListScrollPosition', window.scrollY.toString());
-    sessionStorage.setItem('contactListDisplayCount', displayCount.toString());
+    setScrollPosition(window.scrollY);
     navigate(`/contact/${contactId}/details`);
   };
 
@@ -90,7 +73,7 @@ export const ContactList = ({ contacts }: ContactListProps) => {
   const displayedContacts = contacts.slice(0, displayCount);
 
   return (
-    <div ref={containerRef} className="space-y-4">
+    <div className="space-y-4">
       {displayedContacts.map((contact) => (
         <Card
           key={contact.id}

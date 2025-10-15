@@ -135,6 +135,10 @@ interface LeadContextType {
   interactions: Interaction[];
   lastSync: Date | null;
   isLoading: boolean;
+  scrollPosition: number;
+  displayCount: number;
+  setScrollPosition: (position: number) => void;
+  setDisplayCount: (count: number) => void;
   addInteraction: (contactId: string, type: Interaction["type"], notes: string) => Promise<void>;
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
@@ -147,6 +151,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [displayCount, setDisplayCount] = useState(50);
 
   // Load data once on mount
   useEffect(() => {
@@ -278,10 +284,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     interactions,
     lastSync,
     isLoading,
+    scrollPosition,
+    displayCount,
+    setScrollPosition,
+    setDisplayCount,
     addInteraction,
     getContactInteractions,
     syncData,
-  }), [contacts, interactions, lastSync, isLoading, addInteraction, getContactInteractions, syncData]);
+  }), [contacts, interactions, lastSync, isLoading, scrollPosition, displayCount, addInteraction, getContactInteractions, syncData]);
 
   return (
     <LeadContext.Provider value={value}>
