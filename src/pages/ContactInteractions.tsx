@@ -231,9 +231,6 @@ const ContactInteractions = () => {
                   </div>
                 </div>
                 <p className="text-sm">{interaction.notes}</p>
-                {interaction.syncStatus === "local" && (
-                  <Badge variant="outline" className="mt-2">Not synced</Badge>
-                )}
               </Card>
             ))
           )}
