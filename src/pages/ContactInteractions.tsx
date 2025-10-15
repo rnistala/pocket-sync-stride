@@ -19,22 +19,34 @@ import { toast } from "sonner";
 const ContactInteractions = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
+  const { contacts } = useLeadContext();
+  
+  // Find contact by either id or contact_id (for backward compatibility)
+  const contact = contacts.find((c) => c.id === id || c.contact_id === id);
+
+  // Early return BEFORE any conditional hooks
+  if (!contact) {
+    return <div className="p-4">Contact not found</div>;
+  }
+
+  return <ContactInteractionsContent contact={contact} navigate={navigate} />;
+};
+
+const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navigate: any }) => {
+  const { getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  
-  // Find contact by either id or contact_id (for backward compatibility)
-  const contact = contacts.find((c) => c.id === id || c.contact_id === id);
-  const interactions = getContactInteractions(contact?.id || "");
+
+  const interactions = getContactInteractions(contact.id);
 
   // Fetch interaction history on first load if not already cached
   useEffect(() => {
     const fetchInteractionHistory = async () => {
-      if (!contact || interactions.length > 0 || isLoadingHistory) return;
+      if (interactions.length > 0 || isLoadingHistory) return;
       
       const userId = localStorage.getItem("userId");
       if (!userId) return;
@@ -79,11 +91,7 @@ const ContactInteractions = () => {
     };
 
     fetchInteractionHistory();
-  }, [contact?.id]);
-
-  if (!contact) {
-    return <div className="p-4">Contact not found</div>;
-  }
+  }, [contact.id, interactions.length, isLoadingHistory, mergeInteractionsFromAPI]);
 
   const handleAddInteraction = () => {
     if (!notes.trim()) {

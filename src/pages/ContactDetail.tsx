@@ -11,16 +11,28 @@ const ContactDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { contacts, getContactInteractions, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
+  
+  const contact = contacts.find((c) => c.id === id);
+
+  // Early return BEFORE any conditional hooks
+  if (!contact) {
+    return <div className="p-4">Contact not found</div>;
+  }
+
+  return <ContactDetailContent contact={contact} navigate={navigate} />;
+};
+
+const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: any }) => {
+  const { getContactInteractions, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
-  const contact = contacts.find((c) => c.id === id);
-  const interactions = contact ? getContactInteractions(contact.id) : [];
+  const interactions = getContactInteractions(contact.id);
 
   // Fetch interaction history on first load if not already cached
   useEffect(() => {
     const fetchInteractionHistory = async () => {
-      if (!contact || interactions.length > 0 || isLoadingHistory) return;
+      if (interactions.length > 0 || isLoadingHistory) return;
       
       const userId = localStorage.getItem("userId");
       if (!userId) return;
@@ -65,11 +77,7 @@ const ContactDetail = () => {
     };
 
     fetchInteractionHistory();
-  }, [contact?.id]);
-
-  if (!contact) {
-    return <div className="p-4">Contact not found</div>;
-  }
+  }, [contact.id, interactions.length, isLoadingHistory, mergeInteractionsFromAPI]);
 
   const handleSyncInteractions = async () => {
     
