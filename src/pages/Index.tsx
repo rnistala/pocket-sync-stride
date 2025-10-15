@@ -1,6 +1,7 @@
 import { NetworkStatus } from "@/components/NetworkStatus";
 import { SyncButton } from "@/components/SyncButton";
 import { ContactList } from "@/components/ContactList";
+import { BackToTop } from "@/components/BackToTop";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -115,6 +116,7 @@ const Index = () => {
           <ContactList contacts={filteredContacts} />
         )}
       </div>
+      <BackToTop />
     </div>
   );
 };
