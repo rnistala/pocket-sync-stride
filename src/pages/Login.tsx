@@ -9,6 +9,7 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>("");
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -25,9 +26,10 @@ const Login = () => {
         body: JSON.stringify({ username, password }),
       });
 
-      if (!response.ok) throw new Error("Login failed");
-
       const data = await response.json();
+      setDebugInfo(JSON.stringify(data, null, 2));
+
+      if (!response.ok) throw new Error("Login failed");
       
       // Store user data
       localStorage.setItem("userId", data.id);
@@ -36,6 +38,7 @@ const Login = () => {
       toast.success("Login successful!");
       navigate("/");
     } catch (error) {
+      setDebugInfo(`Error: ${error instanceof Error ? error.message : String(error)}`);
       toast.error("Invalid credentials");
     } finally {
       setIsLoading(false);
@@ -79,6 +82,13 @@ const Login = () => {
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
+
+        {debugInfo && (
+          <div className="mt-4 p-4 bg-muted rounded-lg border border-border">
+            <p className="text-xs font-semibold mb-2">Debug Info:</p>
+            <pre className="text-xs overflow-auto">{debugInfo}</pre>
+          </div>
+        )}
       </div>
     </div>
   );
