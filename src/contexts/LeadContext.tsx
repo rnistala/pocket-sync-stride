@@ -259,8 +259,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
+    console.log("[SYNC] Starting sync process");
+    console.log("[SYNC] Total interactions:", interactions.length);
+
     // Step 1: Upload local changes to server
     const dirtyInteractions = interactions.filter(i => i.dirty);
+    
+    console.log("[SYNC] Dirty interactions found:", dirtyInteractions.length);
+    console.log("[SYNC] Dirty interactions:", dirtyInteractions);
     
     if (dirtyInteractions.length > 0) {
       try {
@@ -294,6 +300,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           const contact = contacts.find(c => c.id === contactId);
           if (!contact) continue;
 
+          console.log("[SYNC] Uploading interactions for contact:", contact.name, contactId);
+
           for (const interaction of contactInteractions) {
             const payload = {
               meta: {
@@ -316,11 +324,18 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               }]
             };
 
-            await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+            console.log("[SYNC] Uploading payload:", JSON.stringify(payload, null, 2));
+            console.log("[SYNC] API URL:", `https://demo.opterix.in/api/public/tdata/${userId}`);
+
+            const uploadResponse = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload),
             });
+
+            console.log("[SYNC] Upload response status:", uploadResponse.status);
+            const responseText = await uploadResponse.text();
+            console.log("[SYNC] Upload response:", responseText);
           }
         }
 
@@ -330,9 +345,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         );
         await saveInteractions(updatedInteractions);
         setInteractions(updatedInteractions);
+        console.log("[SYNC] Marked interactions as synced");
       } catch (error) {
-        console.error("Error uploading local changes:", error);
+        console.error("[SYNC] Error uploading local changes:", error);
       }
+    } else {
+      console.log("[SYNC] No dirty interactions to upload, skipping upload step");
     }
 
     // Step 2: Fetch contacts from server and merge
