@@ -99,7 +99,12 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
         observer.unobserve(currentTarget);
       }
     };
-  }, [displayCount, contacts.length]);
+  }, [displayCount, contacts.length, setDisplayCount]);
+
+  const displayedContacts = useMemo(() => 
+    contacts.slice(0, displayCount), 
+    [contacts, displayCount]
+  );
 
   const handleContactTap = (contactId: string) => {
     setScrollPosition(window.scrollY);
@@ -113,11 +118,6 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
       </div>
     );
   }
-
-  const displayedContacts = useMemo(() => 
-    contacts.slice(0, displayCount), 
-    [contacts, displayCount]
-  );
 
   return (
     <div className="space-y-4">
