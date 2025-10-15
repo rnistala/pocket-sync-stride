@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { LogOut, Search } from "lucide-react";
+import logoFull from "@/assets/logo-full.png";
 
 const Index = () => {
   const { contacts, syncData, lastSync, isLoading, searchQuery, setSearchQuery } = useLeadContext();
@@ -57,13 +58,13 @@ const Index = () => {
       <div className="max-w-3xl mx-auto space-y-8">
         <header className="space-y-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                Lead Manager
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Manage your leads offline, sync when connected
-              </p>
+            <div className="flex items-center gap-4">
+              <img src={logoFull} alt="OpteriX" className="h-10" />
+              <div>
+                <p className="text-muted-foreground text-sm">
+                  Lead Manager
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <NetworkStatus />

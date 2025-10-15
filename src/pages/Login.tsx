@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import logoFull from "@/assets/logo-full.png";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -47,11 +48,14 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-            Lead Manager
-          </h1>
-          <p className="text-muted-foreground mt-2">Sign in to manage your leads</p>
+        <div className="text-center space-y-4">
+          <img src={logoFull} alt="OpteriX" className="h-16 mx-auto" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Lead Manager
+            </h1>
+            <p className="text-muted-foreground mt-2">Sign in to manage your leads</p>
+          </div>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6 bg-card p-8 rounded-lg border border-border">

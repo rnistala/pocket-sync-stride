@@ -17,10 +17,10 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'robots.txt'],
       manifest: {
-        name: 'Pocket Sync Stride',
-        short_name: 'PocketSync',
+        name: 'OpteriX Lead Manager',
+        short_name: 'OpteriX',
         description: 'A modern contact and task manager that works completely offline',
-        theme_color: '#4F46E5',
+        theme_color: '#FF0000',
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
