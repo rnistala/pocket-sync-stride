@@ -3,7 +3,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 
 interface ContactListProps {
   contacts: Contact[];
@@ -14,8 +13,6 @@ const ITEMS_PER_PAGE = 50;
 export const ContactList = ({ contacts }: ContactListProps) => {
   const navigate = useNavigate();
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
-  const tapCountRef = useRef(0);
-  const tapTimerRef = useRef<NodeJS.Timeout>();
   const observerTarget = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,21 +42,7 @@ export const ContactList = ({ contacts }: ContactListProps) => {
   }, [displayCount, contacts.length]);
 
   const handleContactTap = (contactId: string) => {
-    tapCountRef.current++;
-    
-    if (tapTimerRef.current) {
-      clearTimeout(tapTimerRef.current);
-    }
-    
-    if (tapCountRef.current === 1) {
-      tapTimerRef.current = setTimeout(() => {
-        navigate(`/contact/${contactId}`);
-        tapCountRef.current = 0;
-      }, 300);
-    } else if (tapCountRef.current === 2) {
-      navigate(`/contact/${contactId}/details`);
-      tapCountRef.current = 0;
-    }
+    navigate(`/contact/${contactId}/details`);
   };
 
   if (contacts.length === 0) {
