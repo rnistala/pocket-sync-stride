@@ -77,7 +77,6 @@ const ContactInteractions = () => {
     fetchInteractionHistory();
   }, [contact?.id]);
 
-
   if (!contact) {
     return <div className="p-4">Contact not found</div>;
   }

@@ -64,9 +64,11 @@ const ContactDetail = () => {
     fetchInteractionHistory();
   }, [contact?.id]);
 
+  if (!contact) {
+    return <div className="p-4">Contact not found</div>;
+  }
 
   const handleSyncInteractions = async () => {
-    if (!contact) return;
     
     const userId = localStorage.getItem("userId");
     if (!userId) {
@@ -165,10 +167,6 @@ const ContactDetail = () => {
       setIsSyncing(false);
     }
   };
-
-  if (!contact) {
-    return <div className="p-4">Contact not found</div>;
-  }
 
   return (
     <div className="min-h-screen bg-background p-4">
