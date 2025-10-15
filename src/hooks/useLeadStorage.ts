@@ -22,6 +22,7 @@ export interface Interaction {
   notes: string;
   syncStatus: "synced" | "pending" | "local";
   nextFollowUp?: string;
+  dirty?: boolean;
 }
 
 const DB_NAME = "LeadManagerDB";

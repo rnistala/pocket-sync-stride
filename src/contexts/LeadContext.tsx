@@ -218,6 +218,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       notes,
       syncStatus: "local",
       nextFollowUp,
+      dirty: true,
     };
     
     await dbManager.addInteraction(newInteraction);
@@ -258,9 +259,86 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
+    // Step 1: Upload local changes to server
+    const dirtyInteractions = interactions.filter(i => i.dirty);
+    
+    if (dirtyInteractions.length > 0) {
+      try {
+        // Get latitude and longitude (using geolocation if available)
+        let latitude = "";
+        let longitude = "";
+        
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+            });
+            latitude = position.coords.latitude.toString();
+            longitude = position.coords.longitude.toString();
+          } catch (error) {
+            console.log("Geolocation not available", error);
+          }
+        }
+
+        // Group interactions by contact
+        const interactionsByContact = dirtyInteractions.reduce((acc, interaction) => {
+          if (!acc[interaction.contactId]) {
+            acc[interaction.contactId] = [];
+          }
+          acc[interaction.contactId].push(interaction);
+          return acc;
+        }, {} as Record<string, Interaction[]>);
+
+        // Upload each contact's interactions
+        for (const [contactId, contactInteractions] of Object.entries(interactionsByContact)) {
+          const contact = contacts.find(c => c.id === contactId);
+          if (!contact) continue;
+
+          for (const interaction of contactInteractions) {
+            const payload = {
+              meta: {
+                btable: "followup",
+                htable: "",
+                parentkey: "",
+                preapi: "updatecontact",
+                draftid: ""
+              },
+              data: [{
+                body: [{
+                  contact: contact.id,
+                  contact_status: "",
+                  notes: interaction.notes,
+                  next_meeting: interaction.nextFollowUp || "",
+                  latitude: latitude,
+                  longitude: longitude
+                }],
+                dirty: "true"
+              }]
+            };
+
+            await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+          }
+        }
+
+        // Mark uploaded interactions as synced
+        const updatedInteractions = interactions.map(i => 
+          i.dirty ? { ...i, dirty: false, syncStatus: "synced" as const } : i
+        );
+        await saveInteractions(updatedInteractions);
+        setInteractions(updatedInteractions);
+      } catch (error) {
+        console.error("Error uploading local changes:", error);
+      }
+    }
+
+    // Step 2: Fetch contacts from server and merge
     const BATCH_SIZE = 1000;
     let offset = 0;
-    let allContacts: Contact[] = [];
+    let fetchedContacts: Contact[] = [];
     let hasMore = true;
 
     while (hasMore) {
@@ -295,7 +373,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           email: contact.email || "",
         }));
         
-        allContacts = [...allContacts, ...transformedContacts];
+        fetchedContacts = [...fetchedContacts, ...transformedContacts];
         offset += BATCH_SIZE;
 
         if (apiContacts.length < BATCH_SIZE) {
@@ -306,23 +384,33 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    if (allContacts.length > 0) {
-      await saveContacts(allContacts);
-    }
+    // Step 3: Merge server data with local data
+    if (fetchedContacts.length > 0) {
+      const existingContactsMap = new Map(contacts.map(c => [c.id, c]));
+      
+      const mergedContacts = fetchedContacts.map(serverContact => {
+        const localContact = existingContactsMap.get(serverContact.id);
+        
+        if (localContact) {
+          // Merge: prefer local nextFollowUp if it was updated locally
+          return {
+            ...serverContact,
+            nextFollowUp: localContact.nextFollowUp !== serverContact.nextFollowUp 
+              ? localContact.nextFollowUp 
+              : serverContact.nextFollowUp,
+          };
+        }
+        
+        return serverContact;
+      });
 
-    setInteractions(prev => {
-      const syncedInteractions = prev.map((i) => ({
-        ...i,
-        syncStatus: "synced" as const,
-      }));
-      saveInteractions(syncedInteractions);
-      return syncedInteractions;
-    });
+      await saveContacts(mergedContacts);
+    }
 
     const now = new Date();
     setLastSync(now);
     await dbManager.setMetadata("lastSync", now.toISOString());
-  }, [saveContacts, saveInteractions]);
+  }, [contacts, interactions, saveContacts, saveInteractions]);
 
   const value = useMemo(() => ({
     contacts,
