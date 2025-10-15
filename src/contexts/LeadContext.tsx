@@ -260,21 +260,17 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   }, [interactions, saveInteractions]);
 
   const mergeInteractionsFromAPI = useCallback(async (apiInteractions: any[], contactId: string) => {
-    console.log("[MERGE] API interactions sample:", apiInteractions[0]);
-    
     // Transform API interactions to our format
     const transformedInteractions: Interaction[] = apiInteractions.map((item: any) => ({
       id: item.id || crypto.randomUUID(),
       contactId: contactId,
-      date: item.created_on || item.createdOn || item.created_at || item.createdAt || new Date().toISOString(),
+      date: item.created || new Date().toISOString(),
       type: "call" as const, // Default type, can be enhanced based on API data
       notes: item.notes || "",
       syncStatus: "synced" as const,
       nextFollowUp: item.next_meeting || undefined,
       dirty: false,
     }));
-
-    console.log("[MERGE] Transformed interactions sample:", transformedInteractions[0]);
 
     // Merge with existing interactions, avoiding duplicates
     const existingIds = new Set(interactions.map(i => i.id));
