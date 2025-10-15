@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 const ContactDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions, markInteractionsAsSynced } = useLeadContext();
+  const { contacts, getContactInteractions, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
@@ -52,7 +52,10 @@ const ContactDetail = () => {
         );
 
         if (response.ok) {
-          console.log("Interaction history fetched for contact", contact.id);
+          const apiResponse = await response.json();
+          const apiInteractions = apiResponse.data?.[0]?.body || [];
+          await mergeInteractionsFromAPI(apiInteractions, contact.id);
+          console.log("Interaction history fetched and saved for contact", contact.id);
         }
       } catch (error) {
         console.error("Error fetching interaction history:", error);

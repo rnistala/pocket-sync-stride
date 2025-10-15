@@ -161,6 +161,7 @@ interface LeadContextType {
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
   markInteractionsAsSynced: (contactId: string) => Promise<void>;
+  mergeInteractionsFromAPI: (apiInteractions: any[], contactId: string) => Promise<void>;
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -264,6 +265,29 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     );
     await saveInteractions(updatedInteractions);
     setInteractions(updatedInteractions);
+  }, [interactions, saveInteractions]);
+
+  const mergeInteractionsFromAPI = useCallback(async (apiInteractions: any[], contactId: string) => {
+    // Transform API interactions to our format
+    const transformedInteractions: Interaction[] = apiInteractions.map((item: any) => ({
+      id: item.id || crypto.randomUUID(),
+      contactId: contactId,
+      date: item.created_on || new Date().toISOString(),
+      type: "call" as const, // Default type, can be enhanced based on API data
+      notes: item.notes || "",
+      syncStatus: "synced" as const,
+      nextFollowUp: item.next_meeting || undefined,
+      dirty: false,
+    }));
+
+    // Merge with existing interactions, avoiding duplicates
+    const existingIds = new Set(interactions.map(i => i.id));
+    const newInteractions = transformedInteractions.filter(i => !existingIds.has(i.id));
+    
+    if (newInteractions.length > 0) {
+      const mergedInteractions = [...interactions, ...newInteractions];
+      await saveInteractions(mergedInteractions);
+    }
   }, [interactions, saveInteractions]);
 
   const syncData = useCallback(async () => {
@@ -456,7 +480,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     getContactInteractions,
     syncData,
     markInteractionsAsSynced,
-  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced]);
+    mergeInteractionsFromAPI,
+  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI]);
 
   return (
     <LeadContext.Provider value={value}>

@@ -18,7 +18,7 @@ import { toast } from "sonner";
 const ContactInteractions = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced } = useLeadContext();
+  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
@@ -65,7 +65,10 @@ const ContactInteractions = () => {
         );
 
         if (response.ok) {
-          console.log("Interaction history fetched for contact", contact.id);
+          const apiResponse = await response.json();
+          const apiInteractions = apiResponse.data?.[0]?.body || [];
+          await mergeInteractionsFromAPI(apiInteractions, contact.id);
+          console.log("Interaction history fetched and saved for contact", contact.id);
         }
       } catch (error) {
         console.error("Error fetching interaction history:", error);
