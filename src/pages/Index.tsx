@@ -59,7 +59,9 @@ const Index = () => {
         <header className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <img src={logoFull} alt="OpteriX" className="h-10" />
+              <div className="bg-white px-3 py-2 rounded-lg">
+                <img src={logoFull} alt="OpteriX" className="h-8" />
+              </div>
               <div>
                 <p className="text-muted-foreground text-sm">
                   Lead Manager
