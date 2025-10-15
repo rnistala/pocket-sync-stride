@@ -22,7 +22,7 @@ const Login = () => {
         headers: { 
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ username, password, cookie: "opterix" }),
+        body: JSON.stringify({ username, password, cookie: "opterix", detail: "Lovable" }),
       });
 
       const data = await response.json();
