@@ -12,11 +12,43 @@ const ITEMS_PER_PAGE = 50;
 
 export const ContactList = ({ contacts }: ContactListProps) => {
   const navigate = useNavigate();
-  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
+  const [displayCount, setDisplayCount] = useState(() => {
+    const saved = sessionStorage.getItem('contactListDisplayCount');
+    return saved ? parseInt(saved, 10) : ITEMS_PER_PAGE;
+  });
   const observerTarget = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Restore scroll position on mount
+  useEffect(() => {
+    const savedScroll = sessionStorage.getItem('contactListScrollPosition');
+    if (savedScroll && containerRef.current) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedScroll, 10));
+      }, 0);
+    }
+  }, []);
+
+  // Save scroll position and display count when navigating away
+  useEffect(() => {
+    const saveScrollPosition = () => {
+      sessionStorage.setItem('contactListScrollPosition', window.scrollY.toString());
+      sessionStorage.setItem('contactListDisplayCount', displayCount.toString());
+    };
+
+    window.addEventListener('beforeunload', saveScrollPosition);
+    return () => {
+      saveScrollPosition();
+      window.removeEventListener('beforeunload', saveScrollPosition);
+    };
+  }, [displayCount]);
 
   useEffect(() => {
-    setDisplayCount(ITEMS_PER_PAGE);
+    if (contacts.length === 0) {
+      setDisplayCount(ITEMS_PER_PAGE);
+      sessionStorage.removeItem('contactListDisplayCount');
+      sessionStorage.removeItem('contactListScrollPosition');
+    }
   }, [contacts]);
 
   useEffect(() => {
@@ -42,6 +74,8 @@ export const ContactList = ({ contacts }: ContactListProps) => {
   }, [displayCount, contacts.length]);
 
   const handleContactTap = (contactId: string) => {
+    sessionStorage.setItem('contactListScrollPosition', window.scrollY.toString());
+    sessionStorage.setItem('contactListDisplayCount', displayCount.toString());
     navigate(`/contact/${contactId}/details`);
   };
 
@@ -56,7 +90,7 @@ export const ContactList = ({ contacts }: ContactListProps) => {
   const displayedContacts = contacts.slice(0, displayCount);
 
   return (
-    <div className="space-y-4">
+    <div ref={containerRef} className="space-y-4">
       {displayedContacts.map((contact) => (
         <Card
           key={contact.id}
