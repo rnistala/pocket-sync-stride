@@ -90,7 +90,27 @@ const ContactInteractions = () => {
       );
 
       if (response.ok) {
-        toast.success("Interaction history synced successfully!");
+        const apiResponse = await response.json();
+        const interactionsData = apiResponse.data?.[0]?.body || [];
+        
+        console.log("Synced interactions:", interactionsData);
+        
+        // Transform API interactions to our format
+        const transformedInteractions = interactionsData.map((item: any) => ({
+          id: crypto.randomUUID(),
+          contactId: contact.id,
+          date: item.created || new Date().toISOString(),
+          type: "call" as const, // Default type, adjust based on API data
+          notes: item.notes || "",
+          syncStatus: "synced" as const,
+        }));
+
+        // Add synced interactions to context
+        for (const interaction of transformedInteractions) {
+          await addInteraction(contact.id, interaction.type, interaction.notes);
+        }
+        
+        toast.success(`Synced ${transformedInteractions.length} interaction(s)`);
       } else {
         toast.error("Failed to sync interaction history");
       }
