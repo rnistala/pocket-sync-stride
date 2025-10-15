@@ -105,9 +105,9 @@ const ContactInteractions = () => {
           syncStatus: "synced" as const,
         }));
 
-        // Add synced interactions to context
+        // Add synced interactions to context with their original dates
         for (const interaction of transformedInteractions) {
-          await addInteraction(contact.id, interaction.type, interaction.notes);
+          await addInteraction(contact.id, interaction.type, interaction.notes, interaction.date);
         }
         
         toast.success(`Synced ${transformedInteractions.length} interaction(s)`);

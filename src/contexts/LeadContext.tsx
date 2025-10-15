@@ -139,7 +139,7 @@ interface LeadContextType {
   displayCount: number;
   setScrollPosition: (position: number) => void;
   setDisplayCount: (count: number) => void;
-  addInteraction: (contactId: string, type: Interaction["type"], notes: string) => Promise<void>;
+  addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string) => Promise<void>;
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
 }
@@ -190,11 +190,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     setInteractions(newInteractions);
   }, []);
 
-  const addInteraction = useCallback(async (contactId: string, type: Interaction["type"], notes: string) => {
+  const addInteraction = useCallback(async (contactId: string, type: Interaction["type"], notes: string, date?: string) => {
     const newInteraction: Interaction = {
       id: crypto.randomUUID(),
       contactId,
-      date: new Date().toISOString(),
+      date: date || new Date().toISOString(),
       type,
       notes,
       syncStatus: "local",
