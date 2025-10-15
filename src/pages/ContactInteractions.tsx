@@ -20,8 +20,9 @@ const ContactInteractions = () => {
   const [notes, setNotes] = useState("");
   const [isSyncing, setIsSyncing] = useState(false);
   
-  const contact = contacts.find((c) => c.id === id);
-  const interactions = getContactInteractions(id || "");
+  // Find contact by either id or contact_id (for backward compatibility)
+  const contact = contacts.find((c) => c.id === id || c.contact_id === id);
+  const interactions = getContactInteractions(contact?.id || "");
 
   if (!contact) {
     return <div className="p-4">Contact not found</div>;
