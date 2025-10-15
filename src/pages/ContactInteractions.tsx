@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon, Cloud } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
@@ -255,9 +255,16 @@ const ContactInteractions = () => {
             interactions.map((interaction) => (
               <Card key={interaction.id} className="p-4">
                 <div className="flex items-start justify-between mb-2">
-                  <Badge variant="secondary" className="capitalize">
-                    {interaction.type}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="capitalize">
+                      {interaction.type}
+                    </Badge>
+                    {interaction.dirty && (
+                      <div className="relative" title="Not synced yet">
+                        <Cloud className="h-3 w-3 text-amber-500" />
+                      </div>
+                    )}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {new Date(interaction.date).toLocaleDateString('en-US', { 
                       year: 'numeric', 
