@@ -71,6 +71,8 @@ const ContactInteractions = () => {
             id: 4,
             offset: 0,
             limit: 25,
+            ordercolumn: "",
+            ordertype: "",
             extra: [{
               operator: "in",
               value: contact.id,
