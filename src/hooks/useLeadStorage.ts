@@ -21,6 +21,7 @@ export interface Interaction {
   type: "call" | "whatsapp" | "email" | "meeting";
   notes: string;
   syncStatus: "synced" | "pending" | "local";
+  nextFollowUp?: string;
 }
 
 const DB_NAME = "LeadManagerDB";

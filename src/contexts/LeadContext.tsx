@@ -157,7 +157,7 @@ interface LeadContextType {
   setScrollPosition: (position: number) => void;
   setDisplayCount: (count: number) => void;
   setSearchQuery: (query: string) => void;
-  addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string) => Promise<void>;
+  addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string, nextFollowUp?: string) => Promise<void>;
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
 }
@@ -209,7 +209,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     setInteractions(newInteractions);
   }, []);
 
-  const addInteraction = useCallback(async (contactId: string, type: Interaction["type"], notes: string, date?: string) => {
+  const addInteraction = useCallback(async (contactId: string, type: Interaction["type"], notes: string, date?: string, nextFollowUp?: string) => {
     const newInteraction: Interaction = {
       id: crypto.randomUUID(),
       contactId,
@@ -217,11 +217,21 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       type,
       notes,
       syncStatus: "local",
+      nextFollowUp,
     };
     
     await dbManager.addInteraction(newInteraction);
     setInteractions(prev => [...prev, newInteraction]);
-  }, []);
+    
+    // Update contact's nextFollowUp if provided
+    if (nextFollowUp) {
+      const updatedContacts = contacts.map(c => 
+        c.id === contactId ? { ...c, nextFollowUp } : c
+      );
+      await dbManager.saveContacts(updatedContacts);
+      setContacts(updatedContacts);
+    }
+  }, [contacts]);
 
   // Memoize interactions by contact ID for faster lookups
   const interactionsByContact = useMemo(() => {

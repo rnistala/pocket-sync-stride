@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
@@ -9,6 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const ContactInteractions = () => {
@@ -18,6 +22,7 @@ const ContactInteractions = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
+  const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
   const [isSyncing, setIsSyncing] = useState(false);
   
   // Find contact by either id or contact_id (for backward compatibility)
@@ -34,8 +39,15 @@ const ContactInteractions = () => {
       return;
     }
     
-    addInteraction(contact.id, interactionType, notes);
+    addInteraction(
+      contact.id, 
+      interactionType, 
+      notes, 
+      undefined, 
+      nextFollowUpDate?.toISOString()
+    );
     setNotes("");
+    setNextFollowUpDate(undefined);
     setIsDialogOpen(false);
     toast.success("Interaction logged");
   };
@@ -197,6 +209,33 @@ const ContactInteractions = () => {
                     placeholder="What was discussed?"
                     rows={4}
                   />
+                </div>
+                <div>
+                  <Label>Next Follow-Up Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !nextFollowUpDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {nextFollowUpDate ? format(nextFollowUpDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={nextFollowUpDate}
+                        onSelect={setNextFollowUpDate}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <Button onClick={handleAddInteraction} className="w-full">
                   Save Interaction
