@@ -408,6 +408,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         const apiResponse = await response.json();
         const apiContacts = apiResponse.data?.[0]?.body || [];
         
+        console.log(`[SYNC] Fetched ${apiContacts.length} contacts at offset ${offset}`);
+        
         if (apiContacts.length === 0) {
           hasMore = false;
           break;
@@ -429,7 +431,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         fetchedContacts = [...fetchedContacts, ...transformedContacts];
         offset += BATCH_SIZE;
 
+        console.log(`[SYNC] Total contacts fetched so far: ${fetchedContacts.length}`);
+
         if (apiContacts.length < BATCH_SIZE) {
+          console.log(`[SYNC] Last batch received ${apiContacts.length} contacts (less than ${BATCH_SIZE}), stopping`);
           hasMore = false;
         }
       } else {
