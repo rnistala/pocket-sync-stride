@@ -73,7 +73,7 @@ const ContactInteractions = () => {
             limit: 25,
             extra: [{
               operator: "in",
-              value: contact.contact_id || contact.id,
+              value: contact.id,
               tablename: "contact",
               columnname: "id",
               function: "",
