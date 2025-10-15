@@ -240,6 +240,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
         const transformedContacts: Contact[] = apiContacts.map((contact: any) => ({
           id: contact.contact_id || contact.id,
+          contact_id: contact.contact_id,
           name: contact.name || "",
           status: contact.status || "Fresh",
           company: contact.company || "",

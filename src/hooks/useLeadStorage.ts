@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 
 export interface Contact {
   id: string;
+  contact_id?: string;
   name: string;
   status: string;
   company: string;
