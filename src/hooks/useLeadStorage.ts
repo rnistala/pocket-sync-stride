@@ -218,36 +218,59 @@ export const useLeadStorage = () => {
     const userId = localStorage.getItem("userId");
     if (!userId) return;
 
-    // Fetch contacts from API
-    const response = await fetch(
-      `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: 3, offset: 0, limit: 20000 }),
-      }
-    );
+    const BATCH_SIZE = 1000;
+    let offset = 0;
+    let allContacts: Contact[] = [];
+    let hasMore = true;
 
-    if (response.ok) {
-      const apiResponse = await response.json();
-      
-      // Extract contacts from API response structure
-      const apiContacts = apiResponse.data?.[0]?.body || [];
-      
-      // Transform API data to match Contact interface
-      const transformedContacts: Contact[] = apiContacts.map((contact: any) => ({
-        id: contact.contact_id || contact.id,
-        name: contact.name || "",
-        status: contact.status || "Fresh",
-        company: contact.company || "",
-        city: contact.city || "",
-        nextFollowUp: contact.followup_on || new Date().toISOString(),
-        lastNotes: contact.message || "",
-        phone: contact.mobile || "",
-        email: contact.email || "",
-      }));
-      
-      await saveContacts(transformedContacts);
+    // Fetch contacts in batches
+    while (hasMore) {
+      const response = await fetch(
+        `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: 3, offset, limit: BATCH_SIZE }),
+        }
+      );
+
+      if (response.ok) {
+        const apiResponse = await response.json();
+        const apiContacts = apiResponse.data?.[0]?.body || [];
+        
+        if (apiContacts.length === 0) {
+          hasMore = false;
+          break;
+        }
+
+        // Transform API data to match Contact interface
+        const transformedContacts: Contact[] = apiContacts.map((contact: any) => ({
+          id: contact.contact_id || contact.id,
+          name: contact.name || "",
+          status: contact.status || "Fresh",
+          company: contact.company || "",
+          city: contact.city || "",
+          nextFollowUp: contact.followup_on || new Date().toISOString(),
+          lastNotes: contact.message || "",
+          phone: contact.mobile || "",
+          email: contact.email || "",
+        }));
+        
+        allContacts = [...allContacts, ...transformedContacts];
+        offset += BATCH_SIZE;
+
+        // If we received fewer contacts than the batch size, we've reached the end
+        if (apiContacts.length < BATCH_SIZE) {
+          hasMore = false;
+        }
+      } else {
+        hasMore = false;
+      }
+    }
+
+    // Save all fetched contacts
+    if (allContacts.length > 0) {
+      await saveContacts(allContacts);
     }
 
     // Mark interactions as synced
