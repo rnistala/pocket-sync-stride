@@ -90,8 +90,25 @@ export const useLeadStorage = () => {
     );
 
     if (response.ok) {
-      const data = await response.json();
-      saveContacts(data);
+      const apiResponse = await response.json();
+      
+      // Extract contacts from API response structure
+      const apiContacts = apiResponse.data?.[0]?.body || [];
+      
+      // Transform API data to match Contact interface
+      const transformedContacts: Contact[] = apiContacts.map((contact: any) => ({
+        id: contact.contact_id || contact.id,
+        name: contact.name || "",
+        status: contact.status || "Fresh",
+        company: contact.company || "",
+        city: contact.city || "",
+        nextFollowUp: contact.followup_on || new Date().toISOString(),
+        lastNotes: contact.message || "",
+        phone: contact.mobile || "",
+        email: contact.email || "",
+      }));
+      
+      saveContacts(transformedContacts);
     }
 
     // Mark interactions as synced (in real implementation, would upload to server)
