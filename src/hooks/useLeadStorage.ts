@@ -22,67 +22,179 @@ export interface Interaction {
   syncStatus: "synced" | "pending" | "local";
 }
 
-const CONTACTS_KEY = "offline-contacts";
-const INTERACTIONS_KEY = "offline-interactions";
+const DB_NAME = "LeadManagerDB";
+const DB_VERSION = 1;
+const CONTACTS_STORE = "contacts";
+const INTERACTIONS_STORE = "interactions";
+const METADATA_STORE = "metadata";
+
+class IndexedDBManager {
+  private db: IDBDatabase | null = null;
+
+  async init(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.db = request.result;
+        resolve();
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+
+        if (!db.objectStoreNames.contains(CONTACTS_STORE)) {
+          db.createObjectStore(CONTACTS_STORE, { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains(INTERACTIONS_STORE)) {
+          const interactionStore = db.createObjectStore(INTERACTIONS_STORE, { keyPath: "id" });
+          interactionStore.createIndex("contactId", "contactId", { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains(METADATA_STORE)) {
+          db.createObjectStore(METADATA_STORE, { keyPath: "key" });
+        }
+      };
+    });
+  }
+
+  async getAllContacts(): Promise<Contact[]> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(CONTACTS_STORE, "readonly");
+      const store = transaction.objectStore(CONTACTS_STORE);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveContacts(contacts: Contact[]): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(CONTACTS_STORE, "readwrite");
+      const store = transaction.objectStore(CONTACTS_STORE);
+
+      // Clear existing and add new
+      store.clear();
+      contacts.forEach(contact => store.add(contact));
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async getAllInteractions(): Promise<Interaction[]> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INTERACTIONS_STORE, "readonly");
+      const store = transaction.objectStore(INTERACTIONS_STORE);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveInteractions(interactions: Interaction[]): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INTERACTIONS_STORE, "readwrite");
+      const store = transaction.objectStore(INTERACTIONS_STORE);
+
+      // Clear existing and add new
+      store.clear();
+      interactions.forEach(interaction => store.add(interaction));
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async addInteraction(interaction: Interaction): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INTERACTIONS_STORE, "readwrite");
+      const store = transaction.objectStore(INTERACTIONS_STORE);
+      const request = store.add(interaction);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getMetadata(key: string): Promise<any> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(METADATA_STORE, "readonly");
+      const store = transaction.objectStore(METADATA_STORE);
+      const request = store.get(key);
+
+      request.onsuccess = () => resolve(request.result?.value);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async setMetadata(key: string, value: any): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(METADATA_STORE, "readwrite");
+      const store = transaction.objectStore(METADATA_STORE);
+      const request = store.put({ key, value });
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+}
+
+const dbManager = new IndexedDBManager();
 
 export const useLeadStorage = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedContacts = localStorage.getItem(CONTACTS_KEY);
-    if (storedContacts) {
+    const loadData = async () => {
       try {
-        const parsed = JSON.parse(storedContacts);
-        // Validate that it's an array before setting
-        if (Array.isArray(parsed)) {
-          setContacts(parsed);
-        } else {
-          // Clear corrupted data
-          localStorage.removeItem(CONTACTS_KEY);
-          setContacts([]);
-        }
-      } catch (e) {
-        // Clear corrupted data on parse error
-        localStorage.removeItem(CONTACTS_KEY);
-        setContacts([]);
-      }
-    }
+        await dbManager.init();
+        const [loadedContacts, loadedInteractions, syncTime] = await Promise.all([
+          dbManager.getAllContacts(),
+          dbManager.getAllInteractions(),
+          dbManager.getMetadata("lastSync"),
+        ]);
 
-    const storedInteractions = localStorage.getItem(INTERACTIONS_KEY);
-    if (storedInteractions) {
-      try {
-        const parsed = JSON.parse(storedInteractions);
-        if (Array.isArray(parsed)) {
-          setInteractions(parsed);
-        } else {
-          localStorage.removeItem(INTERACTIONS_KEY);
-          setInteractions([]);
+        setContacts(loadedContacts);
+        setInteractions(loadedInteractions);
+        if (syncTime) {
+          setLastSync(new Date(syncTime));
         }
-      } catch (e) {
-        localStorage.removeItem(INTERACTIONS_KEY);
-        setInteractions([]);
+      } catch (error) {
+        console.error("Error loading data from IndexedDB:", error);
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
 
-    const syncTime = localStorage.getItem("last-sync");
-    if (syncTime) {
-      setLastSync(new Date(syncTime));
-    }
+    loadData();
   }, []);
 
-  const saveContacts = (newContacts: Contact[]) => {
-    localStorage.setItem(CONTACTS_KEY, JSON.stringify(newContacts));
+  const saveContacts = async (newContacts: Contact[]) => {
+    await dbManager.saveContacts(newContacts);
     setContacts(newContacts);
   };
 
-  const saveInteractions = (newInteractions: Interaction[]) => {
-    localStorage.setItem(INTERACTIONS_KEY, JSON.stringify(newInteractions));
+  const saveInteractions = async (newInteractions: Interaction[]) => {
+    await dbManager.saveInteractions(newInteractions);
     setInteractions(newInteractions);
   };
 
-  const addInteraction = (contactId: string, type: Interaction["type"], notes: string) => {
+  const addInteraction = async (contactId: string, type: Interaction["type"], notes: string) => {
     const newInteraction: Interaction = {
       id: crypto.randomUUID(),
       contactId,
@@ -91,7 +203,9 @@ export const useLeadStorage = () => {
       notes,
       syncStatus: "local",
     };
-    saveInteractions([...interactions, newInteraction]);
+    
+    await dbManager.addInteraction(newInteraction);
+    setInteractions([...interactions, newInteraction]);
   };
 
   const getContactInteractions = (contactId: string) => {
@@ -110,7 +224,7 @@ export const useLeadStorage = () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: 3, offset: 0, limit: 0 }),
+        body: JSON.stringify({ id: 3, offset: 0, limit: 20000 }),
       }
     );
 
@@ -133,19 +247,19 @@ export const useLeadStorage = () => {
         email: contact.email || "",
       }));
       
-      saveContacts(transformedContacts);
+      await saveContacts(transformedContacts);
     }
 
-    // Mark interactions as synced (in real implementation, would upload to server)
+    // Mark interactions as synced
     const syncedInteractions = interactions.map((i) => ({
       ...i,
       syncStatus: "synced" as const,
     }));
-    saveInteractions(syncedInteractions);
+    await saveInteractions(syncedInteractions);
 
     const now = new Date();
     setLastSync(now);
-    localStorage.setItem("last-sync", now.toISOString());
+    await dbManager.setMetadata("lastSync", now.toISOString());
   };
 
   return {
@@ -155,5 +269,6 @@ export const useLeadStorage = () => {
     getContactInteractions,
     syncData,
     lastSync,
+    isLoading,
   };
 };

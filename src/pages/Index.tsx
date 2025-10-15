@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 
 const Index = () => {
-  const { contacts, syncData, lastSync } = useLeadStorage();
+  const { contacts, syncData, lastSync, isLoading } = useLeadStorage();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
 
@@ -72,7 +72,13 @@ const Index = () => {
           </div>
         </header>
 
-        <ContactList contacts={contacts} />
+        {isLoading ? (
+          <div className="text-center py-12 text-muted-foreground">
+            Loading contacts...
+          </div>
+        ) : (
+          <ContactList contacts={contacts} />
+        )}
       </div>
     </div>
   );
