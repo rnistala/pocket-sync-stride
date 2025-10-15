@@ -9,9 +9,8 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, Search } from "lucide-react";
 
 const Index = () => {
-  const { contacts, syncData, lastSync, isLoading } = useLeadContext();
+  const { contacts, syncData, lastSync, isLoading, searchQuery, setSearchQuery } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   const filteredContacts = useMemo(() => {
