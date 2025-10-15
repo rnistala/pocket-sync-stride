@@ -53,7 +53,7 @@ const ContactInteractions = () => {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-3xl mx-auto space-y-6">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2">
+        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Back
         </Button>
