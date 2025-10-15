@@ -17,7 +17,7 @@ const Index = () => {
   const filteredContacts = useMemo(() => {
     if (!searchQuery.trim()) return contacts;
     
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
     return contacts.filter(contact => {
       const followUpDate = new Date(contact.nextFollowUp).toLocaleDateString().toLowerCase();
       return (

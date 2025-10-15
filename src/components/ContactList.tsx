@@ -2,7 +2,7 @@ import { Contact } from "@/hooks/useLeadStorage";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo, memo } from "react";
 import { useLeadContext } from "@/contexts/LeadContext";
 
 interface ContactListProps {
@@ -11,7 +11,51 @@ interface ContactListProps {
 
 const ITEMS_PER_PAGE = 50;
 
-export const ContactList = ({ contacts }: ContactListProps) => {
+// Memoized contact card component to prevent unnecessary re-renders
+const ContactCard = memo(({ contact, onClick }: { contact: Contact; onClick: () => void }) => {
+  const formattedDate = useMemo(() => 
+    new Date(contact.nextFollowUp).toLocaleDateString(), 
+    [contact.nextFollowUp]
+  );
+
+  return (
+    <Card
+      className="p-4 cursor-pointer hover:bg-accent transition-colors"
+      onClick={onClick}
+    >
+      <div className="space-y-2">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-semibold text-lg">{contact.name}</h3>
+            <p className="text-sm text-muted-foreground">{contact.company}</p>
+          </div>
+          <Badge variant="secondary">{contact.status}</Badge>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <span className="text-muted-foreground">City: </span>
+            <span>{contact.city}</span>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Next Follow-up: </span>
+            <span>{formattedDate}</span>
+          </div>
+        </div>
+
+        {contact.lastNotes && (
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            Last: {contact.lastNotes}
+          </p>
+        )}
+      </div>
+    </Card>
+  );
+});
+
+ContactCard.displayName = "ContactCard";
+
+export const ContactList = memo(({ contacts }: ContactListProps) => {
   const navigate = useNavigate();
   const { scrollPosition, displayCount, setScrollPosition, setDisplayCount } = useLeadContext();
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -70,43 +114,19 @@ export const ContactList = ({ contacts }: ContactListProps) => {
     );
   }
 
-  const displayedContacts = contacts.slice(0, displayCount);
+  const displayedContacts = useMemo(() => 
+    contacts.slice(0, displayCount), 
+    [contacts, displayCount]
+  );
 
   return (
     <div className="space-y-4">
       {displayedContacts.map((contact) => (
-        <Card
+        <ContactCard
           key={contact.id}
-          className="p-4 cursor-pointer hover:bg-accent transition-colors"
+          contact={contact}
           onClick={() => handleContactTap(contact.id)}
-        >
-          <div className="space-y-2">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">{contact.name}</h3>
-                <p className="text-sm text-muted-foreground">{contact.company}</p>
-              </div>
-              <Badge variant="secondary">{contact.status}</Badge>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">City: </span>
-                <span>{contact.city}</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Next Follow-up: </span>
-                <span>{new Date(contact.nextFollowUp).toLocaleDateString()}</span>
-              </div>
-            </div>
-
-            {contact.lastNotes && (
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                Last: {contact.lastNotes}
-              </p>
-            )}
-          </div>
-        </Card>
+        />
       ))}
       
       {displayCount < contacts.length && (
@@ -118,4 +138,6 @@ export const ContactList = ({ contacts }: ContactListProps) => {
       )}
     </div>
   );
-};
+});
+
+ContactList.displayName = "ContactList";

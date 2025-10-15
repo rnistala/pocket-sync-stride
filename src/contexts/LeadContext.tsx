@@ -46,7 +46,10 @@ class IndexedDBManager {
       const store = transaction.objectStore(CONTACTS_STORE);
       const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result || []);
+      request.onsuccess = () => {
+        const result = request.result || [];
+        resolve(result);
+      };
       request.onerror = () => reject(request.error);
     });
   }
@@ -57,8 +60,21 @@ class IndexedDBManager {
       const transaction = this.db!.transaction(CONTACTS_STORE, "readwrite");
       const store = transaction.objectStore(CONTACTS_STORE);
 
-      store.clear();
-      contacts.forEach(contact => store.add(contact));
+      const clearRequest = store.clear();
+      clearRequest.onsuccess = () => {
+        // Use batching for better performance
+        const BATCH_SIZE = 100;
+        let i = 0;
+        
+        const addBatch = () => {
+          const end = Math.min(i + BATCH_SIZE, contacts.length);
+          for (; i < end; i++) {
+            store.add(contacts[i]);
+          }
+        };
+        
+        addBatch();
+      };
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -207,11 +223,26 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     setInteractions(prev => [...prev, newInteraction]);
   }, []);
 
-  const getContactInteractions = useCallback((contactId: string) => {
-    return interactions
-      .filter((i) => i.contactId === contactId)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Memoize interactions by contact ID for faster lookups
+  const interactionsByContact = useMemo(() => {
+    const map = new Map<string, Interaction[]>();
+    interactions.forEach(interaction => {
+      const existing = map.get(interaction.contactId) || [];
+      existing.push(interaction);
+      map.set(interaction.contactId, existing);
+    });
+    // Sort each contact's interactions
+    map.forEach((interactions, contactId) => {
+      map.set(contactId, interactions.sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ));
+    });
+    return map;
   }, [interactions]);
+
+  const getContactInteractions = useCallback((contactId: string) => {
+    return interactionsByContact.get(contactId) || [];
+  }, [interactionsByContact]);
 
   const syncData = useCallback(async () => {
     const userId = localStorage.getItem("userId");
@@ -297,7 +328,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     addInteraction,
     getContactInteractions,
     syncData,
-  }), [contacts, interactions, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData]);
+  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData]);
 
   return (
     <LeadContext.Provider value={value}>
