@@ -99,7 +99,7 @@ const ContactInteractions = () => {
         const transformedInteractions = interactionsData.map((item: any) => ({
           id: crypto.randomUUID(),
           contactId: contact.id,
-          date: item.created || new Date().toISOString(),
+          date: item.created || item.date || new Date().toISOString(),
           type: "call" as const, // Default type, adjust based on API data
           notes: item.notes || "",
           syncStatus: "synced" as const,
@@ -220,7 +220,14 @@ const ContactInteractions = () => {
                     {interaction.type}
                   </Badge>
                   <div className="text-sm text-muted-foreground">
-                    {new Date(interaction.date).toLocaleDateString()} • {new Date(interaction.date).toLocaleTimeString()}
+                    {new Date(interaction.date).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })} at {new Date(interaction.date).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </div>
                 </div>
                 <p className="text-sm">{interaction.notes}</p>
