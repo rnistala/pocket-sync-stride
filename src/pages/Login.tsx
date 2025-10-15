@@ -49,9 +49,7 @@ const Login = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <div className="bg-white px-6 py-4 rounded-lg inline-block">
-            <img src={logoFull} alt="OpteriX" className="h-12" />
-          </div>
+          <img src={logoFull} alt="OpteriX" className="h-12 mx-auto" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               Lead Manager
