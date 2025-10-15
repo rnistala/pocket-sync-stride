@@ -62,18 +62,10 @@ class IndexedDBManager {
 
       const clearRequest = store.clear();
       clearRequest.onsuccess = () => {
-        // Use batching for better performance
-        const BATCH_SIZE = 100;
-        let i = 0;
-        
-        const addBatch = () => {
-          const end = Math.min(i + BATCH_SIZE, contacts.length);
-          for (; i < end; i++) {
-            store.add(contacts[i]);
-          }
-        };
-        
-        addBatch();
+        // Add all contacts
+        contacts.forEach(contact => {
+          store.add(contact);
+        });
       };
 
       transaction.oncomplete = () => resolve();
