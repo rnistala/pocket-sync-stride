@@ -10,54 +10,19 @@ import { Badge } from "@/components/ui/badge";
 const ContactDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions } = useLeadContext();
+  const { contacts, getContactInteractions, syncData } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
   
   const contact = contacts.find((c) => c.id === id);
   const interactions = contact ? getContactInteractions(contact.id) : [];
 
   const handleSyncInteractions = async () => {
-    if (!contact) return;
-    
-    const userId = localStorage.getItem("userId");
-    if (!userId) {
-      toast.error("User ID not found");
-      return;
-    }
-
     setIsSyncing(true);
     try {
-      const response = await fetch(
-        `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: 4,
-            offset: 0,
-            limit: 25,
-            extra: [{
-              operator: "in",
-              value: contact.id,
-              tablename: "contact",
-              columnname: "id",
-              function: "",
-              datatype: "Selection",
-              enable: "true",
-              show: contact.name,
-              extracolumn: "name"
-            }]
-          }),
-        }
-      );
-
-      if (response.ok) {
-        toast.success("Interaction history synced successfully!");
-      } else {
-        toast.error("Failed to sync interaction history");
-      }
+      await syncData();
+      toast.success("Data synced successfully!");
     } catch (error) {
-      toast.error("Error syncing interactions");
+      toast.error("Error syncing data");
       console.error("Sync error:", error);
     } finally {
       setIsSyncing(false);
@@ -84,7 +49,7 @@ const ContactDetail = () => {
             className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-            {isSyncing ? "Syncing..." : "Sync Interactions"}
+            {isSyncing ? "Syncing..." : "Sync Data"}
           </Button>
         </div>
 
