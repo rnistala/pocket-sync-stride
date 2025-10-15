@@ -18,7 +18,7 @@ import { toast } from "sonner";
 const ContactInteractions = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions, addInteraction } = useLeadContext();
+  const { contacts, getContactInteractions, addInteraction, syncData } = useLeadContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
@@ -65,69 +65,12 @@ const ContactInteractions = () => {
   };
 
   const handleSyncInteractions = async () => {
-    if (!contact) return;
-    
-    const userId = localStorage.getItem("userId");
-    if (!userId) {
-      toast.error("User ID not found");
-      return;
-    }
-
     setIsSyncing(true);
     try {
-      const response = await fetch(
-        `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: 4,
-            offset: 0,
-            limit: 25,
-            ordercolumn: "",
-            ordertype: "",
-            extra: [{
-              operator: "in",
-              value: contact.id,
-              tablename: "contact",
-              columnname: "id",
-              function: "",
-              datatype: "Selection",
-              enable: "true",
-              show: contact.name,
-              extracolumn: "name"
-            }]
-          }),
-        }
-      );
-
-      if (response.ok) {
-        const apiResponse = await response.json();
-        const interactionsData = apiResponse.data?.[0]?.body || [];
-        
-        console.log("Synced interactions:", interactionsData);
-        
-        // Transform API interactions to our format
-        const transformedInteractions = interactionsData.map((item: any) => ({
-          id: crypto.randomUUID(),
-          contactId: contact.id,
-          date: item.created || item.date || new Date().toISOString(),
-          type: "call" as const, // Default type, adjust based on API data
-          notes: item.notes || "",
-          syncStatus: "synced" as const,
-        }));
-
-        // Add synced interactions to context with their original dates
-        for (const interaction of transformedInteractions) {
-          await addInteraction(contact.id, interaction.type, interaction.notes, interaction.date);
-        }
-        
-        toast.success(`Synced ${transformedInteractions.length} interaction(s)`);
-      } else {
-        toast.error("Failed to sync interaction history");
-      }
+      await syncData();
+      toast.success("Data synced successfully!");
     } catch (error) {
-      toast.error("Error syncing interactions");
+      toast.error("Error syncing data");
       console.error("Sync error:", error);
     } finally {
       setIsSyncing(false);
