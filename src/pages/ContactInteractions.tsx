@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, MessageSquare, Plus } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
@@ -18,6 +18,7 @@ const ContactInteractions = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const contact = contacts.find((c) => c.id === id);
   const interactions = getContactInteractions(id || "");
@@ -50,6 +51,54 @@ const ContactInteractions = () => {
     if (contact.email) window.location.href = `mailto:${contact.email}`;
   };
 
+  const handleSyncInteractions = async () => {
+    if (!contact) return;
+    
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const response = await fetch(
+        `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: 4,
+            offset: 0,
+            limit: 25,
+            extra: [{
+              operator: "in",
+              value: contact.id,
+              tablename: "contact",
+              columnname: "id",
+              function: "",
+              datatype: "Selection",
+              enable: "true",
+              show: contact.name,
+              extracolumn: "name"
+            }]
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Interaction history synced successfully!");
+      } else {
+        toast.error("Failed to sync interaction history");
+      }
+    } catch (error) {
+      toast.error("Error syncing interactions");
+      console.error("Sync error:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -80,13 +129,24 @@ const ContactInteractions = () => {
 
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Interaction History</h2>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Log Interaction
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleSyncInteractions}
+              disabled={isSyncing}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Syncing..." : "Sync"}
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Log Interaction
+                </Button>
+              </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Log New Interaction</DialogTitle>
@@ -121,6 +181,7 @@ const ContactInteractions = () => {
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <div className="space-y-4">
