@@ -10,19 +10,104 @@ import { Badge } from "@/components/ui/badge";
 const ContactDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { contacts, getContactInteractions, syncData } = useLeadContext();
+  const { contacts, getContactInteractions } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
   
   const contact = contacts.find((c) => c.id === id);
   const interactions = contact ? getContactInteractions(contact.id) : [];
 
   const handleSyncInteractions = async () => {
+    if (!contact) return;
+    
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
     setIsSyncing(true);
     try {
-      await syncData();
-      toast.success("Data synced successfully!");
+      // Step 1: Upload dirty interactions for this contact only
+      const dirtyInteractions = interactions.filter(i => i.dirty);
+      
+      if (dirtyInteractions.length > 0) {
+        let latitude = "";
+        let longitude = "";
+        
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+            });
+            latitude = position.coords.latitude.toString();
+            longitude = position.coords.longitude.toString();
+          } catch (error) {
+            console.log("Geolocation not available", error);
+          }
+        }
+
+        for (const interaction of dirtyInteractions) {
+          const payload = {
+            meta: {
+              btable: "followup",
+              htable: "",
+              parentkey: "",
+              preapi: "updatecontact",
+              draftid: ""
+            },
+            data: [{
+              body: [{
+                contact: contact.id,
+                contact_status: "",
+                notes: interaction.notes,
+                next_meeting: interaction.nextFollowUp || "",
+                latitude: latitude,
+                longitude: longitude
+              }],
+              dirty: "true"
+            }]
+          };
+
+          await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+        }
+      }
+
+      // Step 2: Fetch interaction history for this contact
+      const response = await fetch(
+        `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: 4,
+            offset: 0,
+            limit: 25,
+            extra: [{
+              operator: "in",
+              value: contact.id,
+              tablename: "contact",
+              columnname: "id",
+              function: "",
+              datatype: "Selection",
+              enable: "true",
+              show: contact.name,
+              extracolumn: "name"
+            }]
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Interactions synced successfully!");
+      } else {
+        toast.error("Failed to sync interactions");
+      }
     } catch (error) {
-      toast.error("Error syncing data");
+      toast.error("Error syncing interactions");
       console.error("Sync error:", error);
     } finally {
       setIsSyncing(false);
@@ -49,7 +134,7 @@ const ContactDetail = () => {
             className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-            {isSyncing ? "Syncing..." : "Sync Data"}
+            {isSyncing ? "Syncing..." : "Sync Interactions"}
           </Button>
         </div>
 
