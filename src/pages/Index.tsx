@@ -24,6 +24,7 @@ const Index = () => {
         contact.name.toLowerCase().includes(query) ||
         contact.company.toLowerCase().includes(query) ||
         contact.city.toLowerCase().includes(query) ||
+        contact.status.toLowerCase().includes(query) ||
         followUpDate.includes(query)
       );
     });
@@ -98,7 +99,7 @@ const Index = () => {
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search by name, company, city, or follow-up date..."
+            placeholder="Search by name, company, city, status, or follow-up date..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-10"
