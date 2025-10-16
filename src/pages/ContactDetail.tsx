@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail, RefreshCw, Cloud } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
 const ContactDetail = () => {
@@ -25,20 +24,71 @@ const ContactDetail = () => {
 const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: any }) => {
   const { getContactInteractions, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   const interactions = getContactInteractions(contact.id);
 
-  // Fetch interaction history on first load if not already cached
+  // Auto-sync interactions
   useEffect(() => {
-    const fetchInteractionHistory = async () => {
-      if (interactions.length > 0 || isLoadingHistory) return;
+    const syncInteractions = async () => {
+      if (!navigator.onLine) return;
       
       const userId = localStorage.getItem("userId");
       if (!userId) return;
 
-      setIsLoadingHistory(true);
+      setIsSyncing(true);
       try {
+        // Upload dirty interactions
+        const dirtyInteractions = interactions.filter(i => i.dirty);
+        
+        if (dirtyInteractions.length > 0) {
+          let latitude = "";
+          let longitude = "";
+          
+          if (navigator.geolocation) {
+            try {
+              const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+              });
+              latitude = position.coords.latitude.toString();
+              longitude = position.coords.longitude.toString();
+            } catch (error) {
+              console.log("Geolocation not available", error);
+            }
+          }
+
+          for (const interaction of dirtyInteractions) {
+            const payload = {
+              meta: {
+                btable: "followup",
+                htable: "",
+                parentkey: "",
+                preapi: "updatecontact",
+                draftid: ""
+              },
+              data: [{
+                body: [{
+                  contact: contact.id,
+                  contact_status: "",
+                  notes: interaction.notes,
+                  next_meeting: interaction.nextFollowUp || "",
+                  latitude: latitude,
+                  longitude: longitude
+                }],
+                dirty: "true"
+              }]
+            };
+
+            await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+          }
+
+          await markInteractionsAsSynced(contact.id);
+        }
+
+        // Fetch interaction history
         const response = await fetch(
           `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
           {
@@ -67,117 +117,23 @@ const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: a
           const apiResponse = await response.json();
           const apiInteractions = apiResponse.data?.[0]?.body || [];
           await mergeInteractionsFromAPI(apiInteractions, contact.id);
-          console.log("Interaction history fetched and saved for contact", contact.id);
         }
       } catch (error) {
-        console.error("Error fetching interaction history:", error);
+        console.error("Auto-sync error:", error);
       } finally {
-        setIsLoadingHistory(false);
+        setIsSyncing(false);
       }
     };
 
-    fetchInteractionHistory();
-  }, [contact.id, interactions.length, isLoadingHistory, mergeInteractionsFromAPI]);
+    // Initial sync
+    syncInteractions();
 
-  const handleSyncInteractions = async () => {
-    
-    const userId = localStorage.getItem("userId");
-    if (!userId) {
-      toast.error("User ID not found");
-      return;
-    }
+    // Auto-sync every 3 minutes
+    const syncInterval = setInterval(syncInteractions, 3 * 60 * 1000);
 
-    setIsSyncing(true);
-    try {
-      // Step 1: Upload dirty interactions for this contact only
-      const dirtyInteractions = interactions.filter(i => i.dirty);
-      
-      if (dirtyInteractions.length > 0) {
-        let latitude = "";
-        let longitude = "";
-        
-        if (navigator.geolocation) {
-          try {
-            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-            });
-            latitude = position.coords.latitude.toString();
-            longitude = position.coords.longitude.toString();
-          } catch (error) {
-            console.log("Geolocation not available", error);
-          }
-        }
+    return () => clearInterval(syncInterval);
+  }, [contact.id, interactions, markInteractionsAsSynced, mergeInteractionsFromAPI]);
 
-        for (const interaction of dirtyInteractions) {
-          const payload = {
-            meta: {
-              btable: "followup",
-              htable: "",
-              parentkey: "",
-              preapi: "updatecontact",
-              draftid: ""
-            },
-            data: [{
-              body: [{
-                contact: contact.id,
-                contact_status: "",
-                notes: interaction.notes,
-                next_meeting: interaction.nextFollowUp || "",
-                latitude: latitude,
-                longitude: longitude
-              }],
-              dirty: "true"
-            }]
-          };
-
-          await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-        }
-
-        // Mark interactions as synced
-        await markInteractionsAsSynced(contact.id);
-      }
-
-      // Step 2: Fetch interaction history for this contact
-      const response = await fetch(
-        `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: 4,
-            offset: 0,
-            limit: 25,
-            extra: [{
-              operator: "in",
-              value: contact.id,
-              tablename: "contact",
-              columnname: "id",
-              function: "",
-              datatype: "Selection",
-              enable: "true",
-              show: contact.name,
-              extracolumn: "name"
-            }]
-          }),
-        }
-      );
-
-      if (response.ok) {
-        toast.success("Interactions synced successfully!");
-      } else {
-        toast.error("Failed to sync interactions");
-      }
-    } catch (error) {
-      toast.error("Error syncing interactions");
-      console.error("Sync error:", error);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -188,15 +144,12 @@ const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: a
             Back
           </Button>
           
-          <Button
-            onClick={handleSyncInteractions}
-            disabled={isSyncing}
-            size="sm"
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-            {isSyncing ? "Syncing..." : "Sync Interactions"}
-          </Button>
+          {isSyncing && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Auto-syncing...
+            </div>
+          )}
         </div>
 
         <Card className="p-6">

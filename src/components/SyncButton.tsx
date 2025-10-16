@@ -1,34 +1,11 @@
 import { RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { toast } from "sonner";
 
 interface SyncButtonProps {
-  onSync: () => Promise<void>;
   lastSync: Date | null;
   isOnline: boolean;
 }
 
-export const SyncButton = ({ onSync, lastSync, isOnline }: SyncButtonProps) => {
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  const handleSync = async () => {
-    if (!isOnline) {
-      toast.error("Cannot sync while offline");
-      return;
-    }
-
-    setIsSyncing(true);
-    try {
-      await onSync();
-      toast.success("Synced successfully!");
-    } catch (error) {
-      toast.error("Sync failed");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
-
+export const SyncButton = ({ lastSync, isOnline }: SyncButtonProps) => {
   const getLastSyncText = () => {
     if (!lastSync) return "Never synced";
     const diff = Date.now() - lastSync.getTime();
@@ -41,17 +18,9 @@ export const SyncButton = ({ onSync, lastSync, isOnline }: SyncButtonProps) => {
   };
 
   return (
-    <div className="flex items-center gap-4">
-      <span className="text-sm text-muted-foreground">{getLastSyncText()}</span>
-      <Button
-        onClick={handleSync}
-        disabled={!isOnline || isSyncing}
-        size="sm"
-        className="gap-2"
-      >
-        <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-        {isSyncing ? "Syncing..." : "Sync"}
-      </Button>
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <RefreshCw className="h-3 w-3" />
+      {getLastSyncText()}
     </div>
   );
 };

@@ -48,17 +48,34 @@ const Index = () => {
       navigate("/login");
     }
 
-    const handleOnline = () => setIsOnline(true);
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Auto-sync when coming back online
+      syncData();
+    };
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
+    // Auto-sync on mount if online
+    if (navigator.onLine) {
+      syncData();
+    }
+
+    // Auto-sync every 5 minutes when online
+    const syncInterval = setInterval(() => {
+      if (navigator.onLine) {
+        syncData();
+      }
+    }, 5 * 60 * 1000);
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      clearInterval(syncInterval);
     };
-  }, [navigate]);
+  }, [navigate, syncData]);
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
@@ -112,7 +129,6 @@ const Index = () => {
                 </Button>
                 <AddContactForm />
                 <SyncButton
-                  onSync={syncData}
                   lastSync={lastSync}
                   isOnline={isOnline}
                 />
