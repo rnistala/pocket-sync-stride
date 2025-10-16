@@ -29,7 +29,7 @@ const ContactCard = memo(({ contact, onClick, onToggleStar }: { contact: Contact
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-sm md:text-base truncate">{contact.name}</h3>
-            <Badge variant="secondary" className="text-xs px-1.5 py-0 shrink-0">{contact.status}</Badge>
+            <Badge variant="default" className="text-xs px-2 py-0.5 shrink-0 font-medium">{contact.status}</Badge>
           </div>
           <p className="text-xs text-muted-foreground truncate">{contact.company} • {contact.city}</p>
           <p className="text-xs text-muted-foreground">
