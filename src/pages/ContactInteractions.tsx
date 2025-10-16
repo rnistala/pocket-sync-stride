@@ -44,15 +44,26 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
 
   const interactions = getContactInteractions(contact.id);
 
-  // Auto-sync when network becomes available
+  // Auto-sync dirty interactions in background
   useEffect(() => {
-    const handleOnline = () => {
-      handleSyncInteractions();
+    const autoSync = async () => {
+      if (!navigator.onLine || isSyncing) return;
+      
+      const dirtyInteractions = interactions.filter(i => i.dirty);
+      if (dirtyInteractions.length === 0) return;
+
+      console.log("[AUTO-SYNC] Found", dirtyInteractions.length, "dirty interactions");
+      await handleSyncInteractions();
     };
 
-    window.addEventListener("online", handleOnline);
-    return () => window.removeEventListener("online", handleOnline);
-  }, []);
+    // Check for dirty interactions periodically
+    const syncInterval = setInterval(autoSync, 2000);
+    
+    // Also check immediately when interactions change
+    autoSync();
+
+    return () => clearInterval(syncInterval);
+  }, [interactions, isSyncing]);
 
   // Fetch interaction history on first load if not already cached
   useEffect(() => {
@@ -122,12 +133,6 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
     setNextFollowUpDate(undefined);
     setIsDialogOpen(false);
     toast.success("Interaction logged");
-    
-    // Wait a bit longer for React state to update, then sync
-    setTimeout(() => {
-      console.log("[UI] Triggering sync after adding interaction");
-      handleSyncInteractions();
-    }, 1000);
   };
 
   const handleCall = () => {
