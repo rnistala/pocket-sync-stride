@@ -93,7 +93,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
     fetchInteractionHistory();
   }, [contact.id, interactions.length, isLoadingHistory, mergeInteractionsFromAPI]);
 
-  const handleAddInteraction = () => {
+  const handleAddInteraction = async () => {
     if (!notes.trim()) {
       toast.error("Please add notes");
       return;
@@ -110,6 +110,9 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
     setNextFollowUpDate(undefined);
     setIsDialogOpen(false);
     toast.success("Interaction logged");
+    
+    // Trigger sync after adding interaction
+    await handleSyncInteractions();
   };
 
   const handleCall = () => {

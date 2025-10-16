@@ -63,12 +63,12 @@ const Index = () => {
       syncData();
     }
 
-    // Auto-sync every 5 minutes when online
+    // Auto-sync every hour when online
     const syncInterval = setInterval(() => {
       if (navigator.onLine) {
         syncData();
       }
-    }, 5 * 60 * 1000);
+    }, 60 * 60 * 1000);
 
     return () => {
       window.removeEventListener("online", handleOnline);
