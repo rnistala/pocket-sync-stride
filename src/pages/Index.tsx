@@ -34,6 +34,7 @@ const Index = () => {
           contact.company.toLowerCase().includes(query) ||
           contact.city.toLowerCase().includes(query) ||
           contact.status.toLowerCase().includes(query) ||
+          (contact.profile && contact.profile.toLowerCase().includes(query)) ||
           followUpDate.includes(query)
         );
       });

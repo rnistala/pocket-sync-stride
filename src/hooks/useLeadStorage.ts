@@ -11,6 +11,7 @@ export interface Contact {
   lastNotes: string;
   phone?: string;
   email?: string;
+  profile?: string;
   starred?: boolean;
   interactions?: Interaction[];
 }
