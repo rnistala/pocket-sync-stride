@@ -258,47 +258,47 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
   };
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <Button variant="ghost" onClick={() => navigate('/')} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
+    <div className="min-h-screen bg-background p-3">
+      <div className="max-w-3xl mx-auto space-y-3">
+        <Button variant="ghost" onClick={() => navigate('/')} size="sm" className="gap-1.5">
+          <ArrowLeft className="h-3.5 w-3.5" />
           Back
         </Button>
 
-        <Card className="p-6">
-          <h1 className="text-2xl font-bold mb-2">{contact.name}</h1>
-          <p className="text-muted-foreground mb-4">{contact.company} • {contact.city}</p>
+        <Card className="p-4">
+          <h1 className="text-xl font-bold mb-1">{contact.name}</h1>
+          <p className="text-sm text-muted-foreground mb-3">{contact.company} • {contact.city}</p>
           
-          <div className="flex gap-2">
-            <Button onClick={handleCall} variant="outline" className="gap-2">
-              <Phone className="h-4 w-4" />
+          <div className="flex gap-1.5">
+            <Button onClick={handleCall} variant="outline" size="sm" className="gap-1.5">
+              <Phone className="h-3.5 w-3.5" />
               Call
             </Button>
-            <Button onClick={handleWhatsApp} variant="outline" className="gap-2">
-              <MessageSquare className="h-4 w-4" />
+            <Button onClick={handleWhatsApp} variant="outline" size="sm" className="gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5" />
               WhatsApp
             </Button>
-            <Button onClick={handleEmail} variant="outline" className="gap-2">
-              <Mail className="h-4 w-4" />
+            <Button onClick={handleEmail} variant="outline" size="sm" className="gap-1.5">
+              <Mail className="h-3.5 w-3.5" />
               Email
             </Button>
           </div>
         </Card>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Interaction History</h2>
+          <h2 className="text-lg font-semibold">Interaction History</h2>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Log Interaction
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-3.5 w-3.5" />
+                Log
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Log New Interaction</DialogTitle>
+                <DialogTitle className="text-lg">Log Interaction</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div>
                   <Label>Type</Label>
                   <Select value={interactionType} onValueChange={(v: any) => setInteractionType(v)}>
@@ -314,27 +314,29 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
                   </Select>
                 </div>
                 <div>
-                  <Label>Notes</Label>
+                  <Label className="text-sm">Notes</Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="What was discussed?"
-                    rows={4}
+                    rows={3}
+                    className="text-sm"
                   />
                 </div>
                 <div>
-                  <Label>Next Follow-Up Date</Label>
+                  <Label className="text-sm">Next Follow-Up Date</Label>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         type="button"
                         variant="outline"
+                        size="sm"
                         className={cn(
-                          "w-full justify-start text-left font-normal",
+                          "w-full justify-start text-left font-normal text-sm",
                           !nextFollowUpDate && "text-muted-foreground"
                         )}
                       >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                         {nextFollowUpDate ? format(nextFollowUpDate, "PPP") : <span>Pick a date</span>}
                       </Button>
                     </PopoverTrigger>
@@ -361,17 +363,17 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
           </Dialog>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           {interactions.length === 0 ? (
-            <Card className="p-6 text-center text-muted-foreground">
+            <Card className="p-4 text-center text-sm text-muted-foreground">
               No interactions logged yet
             </Card>
           ) : (
             interactions.map((interaction) => (
-              <Card key={interaction.id} className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="capitalize">
+              <Card key={interaction.id} className="p-3">
+                <div className="flex items-start justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <Badge variant="secondary" className="capitalize text-xs py-0">
                       {interaction.type}
                     </Badge>
                     {interaction.dirty && (
@@ -380,18 +382,17 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
                       </div>
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     {new Date(interaction.date).toLocaleDateString('en-US', { 
-                      year: 'numeric', 
                       month: 'short', 
                       day: 'numeric' 
-                    })} at {new Date(interaction.date).toLocaleTimeString('en-US', {
+                    })} {new Date(interaction.date).toLocaleTimeString('en-US', {
                       hour: '2-digit',
                       minute: '2-digit'
                     })}
                   </div>
                 </div>
-                <p className="text-sm">{interaction.notes}</p>
+                <p className="text-sm leading-relaxed">{interaction.notes}</p>
               </Card>
             ))
           )}
