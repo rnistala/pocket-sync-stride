@@ -16,8 +16,8 @@ const ITEMS_PER_PAGE = 50;
 // Memoized contact card component to prevent unnecessary re-renders
 const ContactCard = memo(({ contact, onClick, onToggleStar }: { contact: Contact; onClick: () => void; onToggleStar: (e: React.MouseEvent) => void }) => {
   const formattedDate = useMemo(() => 
-    new Date(contact.nextFollowUp).toLocaleDateString(), 
-    [contact.nextFollowUp]
+    new Date(contact.followup_on).toLocaleDateString(), 
+    [contact.followup_on]
   );
 
   return (

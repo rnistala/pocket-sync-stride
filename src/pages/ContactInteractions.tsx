@@ -44,7 +44,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>(
-    contact.nextFollowUp ? new Date(contact.nextFollowUp) : undefined
+    contact.followup_on ? new Date(contact.followup_on) : undefined
   );
   const [isFollowUpCalendarOpen, setIsFollowUpCalendarOpen] = useState(false);
   const [isUpdatingFollowUp, setIsUpdatingFollowUp] = useState(false);
@@ -289,9 +289,9 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
               body: [{
                 contact: contact.id,
                 contact_status: "",
-                notes: interaction.notes,
-                next_meeting: interaction.nextFollowUp || "",
-                latitude: latitude,
+                  notes: interaction.notes,
+                  next_meeting: interaction.followup_on || "",
+                  latitude: latitude,
                 longitude: longitude
               }],
               dirty: "true"

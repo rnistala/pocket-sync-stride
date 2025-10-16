@@ -163,7 +163,7 @@ interface LeadContextType {
   setDisplayCount: (count: number) => void;
   setSearchQuery: (query: string) => void;
   setShowStarredOnly: (show: boolean) => void;
-  addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string, nextFollowUp?: string) => Promise<void>;
+  addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string, followup_on?: string) => Promise<void>;
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
   markInteractionsAsSynced: (contactId: string) => Promise<void>;
@@ -220,7 +220,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     setInteractions(newInteractions);
   }, []);
 
-  const addInteraction = useCallback(async (contactId: string, type: Interaction["type"], notes: string, date?: string, nextFollowUp?: string) => {
+  const addInteraction = useCallback(async (contactId: string, type: Interaction["type"], notes: string, date?: string, followup_on?: string) => {
     const newInteraction: Interaction = {
       id: crypto.randomUUID(),
       contactId,
@@ -228,7 +228,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       type,
       notes,
       syncStatus: "local",
-      nextFollowUp,
+      followup_on,
       dirty: true,
     };
     
@@ -240,10 +240,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       return updated;
     });
     
-    // Update contact's nextFollowUp if provided
-    if (nextFollowUp) {
+    // Update contact's followup_on if provided
+    if (followup_on) {
       const updatedContacts = contacts.map(c => 
-        c.id === contactId ? { ...c, nextFollowUp } : c
+        c.id === contactId ? { ...c, followup_on } : c
       );
       await dbManager.saveContacts(updatedContacts);
       setContacts(updatedContacts);
@@ -290,7 +290,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       type: "call" as const, // Default type, can be enhanced based on API data
       notes: item.notes || "",
       syncStatus: "synced" as const,
-      nextFollowUp: item.next_meeting || undefined,
+      followup_on: item.next_meeting || undefined,
       dirty: false,
     }));
 
@@ -321,7 +321,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
   const updateContactFollowUp = useCallback(async (contactId: string, followUpDate: string) => {
     const updatedContacts = contacts.map(c => 
-      c.id === contactId ? { ...c, nextFollowUp: followUpDate } : c
+      c.id === contactId ? { ...c, followup_on: followUpDate } : c
     );
     
     // Update the changed contact in IndexedDB first
@@ -395,7 +395,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
                   contact: contact.id, // Using contact.id (not contact_id)
                   contact_status: "",
                   notes: interaction.notes,
-                  next_meeting: interaction.nextFollowUp || "",
+                  next_meeting: interaction.followup_on || "",
                   latitude: latitude,
                   longitude: longitude
                 }],
@@ -466,7 +466,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           status: contact.status || "Fresh",
           company: contact.company || "",
           city: contact.city || "",
-          nextFollowUp: contact.followup_on || new Date().toISOString(),
+          followup_on: contact.followup_on || new Date().toISOString(),
           lastNotes: contact.message || "",
           phone: contact.mobile || "",
           email: contact.email || "",
@@ -499,13 +499,13 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         const localContact = existingContactsMap.get(serverContact.id);
         
         if (localContact) {
-          // Merge: prefer local data for starred and nextFollowUp
+          // Merge: prefer local data for starred and followup_on
           return {
             ...serverContact,
             starred: localContact.starred || false,
-            nextFollowUp: localContact.nextFollowUp !== serverContact.nextFollowUp 
-              ? localContact.nextFollowUp 
-              : serverContact.nextFollowUp,
+            followup_on: localContact.followup_on !== serverContact.followup_on 
+              ? localContact.followup_on 
+              : serverContact.followup_on,
           };
         }
         

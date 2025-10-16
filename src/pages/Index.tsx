@@ -27,7 +27,7 @@ const Index = () => {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(contact => {
-        const followUpDate = new Date(contact.nextFollowUp).toLocaleDateString().toLowerCase();
+        const followUpDate = new Date(contact.followup_on).toLocaleDateString().toLowerCase();
         return (
           contact.name.toLowerCase().includes(query) ||
           contact.company.toLowerCase().includes(query) ||

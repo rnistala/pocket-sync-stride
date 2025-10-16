@@ -7,7 +7,7 @@ export interface Contact {
   status: string;
   company: string;
   city: string;
-  nextFollowUp: string;
+  followup_on: string;
   lastNotes: string;
   phone?: string;
   email?: string;
@@ -23,7 +23,7 @@ export interface Interaction {
   type: "call" | "whatsapp" | "email" | "meeting";
   notes: string;
   syncStatus: "synced" | "pending" | "local";
-  nextFollowUp?: string;
+  followup_on?: string;
   dirty?: boolean;
 }
 
@@ -255,7 +255,7 @@ export const useLeadStorage = () => {
           status: contact.status || "Fresh",
           company: contact.company || "",
           city: contact.city || "",
-          nextFollowUp: contact.followup_on || new Date().toISOString(),
+          followup_on: contact.followup_on || new Date().toISOString(),
           lastNotes: contact.message || "",
           phone: contact.mobile || "",
           email: contact.email || "",
