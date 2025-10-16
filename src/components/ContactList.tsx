@@ -25,14 +25,14 @@ const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { cont
 
   return (
     <Card
-      className="p-3 cursor-pointer hover:bg-accent/50 transition-colors active:scale-[0.99]"
+      className="p-3 cursor-pointer hover:bg-secondary/80 transition-colors active:scale-[0.99] border-border/50"
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-sm md:text-base truncate">{contact.name}</h3>
-            <Badge variant="default" className="text-xs px-2 py-0.5 shrink-0 font-medium">{contact.status}</Badge>
+            <Badge variant="default" className="text-xs px-2 py-0.5 shrink-0 font-medium bg-accent/20 text-accent-foreground border border-accent/30">{contact.status}</Badge>
           </div>
           <p className="text-xs text-muted-foreground truncate">{contact.company} • {contact.city}</p>
           <p className="text-xs text-muted-foreground">

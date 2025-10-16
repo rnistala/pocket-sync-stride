@@ -141,7 +141,7 @@ const Index = () => {
             </div>
             <div className="flex items-center justify-between gap-2">
               <Button
-                variant={showStarredOnly ? "default" : "ghost"}
+                variant={showStarredOnly ? "default" : "secondary"}
                 size="sm"
                 onClick={() => setShowStarredOnly(!showStarredOnly)}
                 className="h-8 px-3"
