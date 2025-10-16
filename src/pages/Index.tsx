@@ -84,82 +84,73 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-3 md:p-8">
-      <div className="max-w-3xl mx-auto space-y-4 md:space-y-8">
-        <header className="space-y-3 md:space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div className="min-h-screen bg-background">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="max-w-3xl mx-auto px-3 py-2 md:px-8 md:py-4">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+              <h1 className="text-xl md:text-2xl font-bold text-foreground">
                 Lead Manager
               </h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Manage your leads offline, sync when connected
-              </p>
             </div>
-            <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4">
+            <div className="flex items-center gap-2">
               <NetworkStatus />
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>
-          
-          <div className="flex flex-col gap-3 py-3 md:py-4 border-t border-b border-border">
-            <div className="flex items-center justify-between gap-2">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Total:</span>
-                <span className="ml-2 font-semibold text-foreground">
-                  {filteredContacts.length}
-                </span>
+
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search contacts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9 h-9"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-9 w-9"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {filteredContacts.length}
                 {(searchQuery || showStarredOnly) && (
-                  <span className="text-muted-foreground text-xs ml-1">
-                    (of {contacts.length})
-                  </span>
+                  <span className="text-xs ml-1">of {contacts.length}</span>
                 )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={showStarredOnly ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowStarredOnly(!showStarredOnly)}
-                  className="h-8"
-                >
-                  <Star className={`h-3 w-3 md:mr-1 ${showStarredOnly ? 'fill-current' : ''}`} />
-                  <span className="hidden md:inline">Starred</span>
-                </Button>
-                <AddContactForm />
-                <SyncButton
-                  lastSync={lastSync}
-                  isOnline={isOnline}
-                />
-              </div>
+              </span>
+              <Button
+                variant={showStarredOnly ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setShowStarredOnly(!showStarredOnly)}
+                className="h-7 px-2"
+              >
+                <Star className={`h-3 w-3 ${showStarredOnly ? 'fill-current' : ''}`} />
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <AddContactForm />
+              <SyncButton lastSync={lastSync} isOnline={isOnline} />
             </div>
           </div>
-        </header>
-
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Search by name, company, city, status, or follow-up date..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-10"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-0 top-0 h-full"
-              onClick={() => setSearchQuery("")}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
         </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
 
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-12 text-muted-foreground text-sm">
             Loading contacts...
           </div>
         ) : (
