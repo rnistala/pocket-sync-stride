@@ -1,10 +1,15 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, RefreshCw, Cloud } from "lucide-react";
+import { ArrowLeft, Phone, Mail, RefreshCw, Cloud, CalendarIcon, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const ContactDetail = () => {
   const { id } = useParams();
@@ -22,8 +27,13 @@ const ContactDetail = () => {
 };
 
 const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: any }) => {
-  const { getContactInteractions, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
+  const { getContactInteractions, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(
+    contact.followup_on ? new Date(contact.followup_on) : undefined
+  );
+  const [isFollowUpCalendarOpen, setIsFollowUpCalendarOpen] = useState(false);
+  const [isUpdatingFollowUp, setIsUpdatingFollowUp] = useState(false);
   
   const interactions = getContactInteractions(contact.id);
 
@@ -238,6 +248,60 @@ const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: a
     return () => clearInterval(syncInterval);
   }, [contact.id, markInteractionsAsSynced, mergeInteractionsFromAPI]);
 
+  const handleFollowUpDateChange = async (date: Date | undefined) => {
+    if (!date) return;
+    
+    setFollowUpDate(date);
+    setIsFollowUpCalendarOpen(false);
+    setIsUpdatingFollowUp(true);
+
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        toast.error("User ID not found. Please log in again.");
+        return;
+      }
+
+      const payload = {
+        meta: {
+          btable: "contact",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            body: [
+              {
+                id: contact.id,
+                followup_on: format(date, "yyyy-MM-dd"),
+              },
+            ],
+            dirty: "true",
+          },
+        ],
+      };
+
+      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        toast.success("Follow-up date updated");
+        await syncData();
+      } else {
+        toast.error("Failed to update follow-up date");
+      }
+    } catch (error) {
+      console.error("Error updating follow-up date:", error);
+      toast.error("Failed to update follow-up date");
+    } finally {
+      setIsUpdatingFollowUp(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -271,6 +335,35 @@ const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: a
             <div>
               <span className="text-muted-foreground">Status: </span>
               <span>{contact.status}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">Follow-Up Date: </span>
+              <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "justify-start text-left font-normal",
+                      !followUpDate && "text-muted-foreground"
+                    )}
+                    disabled={isUpdatingFollowUp}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {followUpDate ? format(followUpDate, "PPP") : <span>Pick a date</span>}
+                    <Pencil className="ml-2 h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={followUpDate}
+                    onSelect={handleFollowUpDateChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             
             {contact.phone && (
