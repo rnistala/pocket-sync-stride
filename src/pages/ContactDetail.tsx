@@ -129,7 +129,7 @@ const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: a
 
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
-  }, [contact.id, interactions]);
+  }, [contact.id, markInteractionsAsSynced, mergeInteractionsFromAPI]);
 
   // Auto-sync interactions
   useEffect(() => {
@@ -236,7 +236,7 @@ const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: a
     const syncInterval = setInterval(syncInteractions, 3 * 60 * 1000);
 
     return () => clearInterval(syncInterval);
-  }, [contact.id, interactions, markInteractionsAsSynced, mergeInteractionsFromAPI]);
+  }, [contact.id, markInteractionsAsSynced, mergeInteractionsFromAPI]);
 
 
   return (
