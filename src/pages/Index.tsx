@@ -75,7 +75,7 @@ const Index = () => {
       window.removeEventListener("offline", handleOffline);
       clearInterval(syncInterval);
     };
-  }, [navigate, syncData]);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
