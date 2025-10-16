@@ -136,12 +136,17 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
       return;
     }
     
+    if (!nextFollowUpDate) {
+      toast.error("Please select a follow-up date");
+      return;
+    }
+    
     await addInteraction(
       contact.id, 
       interactionType, 
       notes, 
       undefined, 
-      nextFollowUpDate?.toISOString()
+      nextFollowUpDate.toISOString()
     );
     
     setNotes("");
@@ -595,7 +600,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
                   />
                 </div>
                 <div>
-                  <Label className="text-sm">Next Follow-Up Date</Label>
+                  <Label className="text-sm">Next Follow-Up Date *</Label>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <Button
