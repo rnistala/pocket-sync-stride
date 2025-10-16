@@ -287,24 +287,13 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
 
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Interaction History</h2>
-          <div className="flex gap-2">
-            <Button
-              onClick={handleSyncInteractions}
-              disabled={isSyncing}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${isSyncing ? "animate-spin" : ""}`} />
-              {isSyncing ? "Syncing..." : "Sync"}
-            </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Log Interaction
-                </Button>
-              </DialogTrigger>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Log Interaction
+              </Button>
+            </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Log New Interaction</DialogTitle>
@@ -370,7 +359,6 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
               </div>
             </DialogContent>
           </Dialog>
-          </div>
         </div>
 
         <div className="space-y-4">
