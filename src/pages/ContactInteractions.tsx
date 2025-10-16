@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon, Cloud } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon, Cloud, Pencil } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -33,14 +33,28 @@ const ContactInteractions = () => {
 };
 
 const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navigate: any }) => {
-  const { getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI } = useLeadContext();
+  const { getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData } = useLeadContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: contact.name || "",
+    company: contact.company || "",
+    city: contact.city || "",
+    mobile: contact.phone || contact.mobile || "",
+    profile: contact.profile || "",
+    status: contact.status || "Fresh",
+    contact_person: contact.contact_person || "",
+    address: contact.address || "",
+    remarks: contact.remarks || "",
+    industry: contact.industry || "",
+  });
 
   const interactions = getContactInteractions(contact.id);
 
@@ -145,6 +159,75 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
 
   const handleEmail = () => {
     if (contact.email) window.location.href = `mailto:${contact.email}`;
+  };
+
+  const handleEditContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        toast.error("User ID not found. Please log in again.");
+        return;
+      }
+
+      const payload = {
+        meta: {
+          btable: "contact",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            body: [
+              {
+                id: contact.id,
+                name: editFormData.name,
+                company: editFormData.company,
+                city: editFormData.city,
+                mobile: editFormData.mobile,
+                profile: editFormData.profile,
+                status: editFormData.status,
+                contact_person: editFormData.contact_person,
+                address: editFormData.address,
+                remarks: editFormData.remarks,
+                industry: editFormData.industry,
+              },
+            ],
+            dirty: "true",
+          },
+        ],
+      };
+
+      const response = await fetch(
+        `https://demo.opterix.in/api/public/tdata/${userId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update contact");
+      }
+
+      toast.success("Contact updated successfully");
+      setIsEditDialogOpen(false);
+      
+      // Sync data to refresh the contact
+      await syncData();
+    } catch (error) {
+      console.error("Error updating contact:", error);
+      toast.error("Failed to update contact. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleSyncInteractions = async () => {
@@ -266,8 +349,170 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
         </Button>
 
         <Card className="p-4">
-          <h1 className="text-xl font-bold mb-1">{contact.name}</h1>
-          <p className="text-sm text-muted-foreground mb-3">{contact.company} • {contact.city}</p>
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <h1 className="text-xl font-bold mb-1">{contact.name}</h1>
+              <p className="text-sm text-muted-foreground mb-3">{contact.company} • {contact.city}</p>
+            </div>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Edit Contact</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleEditContact} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Name *</Label>
+                      <Input
+                        id="name"
+                        required
+                        value={editFormData.name}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, name: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="company">Company *</Label>
+                      <Input
+                        id="company"
+                        required
+                        value={editFormData.company}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, company: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City *</Label>
+                      <Input
+                        id="city"
+                        required
+                        value={editFormData.city}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, city: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="mobile">Mobile *</Label>
+                      <Input
+                        id="mobile"
+                        type="tel"
+                        required
+                        value={editFormData.mobile}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, mobile: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="profile">Profile</Label>
+                      <Input
+                        id="profile"
+                        value={editFormData.profile}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, profile: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status *</Label>
+                      <Select
+                        value={editFormData.status}
+                        onValueChange={(value) =>
+                          setEditFormData({ ...editFormData, status: value })
+                        }
+                      >
+                        <SelectTrigger id="status">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Fresh">Fresh</SelectItem>
+                          <SelectItem value="Regular">Regular</SelectItem>
+                          <SelectItem value="Hot">Hot</SelectItem>
+                          <SelectItem value="Cold">Cold</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_person">Contact Person</Label>
+                      <Input
+                        id="contact_person"
+                        value={editFormData.contact_person}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, contact_person: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="industry">Industry</Label>
+                      <Input
+                        id="industry"
+                        value={editFormData.industry}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, industry: e.target.value })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Textarea
+                      id="address"
+                      value={editFormData.address}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, address: e.target.value })
+                      }
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="remarks">Remarks</Label>
+                    <Textarea
+                      id="remarks"
+                      value={editFormData.remarks}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, remarks: e.target.value })
+                      }
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditDialogOpen(false)}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isSubmitting}>
+                      {isSubmitting ? "Saving..." : "Save Changes"}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
           
           <div className="flex gap-1.5">
             <Button onClick={handleCall} variant="outline" size="sm" className="gap-1.5">
