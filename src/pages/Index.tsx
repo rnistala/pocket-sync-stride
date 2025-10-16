@@ -122,26 +122,29 @@ const Index = () => {
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {filteredContacts.length}
-                {(searchQuery || showStarredOnly) && (
-                  <span className="text-xs ml-1">of {contacts.length}</span>
-                )}
-              </span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-foreground">
+                  {filteredContacts.length} {filteredContacts.length === 1 ? 'Contact' : 'Contacts'}
+                  {(searchQuery || showStarredOnly) && (
+                    <span className="text-xs text-muted-foreground ml-1">of {contacts.length}</span>
+                  )}
+                </span>
+                <SyncButton lastSync={lastSync} isOnline={isOnline} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2">
               <Button
                 variant={showStarredOnly ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className="h-7 px-2"
+                className="h-8 px-3"
               >
-                <Star className={`h-3 w-3 ${showStarredOnly ? 'fill-current' : ''}`} />
+                <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+                Starred
               </Button>
-            </div>
-            <div className="flex items-center gap-2">
               <AddContactForm />
-              <SyncButton lastSync={lastSync} isOnline={isOnline} />
             </div>
           </div>
         </div>
