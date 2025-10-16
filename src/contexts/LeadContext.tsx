@@ -499,13 +499,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         const localContact = existingContactsMap.get(serverContact.id);
         
         if (localContact) {
-          // Merge: prefer local data for starred and followup_on
+          // Merge: prefer server followup_on, but keep local starred status
           return {
             ...serverContact,
             starred: localContact.starred || false,
-            followup_on: localContact.followup_on !== serverContact.followup_on 
-              ? localContact.followup_on 
-              : serverContact.followup_on,
           };
         }
         
