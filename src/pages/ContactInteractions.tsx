@@ -29,11 +29,18 @@ const ContactInteractions = () => {
     return <div className="p-4">Contact not found</div>;
   }
 
-  return <ContactInteractionsContent contact={contact} navigate={navigate} />;
+  return <ContactInteractionsContent contactId={contact.id} navigate={navigate} />;
 };
 
-const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navigate: any }) => {
-  const { getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp } = useLeadContext();
+const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string; navigate: any }) => {
+  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp } = useLeadContext();
+  
+  // Get fresh contact from context every render
+  const contact = contacts.find((c) => c.id === contactId);
+  
+  if (!contact) {
+    return <div className="p-4">Contact not found</div>;
+  }
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
@@ -52,14 +59,14 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
     name: contact.name || "",
     company: contact.company || "",
     city: contact.city || "",
-    mobile: contact.phone || contact.mobile || "",
+    mobile: contact.phone || "",
     email: contact.email || "",
     profile: contact.profile || "",
     status: contact.status || "Fresh",
-    contact_person: contact.contact_person || "",
-    address: contact.address || "",
-    remarks: contact.remarks || "",
-    industry: contact.industry || "",
+    contact_person: "",
+    address: "",
+    remarks: "",
+    industry: "",
   });
 
   const interactions = getContactInteractions(contact.id);
