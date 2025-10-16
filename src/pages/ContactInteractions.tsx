@@ -423,32 +423,39 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
               
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-sm text-muted-foreground">Follow-Up:</span>
-                <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={cn(
-                        "h-7 justify-start text-left font-normal text-xs",
-                        !followUpDate && "text-muted-foreground"
-                      )}
-                      disabled={isUpdatingFollowUp}
-                    >
-                      <CalendarIcon className="mr-1.5 h-3 w-3" />
-                      {followUpDate ? format(followUpDate, "PPP") : <span>Pick a date</span>}
-                      <Pencil className="ml-1.5 h-2.5 w-2.5" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={followUpDate}
-                      onSelect={handleFollowUpDateChange}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    type="date"
+                    value={followUpDate ? format(followUpDate, "yyyy-MM-dd") : ""}
+                    onChange={(e) => {
+                      const newDate = e.target.value ? new Date(e.target.value) : undefined;
+                      if (newDate) handleFollowUpDateChange(newDate);
+                    }}
+                    disabled={isUpdatingFollowUp}
+                    className="h-7 text-xs w-36"
+                  />
+                  <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        disabled={isUpdatingFollowUp}
+                      >
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={followUpDate}
+                        onSelect={handleFollowUpDateChange}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-1">
