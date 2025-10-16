@@ -73,6 +73,18 @@ class IndexedDBManager {
     });
   }
 
+  async updateContact(contact: Contact): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(CONTACTS_STORE, "readwrite");
+      const store = transaction.objectStore(CONTACTS_STORE);
+      const request = store.put(contact);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   async getAllInteractions(): Promise<Interaction[]> {
     if (!this.db) await this.init();
     return new Promise((resolve, reject) => {
@@ -284,12 +296,20 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   }, [interactions, saveInteractions]);
 
   const toggleStarred = useCallback(async (contactId: string) => {
-    const updatedContacts = contacts.map(c => 
-      c.id === contactId ? { ...c, starred: !c.starred } : c
-    );
-    await dbManager.saveContacts(updatedContacts);
-    setContacts(updatedContacts);
-  }, [contacts]);
+    setContacts(prevContacts => {
+      const updatedContacts = prevContacts.map(c => 
+        c.id === contactId ? { ...c, starred: !c.starred } : c
+      );
+      
+      // Update only the changed contact in IndexedDB
+      const updatedContact = updatedContacts.find(c => c.id === contactId);
+      if (updatedContact) {
+        dbManager.updateContact(updatedContact);
+      }
+      
+      return updatedContacts;
+    });
+  }, []);
 
   const syncData = useCallback(async () => {
     const userId = localStorage.getItem("userId");
