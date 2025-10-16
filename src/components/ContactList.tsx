@@ -1,9 +1,11 @@
 import { Contact } from "@/hooks/useLeadStorage";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useRef, useEffect, useMemo, memo } from "react";
 import { useLeadContext } from "@/contexts/LeadContext";
+import { Star } from "lucide-react";
 
 interface ContactListProps {
   contacts: Contact[];
@@ -12,7 +14,7 @@ interface ContactListProps {
 const ITEMS_PER_PAGE = 50;
 
 // Memoized contact card component to prevent unnecessary re-renders
-const ContactCard = memo(({ contact, onClick }: { contact: Contact; onClick: () => void }) => {
+const ContactCard = memo(({ contact, onClick, onToggleStar }: { contact: Contact; onClick: () => void; onToggleStar: (e: React.MouseEvent) => void }) => {
   const formattedDate = useMemo(() => 
     new Date(contact.nextFollowUp).toLocaleDateString(), 
     [contact.nextFollowUp]
@@ -24,12 +26,24 @@ const ContactCard = memo(({ contact, onClick }: { contact: Contact; onClick: () 
       onClick={onClick}
     >
       <div className="space-y-2">
-        <div className="flex items-start justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1">
             <h3 className="font-semibold text-lg">{contact.name}</h3>
             <p className="text-sm text-muted-foreground">{contact.company}</p>
           </div>
-          <Badge variant="secondary">{contact.status}</Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={onToggleStar}
+            >
+              <Star 
+                className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+              />
+            </Button>
+            <Badge variant="secondary" className="shrink-0">{contact.status}</Badge>
+          </div>
         </div>
         
         <div className="grid grid-cols-2 gap-2 text-sm">
@@ -57,7 +71,7 @@ ContactCard.displayName = "ContactCard";
 
 export const ContactList = memo(({ contacts }: ContactListProps) => {
   const navigate = useNavigate();
-  const { scrollPosition, displayCount, setScrollPosition, setDisplayCount } = useLeadContext();
+  const { scrollPosition, displayCount, setScrollPosition, setDisplayCount, toggleStarred } = useLeadContext();
   const observerTarget = useRef<HTMLDivElement>(null);
   const hasRestoredScroll = useRef(false);
 
@@ -111,6 +125,11 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
     navigate(`/contact/${contactId}/details`);
   };
 
+  const handleToggleStar = (e: React.MouseEvent, contactId: string) => {
+    e.stopPropagation();
+    toggleStarred(contactId);
+  };
+
   if (contacts.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
@@ -126,6 +145,7 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
           key={contact.id}
           contact={contact}
           onClick={() => handleContactTap(contact.id)}
+          onToggleStar={(e) => handleToggleStar(e, contact.id)}
         />
       ))}
       

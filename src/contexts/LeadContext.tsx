@@ -154,6 +154,7 @@ interface LeadContextType {
   syncData: () => Promise<void>;
   markInteractionsAsSynced: (contactId: string) => Promise<void>;
   mergeInteractionsFromAPI: (apiInteractions: any[], contactId: string) => Promise<void>;
+  toggleStarred: (contactId: string) => Promise<void>;
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -281,6 +282,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       await saveInteractions(mergedInteractions);
     }
   }, [interactions, saveInteractions]);
+
+  const toggleStarred = useCallback(async (contactId: string) => {
+    const updatedContacts = contacts.map(c => 
+      c.id === contactId ? { ...c, starred: !c.starred } : c
+    );
+    await dbManager.saveContacts(updatedContacts);
+    setContacts(updatedContacts);
+  }, [contacts]);
 
   const syncData = useCallback(async () => {
     const userId = localStorage.getItem("userId");
@@ -442,9 +451,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         const localContact = existingContactsMap.get(serverContact.id);
         
         if (localContact) {
-          // Merge: prefer local nextFollowUp if it was updated locally
+          // Merge: prefer local data for starred and nextFollowUp
           return {
             ...serverContact,
+            starred: localContact.starred || false,
             nextFollowUp: localContact.nextFollowUp !== serverContact.nextFollowUp 
               ? localContact.nextFollowUp 
               : serverContact.nextFollowUp,
@@ -478,7 +488,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     syncData,
     markInteractionsAsSynced,
     mergeInteractionsFromAPI,
-  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI]);
+    toggleStarred,
+  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred]);
 
   return (
     <LeadContext.Provider value={value}>

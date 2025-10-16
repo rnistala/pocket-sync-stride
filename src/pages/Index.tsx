@@ -8,28 +8,39 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Search, X } from "lucide-react";
+import { LogOut, Search, X, Star } from "lucide-react";
 
 const Index = () => {
   const { contacts, syncData, lastSync, isLoading, searchQuery, setSearchQuery } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showStarredOnly, setShowStarredOnly] = useState(false);
   const navigate = useNavigate();
 
   const filteredContacts = useMemo(() => {
-    if (!searchQuery.trim()) return contacts;
+    let filtered = contacts;
     
-    const query = searchQuery.toLowerCase().trim();
-    return contacts.filter(contact => {
-      const followUpDate = new Date(contact.nextFollowUp).toLocaleDateString().toLowerCase();
-      return (
-        contact.name.toLowerCase().includes(query) ||
-        contact.company.toLowerCase().includes(query) ||
-        contact.city.toLowerCase().includes(query) ||
-        contact.status.toLowerCase().includes(query) ||
-        followUpDate.includes(query)
-      );
-    });
-  }, [contacts, searchQuery]);
+    // Apply starred filter first
+    if (showStarredOnly) {
+      filtered = filtered.filter(contact => contact.starred);
+    }
+    
+    // Then apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(contact => {
+        const followUpDate = new Date(contact.nextFollowUp).toLocaleDateString().toLowerCase();
+        return (
+          contact.name.toLowerCase().includes(query) ||
+          contact.company.toLowerCase().includes(query) ||
+          contact.city.toLowerCase().includes(query) ||
+          contact.status.toLowerCase().includes(query) ||
+          followUpDate.includes(query)
+        );
+      });
+    }
+    
+    return filtered;
+  }, [contacts, searchQuery, showStarredOnly]);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -77,16 +88,27 @@ const Index = () => {
           </div>
           
           <div className="flex items-center justify-between py-4 border-t border-b border-border">
-            <div className="text-sm">
-              <span className="text-muted-foreground">Total contacts:</span>
-              <span className="ml-2 font-semibold text-foreground">
-                {filteredContacts.length}
-              </span>
-              {searchQuery && (
-                <span className="text-muted-foreground text-xs ml-1">
-                  (of {contacts.length})
+            <div className="flex items-center gap-3">
+              <div className="text-sm">
+                <span className="text-muted-foreground">Total contacts:</span>
+                <span className="ml-2 font-semibold text-foreground">
+                  {filteredContacts.length}
                 </span>
-              )}
+                {(searchQuery || showStarredOnly) && (
+                  <span className="text-muted-foreground text-xs ml-1">
+                    (of {contacts.length})
+                  </span>
+                )}
+              </div>
+              <Button
+                variant={showStarredOnly ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowStarredOnly(!showStarredOnly)}
+                className="h-8"
+              >
+                <Star className={`h-3 w-3 mr-1 ${showStarredOnly ? 'fill-current' : ''}`} />
+                Starred
+              </Button>
             </div>
             <div className="flex items-center gap-2">
               <AddContactForm />
