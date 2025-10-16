@@ -470,7 +470,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
     // Step 3: Merge server data with local data
     if (fetchedContacts.length > 0) {
-      const existingContactsMap = new Map(contacts.map(c => [c.id, c]));
+      // Load fresh data from IndexedDB to ensure we have the latest local changes
+      const localContactsFromDB = await dbManager.getAllContacts();
+      const existingContactsMap = new Map(localContactsFromDB.map(c => [c.id, c]));
+      
+      console.log(`[SYNC] Merging with ${localContactsFromDB.length} local contacts from DB`);
       
       const mergedContacts = fetchedContacts.map(serverContact => {
         const localContact = existingContactsMap.get(serverContact.id);
@@ -489,6 +493,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         return serverContact;
       });
 
+      console.log(`[SYNC] Merged contacts - starred count: ${mergedContacts.filter(c => c.starred).length}`);
       await saveContacts(mergedContacts);
     }
 
