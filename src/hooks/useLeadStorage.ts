@@ -255,7 +255,7 @@ export const useLeadStorage = () => {
           status: contact.status || "Fresh",
           company: contact.company || "",
           city: contact.city || "",
-          followup_on: contact.followup_on || new Date().toISOString(),
+          followup_on: contact.followup_on || "",
           lastNotes: contact.message || "",
           phone: contact.mobile || "",
           email: contact.email || "",
