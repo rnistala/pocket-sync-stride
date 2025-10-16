@@ -122,8 +122,8 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
     setIsDialogOpen(false);
     toast.success("Interaction logged");
     
-    // Trigger sync after adding interaction
-    setTimeout(() => handleSyncInteractions(), 100);
+    // Trigger sync after state updates
+    setTimeout(() => handleSyncInteractions(), 500);
   };
 
   const handleCall = () => {
@@ -149,8 +149,12 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
 
     setIsSyncing(true);
     try {
-      // Step 1: Upload dirty interactions for this contact only
-      const dirtyInteractions = interactions.filter(i => i.dirty);
+      // Get fresh interactions from context
+      const currentInteractions = getContactInteractions(contact.id);
+      const dirtyInteractions = currentInteractions.filter(i => i.dirty);
+      
+      console.log("[SYNC] Current interactions:", currentInteractions.length);
+      console.log("[SYNC] Dirty interactions:", dirtyInteractions.length);
       
       if (dirtyInteractions.length > 0) {
         let latitude = "";
@@ -190,6 +194,8 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
             }]
           };
 
+          console.log("[SYNC] Uploading interaction:", interaction.notes);
+
           await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -199,6 +205,9 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
 
         // Mark interactions as synced
         await markInteractionsAsSynced(contact.id);
+        toast.success("Interactions synced successfully!");
+      } else {
+        console.log("[SYNC] No dirty interactions to sync");
       }
 
       // Step 2: Fetch interaction history for this contact
@@ -228,10 +237,8 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
         }
       );
 
-      if (response.ok) {
-        toast.success("Interactions synced successfully!");
-      } else {
-        toast.error("Failed to sync interactions");
+      if (!response.ok) {
+        toast.error("Failed to fetch interaction history");
       }
     } catch (error) {
       toast.error("Error syncing interactions");
