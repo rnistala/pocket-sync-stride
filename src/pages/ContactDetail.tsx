@@ -27,6 +27,110 @@ const ContactDetailContent = ({ contact, navigate }: { contact: any; navigate: a
   
   const interactions = getContactInteractions(contact.id);
 
+  // Auto-sync when network becomes available
+  useEffect(() => {
+    const syncInteractionsOnline = async () => {
+      if (!navigator.onLine) return;
+      
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      setIsSyncing(true);
+      try {
+        const dirtyInteractions = interactions.filter(i => i.dirty);
+        
+        if (dirtyInteractions.length > 0) {
+          let latitude = "";
+          let longitude = "";
+          
+          if (navigator.geolocation) {
+            try {
+              const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+              });
+              latitude = position.coords.latitude.toString();
+              longitude = position.coords.longitude.toString();
+            } catch (error) {
+              console.log("Geolocation not available", error);
+            }
+          }
+
+          for (const interaction of dirtyInteractions) {
+            const payload = {
+              meta: {
+                btable: "followup",
+                htable: "",
+                parentkey: "",
+                preapi: "updatecontact",
+                draftid: ""
+              },
+              data: [{
+                body: [{
+                  contact: contact.id,
+                  contact_status: "",
+                  notes: interaction.notes,
+                  next_meeting: interaction.nextFollowUp || "",
+                  latitude: latitude,
+                  longitude: longitude
+                }],
+                dirty: "true"
+              }]
+            };
+
+            await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+          }
+
+          await markInteractionsAsSynced(contact.id);
+        }
+
+        const response = await fetch(
+          `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: 4,
+              offset: 0,
+              limit: 100,
+              extra: [{
+                operator: "in",
+                value: contact.id,
+                tablename: "contact",
+                columnname: "id",
+                function: "",
+                datatype: "Selection",
+                enable: "true",
+                show: contact.name,
+                extracolumn: "name"
+              }]
+            }),
+          }
+        );
+
+        if (response.ok) {
+          const apiResponse = await response.json();
+          const apiInteractions = apiResponse.data?.[0]?.body || [];
+          await mergeInteractionsFromAPI(apiInteractions, contact.id);
+        }
+      } catch (error) {
+        console.error("Auto-sync error:", error);
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+
+    const handleOnline = () => {
+      syncInteractionsOnline();
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [contact.id, interactions]);
+
   // Auto-sync interactions
   useEffect(() => {
     const syncInteractions = async () => {

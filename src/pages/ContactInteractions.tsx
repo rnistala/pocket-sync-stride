@@ -43,6 +43,16 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
 
   const interactions = getContactInteractions(contact.id);
 
+  // Auto-sync when network becomes available
+  useEffect(() => {
+    const handleOnline = () => {
+      handleSyncInteractions();
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, []);
+
   // Fetch interaction history on first load if not already cached
   useEffect(() => {
     const fetchInteractionHistory = async () => {
