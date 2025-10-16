@@ -33,6 +33,7 @@ export const AddContactForm = () => {
     company: "",
     city: "",
     mobile: "",
+    email: "",
     profile: "",
     status: "Fresh",
     contact_person: "",
@@ -72,6 +73,7 @@ export const AddContactForm = () => {
                 company: formData.company,
                 city: formData.city,
                 mobile: formData.mobile,
+                email: formData.email,
                 profile: formData.profile,
                 status: formData.status,
                 contact_person: formData.contact_person,
@@ -114,6 +116,7 @@ export const AddContactForm = () => {
         company: "",
         city: "",
         mobile: "",
+        email: "",
         profile: "",
         status: "Fresh",
         contact_person: "",
@@ -203,6 +206,18 @@ export const AddContactForm = () => {
                 }
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
