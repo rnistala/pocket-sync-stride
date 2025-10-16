@@ -43,6 +43,11 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState<Date | undefined>(
+    contact.followup_on ? new Date(contact.followup_on) : undefined
+  );
+  const [isFollowUpCalendarOpen, setIsFollowUpCalendarOpen] = useState(false);
+  const [isUpdatingFollowUp, setIsUpdatingFollowUp] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: contact.name || "",
     company: contact.company || "",
@@ -347,6 +352,61 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
     }
   };
 
+  const handleFollowUpDateChange = async (date: Date | undefined) => {
+    if (!date) return;
+    
+    setFollowUpDate(date);
+    setIsFollowUpCalendarOpen(false);
+    setIsUpdatingFollowUp(true);
+
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        toast.error("User ID not found. Please log in again.");
+        return;
+      }
+
+      const payload = {
+        meta: {
+          btable: "contact",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            body: [
+              {
+                id: contact.id,
+                followup_on: format(date, "yyyy-MM-dd"),
+              },
+            ],
+            dirty: "true",
+          },
+        ],
+      };
+
+      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        toast.success("Follow-up date updated");
+        await syncData();
+      } else {
+        toast.error("Failed to update follow-up date");
+      }
+    } catch (error) {
+      console.error("Error updating follow-up date:", error);
+      toast.error("Failed to update follow-up date");
+    } finally {
+      setIsUpdatingFollowUp(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-3">
       <div className="max-w-3xl mx-auto space-y-3">
@@ -360,6 +420,36 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
             <div>
               <h1 className="text-xl font-bold mb-1">{contact.name}</h1>
               <p className="text-sm text-muted-foreground mb-3">{contact.company} • {contact.city}</p>
+              
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-sm text-muted-foreground">Follow-Up:</span>
+                <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "h-7 justify-start text-left font-normal text-xs",
+                        !followUpDate && "text-muted-foreground"
+                      )}
+                      disabled={isUpdatingFollowUp}
+                    >
+                      <CalendarIcon className="mr-1.5 h-3 w-3" />
+                      {followUpDate ? format(followUpDate, "PPP") : <span>Pick a date</span>}
+                      <Pencil className="ml-1.5 h-2.5 w-2.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={followUpDate}
+                      onSelect={handleFollowUpDateChange}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <Button
