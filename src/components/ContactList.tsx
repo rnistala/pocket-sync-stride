@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useRef, useEffect, useMemo, memo } from "react";
 import { useLeadContext } from "@/contexts/LeadContext";
-import { Star } from "lucide-react";
+import { Star, ArrowDown } from "lucide-react";
+import { toast } from "sonner";
+import { format, addYears } from "date-fns";
 
 interface ContactListProps {
   contacts: Contact[];
@@ -14,7 +16,7 @@ interface ContactListProps {
 const ITEMS_PER_PAGE = 50;
 
 // Memoized contact card component to prevent unnecessary re-renders
-const ContactCard = memo(({ contact, onClick, onToggleStar }: { contact: Contact; onClick: () => void; onToggleStar: (e: React.MouseEvent) => void }) => {
+const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { contact: Contact; onClick: () => void; onToggleStar: (e: React.MouseEvent) => void; onPushDown: (e: React.MouseEvent) => void }) => {
   const formattedDate = useMemo(() => {
     if (!contact.followup_on) return 'No date set';
     const date = new Date(contact.followup_on);
@@ -37,16 +39,26 @@ const ContactCard = memo(({ contact, onClick, onToggleStar }: { contact: Contact
             <span className="opacity-70">Follow-up:</span> {formattedDate}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0 -mt-1"
-          onClick={onToggleStar}
-        >
-          <Star 
-            className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
-          />
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 -mt-1"
+            onClick={onToggleStar}
+          >
+            <Star 
+              className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0 -mt-1"
+            onClick={onPushDown}
+          >
+            <ArrowDown className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </div>
       </div>
     </Card>
   );
@@ -115,6 +127,57 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
     toggleStarred(contactId);
   };
 
+  const handlePushDown = async (e: React.MouseEvent, contactId: string) => {
+    e.stopPropagation();
+    
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    try {
+      const futureDate = addYears(new Date(), 100);
+      const payload = {
+        meta: {
+          btable: "contact",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            body: [
+              {
+                id: contactId,
+                followup_on: format(futureDate, "yyyy-MM-dd"),
+              },
+            ],
+            dirty: "true",
+          },
+        ],
+      };
+
+      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        toast.success("Contact pushed down");
+        // Refresh contacts
+        window.location.reload();
+      } else {
+        toast.error("Failed to update contact");
+      }
+    } catch (error) {
+      console.error("Error pushing contact down:", error);
+      toast.error("Failed to update contact");
+    }
+  };
+
   if (contacts.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground text-sm">
@@ -131,6 +194,7 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
           contact={contact}
           onClick={() => handleContactTap(contact.id)}
           onToggleStar={(e) => handleToggleStar(e, contact.id)}
+          onPushDown={(e) => handlePushDown(e, contact.id)}
         />
       ))}
       
