@@ -169,6 +169,7 @@ interface LeadContextType {
   markInteractionsAsSynced: (contactId: string) => Promise<void>;
   mergeInteractionsFromAPI: (apiInteractions: any[], contactId: string) => Promise<void>;
   toggleStarred: (contactId: string) => Promise<void>;
+  updateContactFollowUp: (contactId: string, followUpDate: string) => Promise<void>;
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -306,6 +307,21 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const toggleStarred = useCallback(async (contactId: string) => {
     const updatedContacts = contacts.map(c => 
       c.id === contactId ? { ...c, starred: !c.starred } : c
+    );
+    
+    // Update the changed contact in IndexedDB first
+    const updatedContact = updatedContacts.find(c => c.id === contactId);
+    if (updatedContact) {
+      await dbManager.updateContact(updatedContact);
+    }
+    
+    // Then update state
+    setContacts(updatedContacts);
+  }, [contacts]);
+
+  const updateContactFollowUp = useCallback(async (contactId: string, followUpDate: string) => {
+    const updatedContacts = contacts.map(c => 
+      c.id === contactId ? { ...c, nextFollowUp: followUpDate } : c
     );
     
     // Update the changed contact in IndexedDB first
@@ -524,7 +540,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     markInteractionsAsSynced,
     mergeInteractionsFromAPI,
     toggleStarred,
-  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred]);
+    updateContactFollowUp,
+  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred, updateContactFollowUp]);
 
   return (
     <LeadContext.Provider value={value}>

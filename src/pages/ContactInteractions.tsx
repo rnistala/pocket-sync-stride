@@ -33,7 +33,7 @@ const ContactInteractions = () => {
 };
 
 const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navigate: any }) => {
-  const { getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred } = useLeadContext();
+  const { getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp } = useLeadContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
@@ -394,6 +394,9 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
       });
 
       if (response.ok) {
+        // Update local contact immediately so syncData merge preserves the new value
+        await updateContactFollowUp(contact.id, date.toISOString());
+        
         toast.success("Follow-up date updated");
         await syncData();
       } else {
