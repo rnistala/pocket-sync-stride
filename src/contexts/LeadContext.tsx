@@ -158,9 +158,11 @@ interface LeadContextType {
   scrollPosition: number;
   displayCount: number;
   searchQuery: string;
+  showStarredOnly: boolean;
   setScrollPosition: (position: number) => void;
   setDisplayCount: (count: number) => void;
   setSearchQuery: (query: string) => void;
+  setShowStarredOnly: (show: boolean) => void;
   addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string, nextFollowUp?: string) => Promise<void>;
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
@@ -179,6 +181,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [displayCount, setDisplayCount] = useState(50);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showStarredOnly, setShowStarredOnly] = useState(false);
 
   // Load data once on mount
   useEffect(() => {
@@ -510,16 +513,18 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     scrollPosition,
     displayCount,
     searchQuery,
+    showStarredOnly,
     setScrollPosition,
     setDisplayCount,
     setSearchQuery,
+    setShowStarredOnly,
     addInteraction,
     getContactInteractions,
     syncData,
     markInteractionsAsSynced,
     mergeInteractionsFromAPI,
     toggleStarred,
-  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred]);
+  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred]);
 
   return (
     <LeadContext.Provider value={value}>
