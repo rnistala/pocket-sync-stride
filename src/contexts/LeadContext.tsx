@@ -301,20 +301,19 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   }, [interactions, saveInteractions]);
 
   const toggleStarred = useCallback(async (contactId: string) => {
-    setContacts(prevContacts => {
-      const updatedContacts = prevContacts.map(c => 
-        c.id === contactId ? { ...c, starred: !c.starred } : c
-      );
-      
-      // Update only the changed contact in IndexedDB
-      const updatedContact = updatedContacts.find(c => c.id === contactId);
-      if (updatedContact) {
-        dbManager.updateContact(updatedContact);
-      }
-      
-      return updatedContacts;
-    });
-  }, []);
+    const updatedContacts = contacts.map(c => 
+      c.id === contactId ? { ...c, starred: !c.starred } : c
+    );
+    
+    // Update the changed contact in IndexedDB first
+    const updatedContact = updatedContacts.find(c => c.id === contactId);
+    if (updatedContact) {
+      await dbManager.updateContact(updatedContact);
+    }
+    
+    // Then update state
+    setContacts(updatedContacts);
+  }, [contacts]);
 
   const syncData = useCallback(async () => {
     const userId = localStorage.getItem("userId");
