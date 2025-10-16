@@ -44,7 +44,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>(
-    contact.followup_on ? new Date(contact.followup_on) : undefined
+    contact.nextFollowUp ? new Date(contact.nextFollowUp) : undefined
   );
   const [isFollowUpCalendarOpen, setIsFollowUpCalendarOpen] = useState(false);
   const [isUpdatingFollowUp, setIsUpdatingFollowUp] = useState(false);
