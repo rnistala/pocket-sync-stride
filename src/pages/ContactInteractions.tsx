@@ -474,9 +474,8 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
               </Button>
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1.5">
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
                     <Pencil className="h-3.5 w-3.5" />
-                    Edit
                   </Button>
                 </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
