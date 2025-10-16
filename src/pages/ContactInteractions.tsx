@@ -411,8 +411,8 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
   };
 
   return (
-    <div className="min-h-screen bg-background p-3">
-      <div className="max-w-3xl mx-auto space-y-3">
+    <div className="min-h-screen bg-background p-3 overflow-x-hidden">
+      <div className="max-w-3xl mx-auto space-y-3 w-full">{""}
         <Button variant="ghost" onClick={() => navigate('/')} size="sm" className="gap-1.5">
           <ArrowLeft className="h-3.5 w-3.5" />
           Back
