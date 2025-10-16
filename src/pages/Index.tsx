@@ -39,7 +39,12 @@ const Index = () => {
       });
     }
     
-    return filtered;
+    // Sort by follow-up date (earliest first, empty/invalid dates at the end)
+    return filtered.sort((a, b) => {
+      const dateA = a.followup_on ? new Date(a.followup_on).getTime() : Infinity;
+      const dateB = b.followup_on ? new Date(b.followup_on).getTime() : Infinity;
+      return dateA - dateB;
+    });
   }, [contacts, searchQuery, showStarredOnly]);
 
   useEffect(() => {
