@@ -495,7 +495,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     const now = new Date();
     setLastSync(now);
     await dbManager.setMetadata("lastSync", now.toISOString());
-  }, [saveContacts, saveInteractions]);
+  }, [contacts, interactions, saveContacts, saveInteractions]);
 
   const value = useMemo(() => ({
     contacts,
