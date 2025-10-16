@@ -67,19 +67,19 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <header className="space-y-4">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-background p-3 md:p-8">
+      <div className="max-w-3xl mx-auto space-y-4 md:space-y-8">
+        <header className="space-y-3 md:space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                 Lead Manager
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Manage your leads offline, sync when connected
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center justify-between md:justify-end gap-3 md:gap-4">
               <NetworkStatus />
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
@@ -87,10 +87,10 @@ const Index = () => {
             </div>
           </div>
           
-          <div className="flex items-center justify-between py-4 border-t border-b border-border">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3 py-3 md:py-4 border-t border-b border-border">
+            <div className="flex items-center justify-between gap-2">
               <div className="text-sm">
-                <span className="text-muted-foreground">Total contacts:</span>
+                <span className="text-muted-foreground">Total:</span>
                 <span className="ml-2 font-semibold text-foreground">
                   {filteredContacts.length}
                 </span>
@@ -100,23 +100,23 @@ const Index = () => {
                   </span>
                 )}
               </div>
-              <Button
-                variant={showStarredOnly ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className="h-8"
-              >
-                <Star className={`h-3 w-3 mr-1 ${showStarredOnly ? 'fill-current' : ''}`} />
-                Starred
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <AddContactForm />
-              <SyncButton
-                onSync={syncData}
-                lastSync={lastSync}
-                isOnline={isOnline}
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={showStarredOnly ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowStarredOnly(!showStarredOnly)}
+                  className="h-8"
+                >
+                  <Star className={`h-3 w-3 md:mr-1 ${showStarredOnly ? 'fill-current' : ''}`} />
+                  <span className="hidden md:inline">Starred</span>
+                </Button>
+                <AddContactForm />
+                <SyncButton
+                  onSync={syncData}
+                  lastSync={lastSync}
+                  isOnline={isOnline}
+                />
+              </div>
             </div>
           </div>
         </header>
