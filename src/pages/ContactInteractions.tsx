@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon, Cloud, Pencil } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -33,7 +33,7 @@ const ContactInteractions = () => {
 };
 
 const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navigate: any }) => {
-  const { getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData } = useLeadContext();
+  const { getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred } = useLeadContext();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
@@ -356,13 +356,24 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
               <h1 className="text-xl font-bold mb-1">{contact.name}</h1>
               <p className="text-sm text-muted-foreground mb-3">{contact.company} • {contact.city}</p>
             </div>
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-1.5">
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
-              </DialogTrigger>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={() => toggleStarred(contact.id)}
+              >
+                <Star 
+                  className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                />
+              </Button>
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-1.5">
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Edit Contact</DialogTitle>
@@ -526,6 +537,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
                 </form>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
           
           <div className="flex gap-1.5">
