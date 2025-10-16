@@ -212,12 +212,13 @@ export const AddContactForm = () => {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              type="email"
+              placeholder="email@example.com, another@example.com"
               value={formData.email}
               onChange={(e) =>
                 setFormData({ ...formData, email: e.target.value })
               }
             />
+            <p className="text-xs text-muted-foreground">Separate multiple emails with commas</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
