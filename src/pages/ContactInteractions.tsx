@@ -117,13 +117,17 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
       undefined, 
       nextFollowUpDate?.toISOString()
     );
+    
     setNotes("");
     setNextFollowUpDate(undefined);
     setIsDialogOpen(false);
     toast.success("Interaction logged");
     
-    // Trigger sync after state updates
-    setTimeout(() => handleSyncInteractions(), 500);
+    // Wait a bit longer for React state to update, then sync
+    setTimeout(() => {
+      console.log("[UI] Triggering sync after adding interaction");
+      handleSyncInteractions();
+    }, 1000);
   };
 
   const handleCall = () => {

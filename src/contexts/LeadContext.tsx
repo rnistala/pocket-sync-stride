@@ -229,7 +229,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     };
     
     await dbManager.addInteraction(newInteraction);
-    setInteractions(prev => [...prev, newInteraction]);
+    setInteractions(prev => {
+      const updated = [...prev, newInteraction];
+      console.log("[ADD] Added interaction, total interactions now:", updated.length);
+      console.log("[ADD] New interaction dirty status:", newInteraction.dirty);
+      return updated;
+    });
     
     // Update contact's nextFollowUp if provided
     if (nextFollowUp) {
