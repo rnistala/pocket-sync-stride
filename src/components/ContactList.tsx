@@ -68,7 +68,7 @@ ContactCard.displayName = "ContactCard";
 
 export const ContactList = memo(({ contacts }: ContactListProps) => {
   const navigate = useNavigate();
-  const { scrollPosition, displayCount, setScrollPosition, setDisplayCount, toggleStarred } = useLeadContext();
+  const { scrollPosition, displayCount, setScrollPosition, setDisplayCount, toggleStarred, updateContactFollowUp, syncData } = useLeadContext();
   const observerTarget = useRef<HTMLDivElement>(null);
   const hasRestoredScroll = useRef(false);
 
@@ -138,6 +138,10 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
 
     try {
       const futureDate = addYears(new Date(), 100);
+      
+      // Update local state immediately for instant UI feedback
+      await updateContactFollowUp(contactId, futureDate.toISOString());
+      
       const payload = {
         meta: {
           btable: "contact",
@@ -167,8 +171,6 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
 
       if (response.ok) {
         toast.success("Contact pushed down");
-        // Refresh contacts
-        window.location.reload();
       } else {
         toast.error("Failed to update contact");
       }
