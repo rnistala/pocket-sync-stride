@@ -451,6 +451,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           lastNotes: contact.message || "",
           phone: contact.mobile || "",
           email: contact.email || "",
+          profile: contact.profile || "",
         }));
         
         fetchedContacts = [...fetchedContacts, ...transformedContacts];
