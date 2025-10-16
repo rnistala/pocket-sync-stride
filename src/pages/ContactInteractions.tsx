@@ -109,7 +109,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
       return;
     }
     
-    addInteraction(
+    await addInteraction(
       contact.id, 
       interactionType, 
       notes, 
@@ -122,7 +122,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
     toast.success("Interaction logged");
     
     // Trigger sync after adding interaction
-    await handleSyncInteractions();
+    setTimeout(() => handleSyncInteractions(), 100);
   };
 
   const handleCall = () => {
