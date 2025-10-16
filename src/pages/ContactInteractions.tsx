@@ -48,6 +48,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
     company: contact.company || "",
     city: contact.city || "",
     mobile: contact.phone || contact.mobile || "",
+    email: contact.email || "",
     profile: contact.profile || "",
     status: contact.status || "Fresh",
     contact_person: contact.contact_person || "",
@@ -189,6 +190,7 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
                 company: editFormData.company,
                 city: editFormData.city,
                 mobile: editFormData.mobile,
+                email: editFormData.email,
                 profile: editFormData.profile,
                 status: editFormData.status,
                 contact_person: editFormData.contact_person,
@@ -415,6 +417,18 @@ const ContactInteractionsContent = ({ contact, navigate }: { contact: any; navig
                         }
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) =>
+                        setEditFormData({ ...editFormData, email: e.target.value })
+                      }
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
