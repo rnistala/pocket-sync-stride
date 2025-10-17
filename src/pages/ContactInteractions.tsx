@@ -768,35 +768,43 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                 </div>
                 <div>
                   <Label className="text-sm">Next Follow-Up Date *</Label>
-                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          "w-full justify-start text-left font-normal text-sm",
-                          !nextFollowUpDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                        {nextFollowUpDate ? format(nextFollowUpDate, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={nextFollowUpDate}
-                        onSelect={(date) => {
-                          setNextFollowUpDate(date);
-                          setIsCalendarOpen(false);
-                        }}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="date"
+                      value={nextFollowUpDate ? format(nextFollowUpDate, "yyyy-MM-dd") : ""}
+                      onChange={(e) => {
+                        const newDate = e.target.value ? new Date(e.target.value) : undefined;
+                        setNextFollowUpDate(newDate);
+                      }}
+                      className="text-sm"
+                      min={format(new Date(), "yyyy-MM-dd")}
+                    />
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-9 w-9 p-0 shrink-0"
+                        >
+                          <CalendarIcon className="h-3.5 w-3.5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={nextFollowUpDate}
+                          onSelect={(date) => {
+                            setNextFollowUpDate(date);
+                            setIsCalendarOpen(false);
+                          }}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
                 <Button onClick={handleAddInteraction} className="w-full">
                   Save Interaction
