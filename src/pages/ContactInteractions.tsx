@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star } from "lucide-react";
+import { ArrowLeft, Phone, Mail, MessageSquare, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, addYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -417,6 +417,58 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     }
   };
 
+  const handlePushDown = async () => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
+      toast.error("User ID not found");
+      return;
+    }
+
+    try {
+      const futureDate = addYears(new Date(), 100);
+      
+      // Update local state immediately for instant UI feedback
+      await updateContactFollowUp(contact.id, futureDate.toISOString());
+      setFollowUpDate(futureDate);
+      
+      const payload = {
+        meta: {
+          btable: "contact",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            body: [
+              {
+                id: contact.id,
+                followup_on: format(futureDate, "yyyy-MM-dd"),
+              },
+            ],
+            dirty: "true",
+          },
+        ],
+      };
+
+      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        toast.success("Contact pushed down");
+      } else {
+        toast.error("Failed to update contact");
+      }
+    } catch (error) {
+      console.error("Error pushing contact down:", error);
+      toast.error("Failed to update contact");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-3 overflow-x-hidden">
       <div className="max-w-3xl mx-auto space-y-3 w-full">{""}
@@ -478,6 +530,14 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                 <Star 
                   className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
                 />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={handlePushDown}
+              >
+                <ArrowDown className="h-4 w-4 text-muted-foreground" />
               </Button>
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
