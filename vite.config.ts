@@ -6,7 +6,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/opterix/',
   server: {
     host: "::",
     port: 8080,
@@ -25,8 +24,8 @@ export default defineConfig(({ mode }) => ({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/opterix/',
-        start_url: '/opterix/',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
             src: 'icon-192x192.png',
