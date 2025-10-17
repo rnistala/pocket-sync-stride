@@ -713,15 +713,15 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
           </div>
           
           <div className="flex gap-1.5">
-            <Button onClick={handleCall} variant="outline" size="sm" className="gap-1.5">
+            <Button onClick={handleCall} variant="outline" size="sm" className="gap-1.5" disabled={!contact.phone}>
               <Phone className="h-3.5 w-3.5" />
               Call
             </Button>
-            <Button onClick={handleWhatsApp} variant="outline" size="sm" className="gap-1.5">
+            <Button onClick={handleWhatsApp} variant="outline" size="sm" className="gap-1.5" disabled={!contact.phone}>
               <MessageSquare className="h-3.5 w-3.5" />
               WhatsApp
             </Button>
-            <Button onClick={handleEmail} variant="outline" size="sm" className="gap-1.5">
+            <Button onClick={handleEmail} variant="outline" size="sm" className="gap-1.5" disabled={!contact.email}>
               <Mail className="h-3.5 w-3.5" />
               Email
             </Button>
