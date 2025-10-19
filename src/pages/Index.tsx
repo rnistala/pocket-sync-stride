@@ -3,6 +3,7 @@ import { SyncButton } from "@/components/SyncButton";
 import { ContactList } from "@/components/ContactList";
 import { BackToTop } from "@/components/BackToTop";
 import { AddContactForm } from "@/components/AddContactForm";
+import { FollowUpReminder } from "@/components/FollowUpReminder";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -100,6 +101,7 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-2">
               <NetworkStatus />
+              <FollowUpReminder />
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
