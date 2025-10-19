@@ -18,7 +18,7 @@ const App = () => (
       <LeadProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter basename="/opterix">
+        <BrowserRouter basename={import.meta.env.PROD ? "/opterix" : ""}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />

@@ -6,7 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/opterix/',
+  base: mode === 'production' ? '/opterix/' : '/',
   server: {
     host: "::",
     port: 8080,
