@@ -4,6 +4,7 @@ import { ContactList } from "@/components/ContactList";
 import { BackToTop } from "@/components/BackToTop";
 import { AddContactForm } from "@/components/AddContactForm";
 import { FollowUpReminder } from "@/components/FollowUpReminder";
+import { MetricsCard } from "@/components/MetricsCard";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, Search, X, Star } from "lucide-react";
 
 const Index = () => {
-  const { contacts, syncData, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly } = useLeadContext();
+  const { contacts, interactions, syncData, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
 
@@ -47,6 +48,46 @@ const Index = () => {
       return dateA - dateB;
     });
   }, [contacts, searchQuery, showStarredOnly]);
+
+  const metrics = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Today's Leads: contacts with interactions today
+    const contactsWithTodayInteractions = new Set<string>();
+    interactions.forEach(interaction => {
+      const interactionDate = new Date(interaction.date);
+      interactionDate.setHours(0, 0, 0, 0);
+      if (interactionDate >= today && interactionDate < tomorrow) {
+        contactsWithTodayInteractions.add(interaction.contactId);
+      }
+    });
+    
+    // Leads Closed This Month: contacts with status "Closed Won" this month
+    const leadsClosedThisMonth = contacts.filter(contact => {
+      if (contact.status !== "Closed Won") return false;
+      
+      // Find the most recent interaction for this contact
+      const contactInteractions = interactions
+        .filter(i => i.contactId === contact.id)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      if (contactInteractions.length > 0) {
+        const lastInteractionDate = new Date(contactInteractions[0].date);
+        return lastInteractionDate >= firstDayOfMonth;
+      }
+      return false;
+    }).length;
+    
+    return {
+      todaysLeads: contactsWithTodayInteractions.size,
+      leadsClosedThisMonth
+    };
+  }, [contacts, interactions]);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -158,6 +199,10 @@ const Index = () => {
       </div>
 
       <div className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
+        <MetricsCard 
+          todaysLeads={metrics.todaysLeads} 
+          leadsClosedThisMonth={metrics.leadsClosedThisMonth} 
+        />
 
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
