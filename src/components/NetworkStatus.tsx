@@ -21,18 +21,12 @@ export const NetworkStatus = () => {
   return (
     <Badge
       variant={isOnline ? "default" : "secondary"}
-      className="gap-2 transition-all duration-300"
+      className="p-1.5 transition-all duration-300"
     >
       {isOnline ? (
-        <>
-          <Wifi className="h-3 w-3" />
-          Online
-        </>
+        <Wifi className="h-3 w-3" />
       ) : (
-        <>
-          <WifiOff className="h-3 w-3" />
-          Offline
-        </>
+        <WifiOff className="h-3 w-3" />
       )}
     </Badge>
   );
