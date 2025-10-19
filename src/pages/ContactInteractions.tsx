@@ -55,6 +55,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   );
   const [isFollowUpCalendarOpen, setIsFollowUpCalendarOpen] = useState(false);
   const [isUpdatingFollowUp, setIsUpdatingFollowUp] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: contact.name || "",
     company: contact.company || "",
@@ -469,6 +470,57 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     }
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    setIsUpdatingStatus(true);
+
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        toast.error("User ID not found. Please log in again.");
+        return;
+      }
+
+      const payload = {
+        meta: {
+          btable: "contact",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            body: [
+              {
+                id: contact.id,
+                status: newStatus,
+              },
+            ],
+            dirty: "true",
+          },
+        ],
+      };
+
+      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        toast.success("Status updated successfully");
+        await syncData();
+      } else {
+        toast.error("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-3 overflow-x-hidden">
       <div className="max-w-3xl mx-auto space-y-3 w-full">{""}
@@ -483,6 +535,27 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               <h1 className="text-xl font-bold mb-1">{contact.name}</h1>
               <p className="text-sm text-muted-foreground mb-3">{contact.company} • {contact.city}</p>
               
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-sm text-muted-foreground">Status:</span>
+                <Select
+                  value={contact.status || "New"}
+                  onValueChange={handleStatusChange}
+                  disabled={isUpdatingStatus}
+                >
+                  <SelectTrigger className="h-7 text-xs w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="New">New</SelectItem>
+                    <SelectItem value="Contacted">Contacted</SelectItem>
+                    <SelectItem value="Qualified">Qualified</SelectItem>
+                    <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
+                    <SelectItem value="Closed Won">Closed Won</SelectItem>
+                    <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-sm text-muted-foreground">Follow-Up:</span>
                 <div className="flex items-center gap-1.5">
@@ -637,10 +710,12 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Fresh">Fresh</SelectItem>
-                          <SelectItem value="Regular">Regular</SelectItem>
-                          <SelectItem value="Hot">Hot</SelectItem>
-                          <SelectItem value="Cold">Cold</SelectItem>
+                          <SelectItem value="New">New</SelectItem>
+                          <SelectItem value="Contacted">Contacted</SelectItem>
+                          <SelectItem value="Qualified">Qualified</SelectItem>
+                          <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
+                          <SelectItem value="Closed Won">Closed Won</SelectItem>
+                          <SelectItem value="Closed Lost">Closed Lost</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
