@@ -72,7 +72,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
   const interactions = getContactInteractions(contact.id);
 
-  // Auto-sync dirty interactions in background
+  // useEffect hooks
   useEffect(() => {
     const autoSync = async () => {
       if (!navigator.onLine || isSyncing) return;
@@ -93,7 +93,6 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     return () => clearInterval(syncInterval);
   }, [interactions, isSyncing]);
 
-  // Fetch interaction history on first load if not already cached
   useEffect(() => {
     const fetchInteractionHistory = async () => {
       if (interactions.length > 0 || isLoadingHistory) return;
@@ -143,6 +142,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     fetchInteractionHistory();
   }, [contact.id, interactions.length, isLoadingHistory, mergeInteractionsFromAPI]);
 
+  // handler functions
   const handleAddInteraction = async () => {
     if (!notes.trim()) {
       toast.error("Please add notes");
@@ -239,8 +239,6 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
       toast.success("Contact updated successfully");
       setIsEditDialogOpen(false);
-      
-      // Sync data to refresh the contact
       await syncData();
     } catch (error) {
       console.error("Error updating contact:", error);
@@ -261,7 +259,6 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
     setIsSyncing(true);
     try {
-      // Get fresh interactions from context
       const currentInteractions = getContactInteractions(contact.id);
       const dirtyInteractions = currentInteractions.filter(i => i.dirty);
       
@@ -297,9 +294,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               body: [{
                 contact: contact.id,
                 contact_status: "",
-                  notes: interaction.notes,
-                  next_meeting: interaction.followup_on || "",
-                  latitude: latitude,
+                notes: interaction.notes,
+                next_meeting: interaction.followup_on || "",
+                latitude: latitude,
                 longitude: longitude
               }],
               dirty: "true"
@@ -315,14 +312,12 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
           });
         }
 
-        // Mark interactions as synced
         await markInteractionsAsSynced(contact.id);
         toast.success("Interactions synced successfully!");
       } else {
         console.log("[SYNC] No dirty interactions to sync");
       }
 
-      // Step 2: Fetch interaction history for this contact
       const response = await fetch(
         `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
         {
@@ -402,9 +397,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       });
 
       if (response.ok) {
-        // Update local contact immediately so syncData merge preserves the new value
         await updateContactFollowUp(contact.id, date.toISOString());
-        
         toast.success("Follow-up date updated");
         await syncData();
       } else {
@@ -427,8 +420,6 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
     try {
       const futureDate = addYears(new Date(), 100);
-      
-      // Update local state immediately for instant UI feedback
       await updateContactFollowUp(contact.id, futureDate.toISOString());
       setFollowUpDate(futureDate);
       
@@ -523,42 +514,42 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
   return (
     <div className="min-h-screen bg-background p-3 overflow-x-hidden">
-      <div className="max-w-3xl mx-auto space-y-3 w-full">{""}
+      <div className="max-w-3xl mx-auto space-y-3 w-full">
         <Button variant="ghost" onClick={() => navigate('/')} size="sm" className="gap-1.5">
           <ArrowLeft className="h-3.5 w-3.5" />
           Back
         </Button>
 
-        <Card className="p-4">
-          <div className="flex items-start justify-between mb-1">
-            <div>
-              <h1 className="text-xl font-bold mb-1">{contact.name}</h1>
-              <p className="text-sm text-muted-foreground mb-3">{contact.company} • {contact.city}</p>
+        <Card className="p-3">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex-1">
+              <h1 className="text-lg font-bold mb-0.5">{contact.name}</h1>
+              <p className="text-xs text-muted-foreground mb-2">{contact.company} • {contact.city}</p>
               
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-sm text-muted-foreground">Status:</span>
-                <Select
-                  value={contact.status || "New"}
-                  onValueChange={handleStatusChange}
-                  disabled={isUpdatingStatus}
-                >
-                  <SelectTrigger className="h-7 text-xs w-40">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="New">New</SelectItem>
-                    <SelectItem value="Contacted">Contacted</SelectItem>
-                    <SelectItem value="Qualified">Qualified</SelectItem>
-                    <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
-                    <SelectItem value="Closed Won">Closed Won</SelectItem>
-                    <SelectItem value="Closed Lost">Closed Lost</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-sm text-muted-foreground">Follow-Up:</span>
+              <div className="flex items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Status:</span>
+                  <Select
+                    value={contact.status || "New"}
+                    onValueChange={handleStatusChange}
+                    disabled={isUpdatingStatus}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-36">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="New">New</SelectItem>
+                      <SelectItem value="Contacted">Contacted</SelectItem>
+                      <SelectItem value="Qualified">Qualified</SelectItem>
+                      <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
+                      <SelectItem value="Closed Won">Closed Won</SelectItem>
+                      <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Follow-Up:</span>
                   <Input
                     type="date"
                     value={followUpDate ? format(followUpDate, "yyyy-MM-dd") : ""}
@@ -567,7 +558,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                       if (newDate) handleFollowUpDateChange(newDate);
                     }}
                     disabled={isUpdatingFollowUp}
-                    className="h-7 text-xs w-36"
+                    className="h-7 text-xs w-32"
                   />
                   <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
                     <PopoverTrigger asChild>
@@ -577,7 +568,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                         className="h-7 w-7 p-0"
                         disabled={isUpdatingFollowUp}
                       >
-                        <CalendarIcon className="h-3.5 w-3.5" />
+                        <CalendarIcon className="h-3 w-3" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -593,300 +584,317 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 shrink-0"
+                className="h-7 w-7 shrink-0"
                 onClick={() => toggleStarred(contact.id)}
               >
                 <Star 
-                  className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                  className={`h-3.5 w-3.5 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
                 />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 shrink-0"
+                className="h-7 w-7 shrink-0"
                 onClick={handlePushDown}
               >
-                <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Pencil className="h-3.5 w-3.5" />
+                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <Pencil className="h-3 w-3" />
                   </Button>
                 </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Edit Contact</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleEditContact} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Name *</Label>
-                      <Input
-                        id="name"
-                        required
-                        value={editFormData.name}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, name: e.target.value })
-                        }
-                      />
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Edit Contact</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleEditContact} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Name *</Label>
+                        <Input
+                          id="name"
+                          required
+                          value={editFormData.name}
+                          onChange={(e) =>
+                            setEditFormData({ ...editFormData, name: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="company">Company *</Label>
+                        <Input
+                          id="company"
+                          required
+                          value={editFormData.company}
+                          onChange={(e) =>
+                            setEditFormData({ ...editFormData, company: e.target.value })
+                          }
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="company">Company *</Label>
-                      <Input
-                        id="company"
-                        required
-                        value={editFormData.company}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, company: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
-                        required
-                        value={editFormData.city}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, city: e.target.value })
-                        }
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City *</Label>
+                        <Input
+                          id="city"
+                          required
+                          value={editFormData.city}
+                          onChange={(e) =>
+                            setEditFormData({ ...editFormData, city: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="mobile">Mobile *</Label>
+                        <Input
+                          id="mobile"
+                          type="tel"
+                          required
+                          value={editFormData.mobile}
+                          onChange={(e) =>
+                            setEditFormData({ ...editFormData, mobile: e.target.value })
+                          }
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="mobile">Mobile *</Label>
-                      <Input
-                        id="mobile"
-                        type="tel"
-                        required
-                        value={editFormData.mobile}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, mobile: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      placeholder="email@example.com, another@example.com"
-                      value={editFormData.email}
-                      onChange={(e) =>
-                        setEditFormData({ ...editFormData, email: e.target.value })
-                      }
-                    />
-                    <p className="text-xs text-muted-foreground">Separate multiple emails with commas</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="profile">Profile</Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input
-                        id="profile"
-                        value={editFormData.profile}
+                        id="email"
+                        placeholder="email@example.com, another@example.com"
+                        value={editFormData.email}
                         onChange={(e) =>
-                          setEditFormData({ ...editFormData, profile: e.target.value })
+                          setEditFormData({ ...editFormData, email: e.target.value })
                         }
                       />
+                      <p className="text-xs text-muted-foreground">Separate multiple emails with commas</p>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="profile">Profile</Label>
+                        <Input
+                          id="profile"
+                          value={editFormData.profile}
+                          onChange={(e) =>
+                            setEditFormData({ ...editFormData, profile: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="status">Status *</Label>
+                        <Select
+                          value={editFormData.status}
+                          onValueChange={(value) =>
+                            setEditFormData({ ...editFormData, status: value })
+                          }
+                        >
+                          <SelectTrigger id="status">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="New">New</SelectItem>
+                            <SelectItem value="Contacted">Contacted</SelectItem>
+                            <SelectItem value="Qualified">Qualified</SelectItem>
+                            <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
+                            <SelectItem value="Closed Won">Closed Won</SelectItem>
+                            <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contact_person">Contact Person</Label>
+                        <Input
+                          id="contact_person"
+                          value={editFormData.contact_person}
+                          onChange={(e) =>
+                            setEditFormData({ ...editFormData, contact_person: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="industry">Industry</Label>
+                        <Input
+                          id="industry"
+                          value={editFormData.industry}
+                          onChange={(e) =>
+                            setEditFormData({ ...editFormData, industry: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="status">Status *</Label>
-                      <Select
-                        value={editFormData.status}
-                        onValueChange={(value) =>
-                          setEditFormData({ ...editFormData, status: value })
+                      <Label htmlFor="address">Address</Label>
+                      <Textarea
+                        id="address"
+                        value={editFormData.address}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, address: e.target.value })
                         }
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="remarks">Remarks</Label>
+                      <Textarea
+                        id="remarks"
+                        value={editFormData.remarks}
+                        onChange={(e) =>
+                          setEditFormData({ ...editFormData, remarks: e.target.value })
+                        }
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsEditDialogOpen(false)}
+                        disabled={isSubmitting}
                       >
-                        <SelectTrigger id="status">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="New">New</SelectItem>
-                          <SelectItem value="Contacted">Contacted</SelectItem>
-                          <SelectItem value="Qualified">Qualified</SelectItem>
-                          <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
-                          <SelectItem value="Closed Won">Closed Won</SelectItem>
-                          <SelectItem value="Closed Lost">Closed Lost</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Saving..." : "Save Changes"}
+                      </Button>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="contact_person">Contact Person</Label>
-                      <Input
-                        id="contact_person"
-                        value={editFormData.contact_person}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, contact_person: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="industry">Industry</Label>
-                      <Input
-                        id="industry"
-                        value={editFormData.industry}
-                        onChange={(e) =>
-                          setEditFormData({ ...editFormData, industry: e.target.value })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Textarea
-                      id="address"
-                      value={editFormData.address}
-                      onChange={(e) =>
-                        setEditFormData({ ...editFormData, address: e.target.value })
-                      }
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="remarks">Remarks</Label>
-                    <Textarea
-                      id="remarks"
-                      value={editFormData.remarks}
-                      onChange={(e) =>
-                        setEditFormData({ ...editFormData, remarks: e.target.value })
-                      }
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsEditDialogOpen(false)}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
           
-          <div className="flex gap-1.5">
-            <Button onClick={handleCall} variant="outline" size="sm" className="gap-1.5" disabled={!contact.phone}>
-              <Phone className="h-3.5 w-3.5" />
+          <div className="flex gap-1.5 mt-2">
+            <Button onClick={handleCall} variant="outline" size="sm" className="flex-1 h-8" disabled={!contact.phone}>
+              <Phone className="h-3 w-3 mr-1" />
               Call
             </Button>
-            <Button onClick={handleWhatsApp} variant="outline" size="sm" className="gap-1.5" disabled={!contact.phone}>
-              <MessageSquare className="h-3.5 w-3.5" />
+            <Button onClick={handleWhatsApp} variant="outline" size="sm" className="flex-1 h-8" disabled={!contact.phone}>
+              <MessageSquare className="h-3 w-3 mr-1" />
               WhatsApp
             </Button>
-            <Button onClick={handleEmail} variant="outline" size="sm" className="gap-1.5" disabled={!contact.email}>
-              <Mail className="h-3.5 w-3.5" />
+            <Button onClick={handleEmail} variant="outline" size="sm" className="flex-1 h-8" disabled={!contact.email}>
+              <Mail className="h-3 w-3 mr-1" />
               Email
             </Button>
           </div>
         </Card>
 
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Interaction History</h2>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5">
-                <Plus className="h-3.5 w-3.5" />
-                Log
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-lg">Log Interaction</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <div>
-                  <Label>Type</Label>
-                  <Select value={interactionType} onValueChange={(v: any) => setInteractionType(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="call">Call</SelectItem>
-                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="meeting">Meeting</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm">Notes</Label>
-                  <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="What was discussed?"
-                    rows={3}
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm">Next Follow-Up Date *</Label>
-                  <div className="flex items-center gap-1.5">
-                    <Input
-                      type="date"
-                      value={nextFollowUpDate ? format(nextFollowUpDate, "yyyy-MM-dd") : ""}
-                      onChange={(e) => {
-                        const newDate = e.target.value ? new Date(e.target.value) : undefined;
-                        setNextFollowUpDate(newDate);
-                      }}
-                      className="text-sm"
-                      min={format(new Date(), "yyyy-MM-dd")}
-                    />
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-9 w-9 p-0 shrink-0"
-                        >
-                          <CalendarIcon className="h-3.5 w-3.5" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={nextFollowUpDate}
-                          onSelect={(date) => {
-                            setNextFollowUpDate(date);
-                            setIsCalendarOpen(false);
-                          }}
-                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-                <Button onClick={handleAddInteraction} className="w-full">
-                  Save Interaction
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-semibold">Interaction History</h2>
+          <div className="flex gap-1.5">
+            <Button 
+              onClick={handleSyncInteractions}
+              variant="outline" 
+              size="sm"
+              disabled={isSyncing}
+              className="h-8"
+            >
+              {isSyncing ? (
+                <>
+                  <Cloud className="h-3 w-3 mr-1 animate-spin" />
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Sync
+                </>
+              )}
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8">
+                  <Plus className="h-3 w-3 mr-1" />
+                  Log
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-lg">Log Interaction</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Type</Label>
+                    <Select value={interactionType} onValueChange={(v: any) => setInteractionType(v)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="call">Call</SelectItem>
+                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                        <SelectItem value="email">Email</SelectItem>
+                        <SelectItem value="meeting">Meeting</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-sm">Notes</Label>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="What was discussed?"
+                      rows={3}
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Next Follow-Up Date *</Label>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="date"
+                        value={nextFollowUpDate ? format(nextFollowUpDate, "yyyy-MM-dd") : ""}
+                        onChange={(e) => {
+                          const date = e.target.value ? new Date(e.target.value) : undefined;
+                          setNextFollowUpDate(date);
+                        }}
+                        className="h-9 text-sm"
+                      />
+                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0"
+                          >
+                            <CalendarIcon className="h-3.5 w-3.5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={nextFollowUpDate}
+                            onSelect={(date) => {
+                              setNextFollowUpDate(date);
+                              setIsCalendarOpen(false);
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+                  <Button onClick={handleAddInteraction} className="w-full">
+                    Save Interaction
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="space-y-2">
