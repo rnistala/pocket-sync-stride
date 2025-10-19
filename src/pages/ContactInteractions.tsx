@@ -521,87 +521,16 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         </Button>
 
         <Card className="p-3">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex-1">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex-1 min-w-0">
               <h1 className="text-lg font-bold mb-0.5">{contact.name}</h1>
               <p className="text-xs text-muted-foreground mb-2">{contact.company} • {contact.city}</p>
-              
-              <div className="flex items-center gap-4 overflow-x-auto">
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs text-muted-foreground">Status:</span>
-                  <Select
-                    value={contact.status || "New"}
-                    onValueChange={handleStatusChange}
-                    disabled={isUpdatingStatus}
-                  >
-                    <SelectTrigger className="h-7 text-xs w-36">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="New">New</SelectItem>
-                      <SelectItem value="Contacted">Contacted</SelectItem>
-                      <SelectItem value="Qualified">Qualified</SelectItem>
-                      <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
-                      <SelectItem value="Closed Won">Closed Won</SelectItem>
-                      <SelectItem value="Closed Lost">Closed Lost</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs text-muted-foreground">Follow-Up:</span>
-                  <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
-                    <div className="relative">
-                      <Input
-                        placeholder="dd-mm-yyyy"
-                        value={followUpDate ? format(followUpDate, "dd-MM-yyyy") : ""}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          // Parse dd-MM-yyyy format
-                          const parts = value.split('-');
-                          if (parts.length === 3) {
-                            const [day, month, year] = parts;
-                            const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                            if (!isNaN(parsed.getTime())) {
-                              handleFollowUpDateChange(parsed);
-                            }
-                          }
-                        }}
-                        disabled={isUpdatingFollowUp}
-                        className="h-7 text-xs w-36 pr-8"
-                      />
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 absolute right-1 top-1/2 -translate-y-1/2"
-                          disabled={isUpdatingFollowUp}
-                        >
-                          <CalendarIcon className="h-3 w-3" />
-                        </Button>
-                      </PopoverTrigger>
-                    </div>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={followUpDate}
-                        onSelect={(date) => {
-                          handleFollowUpDateChange(date);
-                          setIsFollowUpCalendarOpen(false);
-                        }}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
             </div>
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center gap-0.5 shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 shrink-0"
+                className="h-7 w-7"
                 onClick={() => toggleStarred(contact.id)}
               >
                 <Star 
@@ -611,7 +540,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 shrink-0"
+                className="h-7 w-7"
                 onClick={handlePushDown}
               >
                 <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -788,6 +717,77 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                   </form>
                 </DialogContent>
               </Dialog>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground shrink-0">Status:</span>
+              <Select
+                value={contact.status || "New"}
+                onValueChange={handleStatusChange}
+                disabled={isUpdatingStatus}
+              >
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="New">New</SelectItem>
+                  <SelectItem value="Contacted">Contacted</SelectItem>
+                  <SelectItem value="Qualified">Qualified</SelectItem>
+                  <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
+                  <SelectItem value="Closed Won">Closed Won</SelectItem>
+                  <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground shrink-0">Follow-Up:</span>
+              <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="dd-mm-yyyy"
+                    value={followUpDate ? format(followUpDate, "dd-MM-yyyy") : ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Parse dd-MM-yyyy format
+                      const parts = value.split('-');
+                      if (parts.length === 3) {
+                        const [day, month, year] = parts;
+                        const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                        if (!isNaN(parsed.getTime())) {
+                          handleFollowUpDateChange(parsed);
+                        }
+                      }
+                    }}
+                    disabled={isUpdatingFollowUp}
+                    className="h-7 text-xs pr-8"
+                  />
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0 absolute right-1 top-1/2 -translate-y-1/2"
+                      disabled={isUpdatingFollowUp}
+                    >
+                      <CalendarIcon className="h-3 w-3" />
+                    </Button>
+                  </PopoverTrigger>
+                </div>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={followUpDate}
+                    onSelect={(date) => {
+                      handleFollowUpDateChange(date);
+                      setIsFollowUpCalendarOpen(false);
+                    }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           
