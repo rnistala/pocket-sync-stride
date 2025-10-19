@@ -796,105 +796,84 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-base font-semibold">Interaction History</h2>
-          <div className="flex gap-1.5">
-            <Button 
-              onClick={handleSyncInteractions}
-              variant="outline" 
-              size="sm"
-              disabled={isSyncing}
-              className="h-8"
-            >
-              {isSyncing ? (
-                <>
-                  <Cloud className="h-3 w-3 mr-1 animate-spin" />
-                  Syncing...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Sync
-                </>
-              )}
-            </Button>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-8">
-                  <Plus className="h-3 w-3 mr-1" />
-                  Log
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="text-lg">Log Interaction</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-3">
-                  <div>
-                    <Label>Type</Label>
-                    <Select value={interactionType} onValueChange={(v: any) => setInteractionType(v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="call">Call</SelectItem>
-                        <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="meeting">Meeting</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-sm">Notes</Label>
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="What was discussed?"
-                      rows={3}
-                      className="text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm">Next Follow-Up Date *</Label>
-                    <div className="flex items-center gap-1.5">
-                      <Input
-                        type="date"
-                        value={nextFollowUpDate ? format(nextFollowUpDate, "yyyy-MM-dd") : ""}
-                        onChange={(e) => {
-                          const date = e.target.value ? new Date(e.target.value) : undefined;
-                          setNextFollowUpDate(date);
-                        }}
-                        className="h-9 text-sm"
-                      />
-                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-9 w-9 p-0"
-                          >
-                            <CalendarIcon className="h-3.5 w-3.5" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={nextFollowUpDate}
-                            onSelect={(date) => {
-                              setNextFollowUpDate(date);
-                              setIsCalendarOpen(false);
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-                  <Button onClick={handleAddInteraction} className="w-full">
-                    Save Interaction
-                  </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="h-8">
+                <Plus className="h-3 w-3 mr-1" />
+                Log
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-lg">Log Interaction</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Type</Label>
+                  <Select value={interactionType} onValueChange={(v: any) => setInteractionType(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="call">Call</SelectItem>
+                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="meeting">Meeting</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+                <div>
+                  <Label className="text-sm">Notes</Label>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="What was discussed?"
+                    rows={3}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">Next Follow-Up Date *</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="date"
+                      value={nextFollowUpDate ? format(nextFollowUpDate, "yyyy-MM-dd") : ""}
+                      onChange={(e) => {
+                        const date = e.target.value ? new Date(e.target.value) : undefined;
+                        setNextFollowUpDate(date);
+                      }}
+                      className="h-9 text-sm"
+                    />
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 w-9 p-0"
+                        >
+                          <CalendarIcon className="h-3.5 w-3.5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={nextFollowUpDate}
+                          onSelect={(date) => {
+                            setNextFollowUpDate(date);
+                            setIsCalendarOpen(false);
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                <Button onClick={handleAddInteraction} className="w-full">
+                  Save Interaction
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="space-y-2">
