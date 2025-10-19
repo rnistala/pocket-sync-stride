@@ -520,30 +520,21 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
           Back
         </Button>
 
-        <Card className="p-4 shadow-lg border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
-          <div className="flex items-start justify-between gap-3 mb-4">
+        <Card className="p-3">
+          <div className="flex items-start justify-between mb-2">
             <div className="flex-1">
-              <div className="flex items-start gap-3 mb-3">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg font-bold text-primary">
-                    {contact.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <h1 className="text-xl font-bold mb-1">{contact.name}</h1>
-                  <p className="text-sm text-muted-foreground">{contact.company} • {contact.city}</p>
-                </div>
-              </div>
+              <h1 className="text-lg font-bold mb-0.5">{contact.name}</h1>
+              <p className="text-xs text-muted-foreground mb-2">{contact.company} • {contact.city}</p>
               
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Status</Label>
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Status:</span>
                   <Select
                     value={contact.status || "New"}
                     onValueChange={handleStatusChange}
                     disabled={isUpdatingStatus}
                   >
-                    <SelectTrigger className="h-9 text-sm">
+                    <SelectTrigger className="h-7 text-xs w-36">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -557,20 +548,27 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Follow-Up Date</Label>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground">Follow-Up:</span>
+                  <Input
+                    type="date"
+                    value={followUpDate ? format(followUpDate, "yyyy-MM-dd") : ""}
+                    onChange={(e) => {
+                      const newDate = e.target.value ? new Date(e.target.value) : undefined;
+                      if (newDate) handleFollowUpDateChange(newDate);
+                    }}
+                    disabled={isUpdatingFollowUp}
+                    className="h-7 text-xs w-32"
+                  />
                   <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        className={cn(
-                          "w-full h-9 justify-start text-left font-normal text-sm",
-                          !followUpDate && "text-muted-foreground"
-                        )}
+                        size="sm"
+                        className="h-7 w-7 p-0"
                         disabled={isUpdatingFollowUp}
                       >
-                        <CalendarIcon className="h-4 w-4 mr-2" />
-                        {followUpDate ? format(followUpDate, "PPP") : "Pick a date"}
+                        <CalendarIcon className="h-3 w-3" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
@@ -585,64 +583,30 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                   </Popover>
                 </div>
               </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <Button 
-                  onClick={handleCall} 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-10 border-primary/30 hover:bg-primary/10" 
-                  disabled={!contact.phone}
-                >
-                  <Phone className="h-4 w-4 mr-1.5" />
-                  Call
-                </Button>
-                <Button 
-                  onClick={handleWhatsApp} 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-10 border-primary/30 hover:bg-primary/10" 
-                  disabled={!contact.phone}
-                >
-                  <MessageSquare className="h-4 w-4 mr-1.5" />
-                  WhatsApp
-                </Button>
-                <Button 
-                  onClick={handleEmail} 
-                  variant="outline" 
-                  size="sm" 
-                  className="h-10 border-primary/30 hover:bg-primary/10" 
-                  disabled={!contact.email}
-                >
-                  <Mail className="h-4 w-4 mr-1.5" />
-                  Email
-                </Button>
-              </div>
             </div>
-
-            <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-0.5">
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 shrink-0"
+                className="h-7 w-7 shrink-0"
                 onClick={() => toggleStarred(contact.id)}
               >
                 <Star 
-                  className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                  className={`h-3.5 w-3.5 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
                 />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 shrink-0"
+                className="h-7 w-7 shrink-0"
                 onClick={handlePushDown}
               >
-                <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                <ArrowDown className="h-3.5 w-3.5 text-muted-foreground" />
               </Button>
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <Pencil className="h-4 w-4" />
+                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                    <Pencil className="h-3 w-3" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -813,6 +777,21 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               </Dialog>
             </div>
           </div>
+          
+          <div className="flex gap-1.5 mt-2">
+            <Button onClick={handleCall} variant="outline" size="sm" className="flex-1 h-8" disabled={!contact.phone}>
+              <Phone className="h-3 w-3 mr-1" />
+              Call
+            </Button>
+            <Button onClick={handleWhatsApp} variant="outline" size="sm" className="flex-1 h-8" disabled={!contact.phone}>
+              <MessageSquare className="h-3 w-3 mr-1" />
+              WhatsApp
+            </Button>
+            <Button onClick={handleEmail} variant="outline" size="sm" className="flex-1 h-8" disabled={!contact.email}>
+              <Mail className="h-3 w-3 mr-1" />
+              Email
+            </Button>
+          </div>
         </Card>
 
         <div className="flex items-center justify-between mb-2">
@@ -875,32 +854,39 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                   </div>
                   <div>
                     <Label className="text-sm">Next Follow-Up Date *</Label>
-                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full h-9 justify-start text-left font-normal text-sm",
-                            !nextFollowUpDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="h-4 w-4 mr-2" />
-                          {nextFollowUpDate ? format(nextFollowUpDate, "PPP") : "Pick a date"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={nextFollowUpDate}
-                          onSelect={(date) => {
-                            setNextFollowUpDate(date);
-                            setIsCalendarOpen(false);
-                          }}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="date"
+                        value={nextFollowUpDate ? format(nextFollowUpDate, "yyyy-MM-dd") : ""}
+                        onChange={(e) => {
+                          const date = e.target.value ? new Date(e.target.value) : undefined;
+                          setNextFollowUpDate(date);
+                        }}
+                        className="h-9 text-sm"
+                      />
+                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 w-9 p-0"
+                          >
+                            <CalendarIcon className="h-3.5 w-3.5" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={nextFollowUpDate}
+                            onSelect={(date) => {
+                              setNextFollowUpDate(date);
+                              setIsCalendarOpen(false);
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                   <Button onClick={handleAddInteraction} className="w-full">
                     Save Interaction
