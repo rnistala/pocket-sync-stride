@@ -751,28 +751,36 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
                 <div className="relative flex-1">
                   <Input
-                    placeholder="dd-mm-yyyy"
+                    placeholder="ddmmyyyy"
                     value={followUpDateText}
                     onChange={(e) => {
-                      const value = e.target.value;
+                      let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                      
+                      // Auto-format with dashes
+                      if (value.length >= 2) {
+                        value = value.slice(0, 2) + '-' + value.slice(2);
+                      }
+                      if (value.length >= 5) {
+                        value = value.slice(0, 5) + '-' + value.slice(5);
+                      }
+                      value = value.slice(0, 10); // Limit to dd-mm-yyyy
+                      
                       setFollowUpDateText(value);
                       
                       // Parse dd-MM-yyyy format
                       const parts = value.split('-');
-                      if (parts.length === 3) {
+                      if (parts.length === 3 && parts[2].length === 4) {
                         const [day, month, year] = parts;
-                        if (day && month && year && day.length <= 2 && month.length <= 2 && year.length === 4) {
-                          const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                          if (!isNaN(parsed.getTime())) {
-                            setFollowUpDate(parsed);
-                          }
+                        const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                        if (!isNaN(parsed.getTime())) {
+                          setFollowUpDate(parsed);
                         }
                       }
                     }}
                     onBlur={() => {
                       // Parse and update on blur
                       const parts = followUpDateText.split('-');
-                      if (parts.length === 3) {
+                      if (parts.length === 3 && parts[2].length === 4) {
                         const [day, month, year] = parts;
                         const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
                         if (!isNaN(parsed.getTime())) {
@@ -872,21 +880,29 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <div className="relative">
                       <Input
-                        placeholder="dd-mm-yyyy"
+                        placeholder="ddmmyyyy"
                         value={nextFollowUpDateText}
                         onChange={(e) => {
-                          const value = e.target.value;
+                          let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                          
+                          // Auto-format with dashes
+                          if (value.length >= 2) {
+                            value = value.slice(0, 2) + '-' + value.slice(2);
+                          }
+                          if (value.length >= 5) {
+                            value = value.slice(0, 5) + '-' + value.slice(5);
+                          }
+                          value = value.slice(0, 10); // Limit to dd-mm-yyyy
+                          
                           setNextFollowUpDateText(value);
                           
                           // Parse dd-MM-yyyy format as user types
                           const parts = value.split('-');
-                          if (parts.length === 3) {
+                          if (parts.length === 3 && parts[2].length === 4) {
                             const [day, month, year] = parts;
-                            if (day && month && year && day.length <= 2 && month.length <= 2 && year.length === 4) {
-                              const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                              if (!isNaN(parsed.getTime())) {
-                                setNextFollowUpDate(parsed);
-                              }
+                            const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                            if (!isNaN(parsed.getTime())) {
+                              setNextFollowUpDate(parsed);
                             }
                           }
                         }}
