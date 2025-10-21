@@ -56,6 +56,10 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isFollowUpCalendarOpen, setIsFollowUpCalendarOpen] = useState(false);
   const [isUpdatingFollowUp, setIsUpdatingFollowUp] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [followUpDateText, setFollowUpDateText] = useState(
+    contact.followup_on ? format(new Date(contact.followup_on), "dd-MM-yyyy") : ""
+  );
+  const [nextFollowUpDateText, setNextFollowUpDateText] = useState("");
   const [editFormData, setEditFormData] = useState({
     name: contact.name || "",
     company: contact.company || "",
@@ -748,11 +752,26 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                 <div className="relative flex-1">
                   <Input
                     placeholder="dd-mm-yyyy"
-                    value={followUpDate ? format(followUpDate, "dd-MM-yyyy") : ""}
+                    value={followUpDateText}
                     onChange={(e) => {
                       const value = e.target.value;
+                      setFollowUpDateText(value);
+                      
                       // Parse dd-MM-yyyy format
                       const parts = value.split('-');
+                      if (parts.length === 3) {
+                        const [day, month, year] = parts;
+                        if (day && month && year && day.length <= 2 && month.length <= 2 && year.length === 4) {
+                          const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                          if (!isNaN(parsed.getTime())) {
+                            setFollowUpDate(parsed);
+                          }
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      // Parse and update on blur
+                      const parts = followUpDateText.split('-');
                       if (parts.length === 3) {
                         const [day, month, year] = parts;
                         const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -780,7 +799,10 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                     mode="single"
                     selected={followUpDate}
                     onSelect={(date) => {
-                      handleFollowUpDateChange(date);
+                      if (date) {
+                        setFollowUpDateText(format(date, "dd-MM-yyyy"));
+                        handleFollowUpDateChange(date);
+                      }
                       setIsFollowUpCalendarOpen(false);
                     }}
                     initialFocus
@@ -851,16 +873,20 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                     <div className="relative">
                       <Input
                         placeholder="dd-mm-yyyy"
-                        value={nextFollowUpDate ? format(nextFollowUpDate, "dd-MM-yyyy") : ""}
+                        value={nextFollowUpDateText}
                         onChange={(e) => {
                           const value = e.target.value;
-                          // Parse dd-MM-yyyy format
+                          setNextFollowUpDateText(value);
+                          
+                          // Parse dd-MM-yyyy format as user types
                           const parts = value.split('-');
                           if (parts.length === 3) {
                             const [day, month, year] = parts;
-                            const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                            if (!isNaN(parsed.getTime())) {
-                              setNextFollowUpDate(parsed);
+                            if (day && month && year && day.length <= 2 && month.length <= 2 && year.length === 4) {
+                              const parsed = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                              if (!isNaN(parsed.getTime())) {
+                                setNextFollowUpDate(parsed);
+                              }
                             }
                           }
                         }}
@@ -881,7 +907,10 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                         mode="single"
                         selected={nextFollowUpDate}
                         onSelect={(date) => {
-                          setNextFollowUpDate(date);
+                          if (date) {
+                            setNextFollowUpDateText(format(date, "dd-MM-yyyy"));
+                            setNextFollowUpDate(date);
+                          }
                           setIsCalendarOpen(false);
                         }}
                         initialFocus
