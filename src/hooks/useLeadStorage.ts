@@ -13,6 +13,7 @@ export interface Contact {
   email?: string;
   profile?: string;
   starred?: boolean;
+  score?: number;
   interactions?: Interaction[];
 }
 

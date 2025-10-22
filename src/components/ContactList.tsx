@@ -23,6 +23,13 @@ const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { cont
     return isNaN(date.getTime()) ? 'Invalid date' : date.toLocaleDateString();
   }, [contact.followup_on]);
 
+  const badgeVariant = useMemo(() => {
+    const score = contact.score ?? 0;
+    if (score <= 5) return "success";
+    if (score <= 10) return "warning";
+    return "info";
+  }, [contact.score]);
+
   return (
     <Card
       className="p-3 cursor-pointer hover:bg-secondary/80 transition-colors active:scale-[0.99] border-border/50"
@@ -32,7 +39,7 @@ const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { cont
         <div className="flex-1 min-w-0 space-y-1">
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-sm md:text-base truncate">{contact.name}</h3>
-            <Badge variant="default" className="text-xs px-2 py-0.5 shrink-0 font-medium bg-accent/20 text-accent-foreground border border-accent/30">{contact.status}</Badge>
+            <Badge variant={badgeVariant} className="text-xs px-2 py-0.5 shrink-0 font-medium">{contact.status}</Badge>
           </div>
           <p className="text-xs text-muted-foreground truncate">{contact.company} • {contact.city}</p>
           <p className="text-xs text-muted-foreground">
