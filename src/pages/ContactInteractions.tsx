@@ -43,6 +43,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   }
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
   const [notes, setNotes] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
@@ -50,6 +51,14 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [orderFormData, setOrderFormData] = useState({
+    orderNumber: "",
+    orderDate: new Date(),
+    orderValue: "",
+    orderNotes: "",
+  });
+  const [isOrderCalendarOpen, setIsOrderCalendarOpen] = useState(false);
   const [followUpDate, setFollowUpDate] = useState<Date | undefined>(
     contact.followup_on ? new Date(contact.followup_on) : undefined
   );
@@ -516,6 +525,78 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     }
   };
 
+  const handleSubmitOrder = async () => {
+    if (!orderFormData.orderNumber.trim()) {
+      toast.error("Please enter order number");
+      return;
+    }
+    
+    if (!orderFormData.orderValue.trim()) {
+      toast.error("Please enter order value");
+      return;
+    }
+    
+    setIsSubmittingOrder(true);
+
+    try {
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        toast.error("User ID not found. Please log in again.");
+        return;
+      }
+
+      const payload = {
+        meta: {
+          btable: "so",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            body: [
+              {
+                buyer: contact.id,
+                sodate: format(orderFormData.orderDate, "yyyy-MM-dd"),
+                total_basic: orderFormData.orderValue,
+                po_no: orderFormData.orderNumber,
+                comment: orderFormData.orderNotes,
+                createdby: userId,
+                created: format(new Date(), "yyyy-MM-dd"),
+              },
+            ],
+            dirty: "true",
+          },
+        ],
+      };
+
+      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        toast.success("Order submitted successfully");
+        setIsOrderDialogOpen(false);
+        setOrderFormData({
+          orderNumber: "",
+          orderDate: new Date(),
+          orderValue: "",
+          orderNotes: "",
+        });
+      } else {
+        toast.error("Failed to submit order");
+      }
+    } catch (error) {
+      console.error("Error submitting order:", error);
+      toast.error("Failed to submit order");
+    } finally {
+      setIsSubmittingOrder(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-3 overflow-x-hidden">
       <div className="max-w-3xl mx-auto space-y-3 w-full">
@@ -839,13 +920,110 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-base font-semibold">Interaction History</h2>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="h-8">
-                <Plus className="h-3 w-3 mr-1" />
-                Log
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8" variant="outline">
+                  <Plus className="h-3 w-3 mr-1" />
+                  Order
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-lg">Create Order</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm">Order Number *</Label>
+                    <Input
+                      value={orderFormData.orderNumber}
+                      onChange={(e) =>
+                        setOrderFormData({ ...orderFormData, orderNumber: e.target.value })
+                      }
+                      placeholder="Enter order number"
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Order Date *</Label>
+                    <Popover open={isOrderCalendarOpen} onOpenChange={setIsOrderCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-sm",
+                            !orderFormData.orderDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-3 w-3" />
+                          {orderFormData.orderDate ? (
+                            format(orderFormData.orderDate, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={orderFormData.orderDate}
+                          onSelect={(date) => {
+                            if (date) {
+                              setOrderFormData({ ...orderFormData, orderDate: date });
+                            }
+                            setIsOrderCalendarOpen(false);
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div>
+                    <Label className="text-sm">Order Value *</Label>
+                    <Input
+                      type="number"
+                      value={orderFormData.orderValue}
+                      onChange={(e) =>
+                        setOrderFormData({ ...orderFormData, orderValue: e.target.value })
+                      }
+                      placeholder="Enter order value"
+                      className="text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm">Order Notes</Label>
+                    <Textarea
+                      value={orderFormData.orderNotes}
+                      onChange={(e) =>
+                        setOrderFormData({ ...orderFormData, orderNotes: e.target.value })
+                      }
+                      placeholder="Additional notes (optional)"
+                      rows={3}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsOrderDialogOpen(false)}
+                    disabled={isSubmittingOrder}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSubmitOrder} disabled={isSubmittingOrder}>
+                    {isSubmittingOrder ? "Submitting..." : "Submit Order"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="h-8">
+                  <Plus className="h-3 w-3 mr-1" />
+                  Log
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-lg">Log Interaction</DialogTitle>
@@ -941,6 +1119,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <div className="space-y-2">
