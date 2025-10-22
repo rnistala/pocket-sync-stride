@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, Search, X, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -267,52 +268,94 @@ const Index = () => {
       <Dialog open={showOrdersDialog} onOpenChange={setShowOrdersDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Orders This Month</DialogTitle>
+            <DialogTitle>Sales Orders</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="h-[60vh] pr-4">
-            {orders.filter(order => {
-              if (!order.sodate) return false;
-              const orderDate = new Date(order.sodate);
-              const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-              const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
-              return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
-            }).length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No orders this month
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {orders
-                  .filter(order => {
-                    if (!order.sodate) return false;
-                    const orderDate = new Date(order.sodate);
-                    const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-                    const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
-                    return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
-                  })
-                  .map((order, index) => (
-                    <div key={index} className="border rounded-lg p-4 space-y-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-foreground">
-                            {order.po_no || 'No Order Number'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {order.sodate ? new Date(order.sodate).toLocaleDateString() : 'No Date'}
+          <Tabs defaultValue="this-month" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="this-month">This Month</TabsTrigger>
+              <TabsTrigger value="all">All Orders</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="this-month">
+              <ScrollArea className="h-[55vh] pr-4">
+                {orders.filter(order => {
+                  if (!order.sodate) return false;
+                  const orderDate = new Date(order.sodate);
+                  const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+                  const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+                  return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
+                }).length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No orders this month
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders
+                      .filter(order => {
+                        if (!order.sodate) return false;
+                        const orderDate = new Date(order.sodate);
+                        const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+                        const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+                        return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
+                      })
+                      .map((order, index) => (
+                        <div key={index} className="border rounded-lg p-4 space-y-2">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-semibold text-foreground">
+                                {order.po_no || 'No Order Number'}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {order.sodate ? new Date(order.sodate).toLocaleDateString() : 'No Date'}
+                              </p>
+                            </div>
+                            <p className="text-lg font-bold text-primary">
+                              ₹{order.total_basic ? parseFloat(order.total_basic).toLocaleString() : '0'}
+                            </p>
+                          </div>
+                          {order.comment && (
+                            <p className="text-sm text-muted-foreground">{order.comment}</p>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+            
+            <TabsContent value="all">
+              <ScrollArea className="h-[55vh] pr-4">
+                {orders.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No orders found
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.map((order, index) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {order.po_no || 'No Order Number'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {order.sodate ? new Date(order.sodate).toLocaleDateString() : 'No Date'}
+                            </p>
+                          </div>
+                          <p className="text-lg font-bold text-primary">
+                            ₹{order.total_basic ? parseFloat(order.total_basic).toLocaleString() : '0'}
                           </p>
                         </div>
-                        <p className="text-lg font-bold text-primary">
-                          ₹{order.total_basic ? parseFloat(order.total_basic).toLocaleString() : '0'}
-                        </p>
+                        {order.comment && (
+                          <p className="text-sm text-muted-foreground">{order.comment}</p>
+                        )}
                       </div>
-                      {order.comment && (
-                        <p className="text-sm text-muted-foreground">{order.comment}</p>
-                      )}
-                    </div>
-                  ))}
-              </div>
-            )}
-          </ScrollArea>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
