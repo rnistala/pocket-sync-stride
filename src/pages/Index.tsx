@@ -67,7 +67,7 @@ const Index = () => {
       const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: 78, offset: 0, limit: 100 })
+        body: JSON.stringify({ id: 78, offset: 0, limit: 0 })
       });
 
       if (response.ok) {
