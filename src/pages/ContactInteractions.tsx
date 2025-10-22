@@ -644,7 +644,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                           }
                         >
                           <SelectTrigger id="status">
-                            <SelectValue />
+                            <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="New">New</SelectItem>
@@ -733,7 +733,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                 disabled={isUpdatingStatus}
               >
                 <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
+                  <SelectValue placeholder={contact.status || "Select status"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="New">New</SelectItem>
