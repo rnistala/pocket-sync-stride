@@ -57,31 +57,44 @@ const Index = () => {
   }, [contacts, searchQuery, showStarredOnly]);
 
   // Fetch orders
-  useEffect(() => {
-    const fetchOrders = async () => {
-      const userId = localStorage.getItem("userId");
-      const token = localStorage.getItem("userToken");
-      if (!userId || !token) return;
+  const fetchOrders = async () => {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("userToken");
+    if (!userId || !token) return;
 
-      try {
-        const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/${token}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: 78, offset: 0, limit: 100 })
-        });
+    try {
+      const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: 78, offset: 0, limit: 100 })
+      });
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.data && result.data[0] && result.data[0].body) {
-            setOrders(result.data[0].body);
-          }
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data && result.data[0] && result.data[0].body) {
+          setOrders(result.data[0].body);
         }
-      } catch (error) {
-        console.error("Failed to fetch orders:", error);
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+
+    // Refetch orders when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchOrders();
       }
     };
 
-    fetchOrders();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const metrics = useMemo(() => {
