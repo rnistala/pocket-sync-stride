@@ -21,6 +21,7 @@ const Index = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [orders, setOrders] = useState<any[]>([]);
   const [showOrdersDialog, setShowOrdersDialog] = useState(false);
+  const [showInteractionsDialog, setShowInteractionsDialog] = useState(false);
   const navigate = useNavigate();
 
   const filteredContacts = useMemo(() => {
@@ -100,6 +101,25 @@ const Index = () => {
     setShowOrdersDialog(true);
   };
 
+  // Show today's interactions
+  const handleTodaysClick = () => {
+    setShowInteractionsDialog(true);
+  };
+
+  // Get today's interactions
+  const todaysInteractions = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    return interactions.filter(interaction => {
+      const interactionDate = new Date(interaction.date);
+      interactionDate.setHours(0, 0, 0, 0);
+      return interactionDate >= today && interactionDate < tomorrow;
+    });
+  }, [interactions]);
+
   const metrics = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -110,15 +130,12 @@ const Index = () => {
     const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     lastDayOfMonth.setHours(23, 59, 59, 999);
     
-    // Today's Leads: contacts with interactions today
-    const contactsWithTodayInteractions = new Set<string>();
-    interactions.forEach(interaction => {
+    // Today's Interactions: count of interactions today
+    const todaysInteractions = interactions.filter(interaction => {
       const interactionDate = new Date(interaction.date);
       interactionDate.setHours(0, 0, 0, 0);
-      if (interactionDate >= today && interactionDate < tomorrow) {
-        contactsWithTodayInteractions.add(interaction.contactId);
-      }
-    });
+      return interactionDate >= today && interactionDate < tomorrow;
+    }).length;
     
     // Orders Closed This Month: count orders created this month
     const ordersClosedThisMonth = orders.filter(order => {
@@ -138,7 +155,7 @@ const Index = () => {
     console.log("Total orders:", orders.length, "Orders this month:", ordersClosedThisMonth);
     
     return {
-      todaysLeads: contactsWithTodayInteractions.size,
+      todaysInteractions,
       leadsClosedThisMonth: ordersClosedThisMonth
     };
   }, [contacts, interactions, orders]);
@@ -256,8 +273,9 @@ const Index = () => {
 
       <div className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
         <MetricsCard 
-          todaysLeads={metrics.todaysLeads} 
+          todaysInteractions={metrics.todaysInteractions} 
           leadsClosedThisMonth={metrics.leadsClosedThisMonth}
+          onTodaysClick={handleTodaysClick}
           onClosedClick={handleClosedClick}
         />
 
@@ -270,6 +288,45 @@ const Index = () => {
         )}
       </div>
       <BackToTop />
+
+      <Dialog open={showInteractionsDialog} onOpenChange={setShowInteractionsDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Today's Interactions</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            {todaysInteractions.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No interactions today
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {todaysInteractions.map((interaction, index) => {
+                  const contact = contacts.find(c => c.id === interaction.contactId);
+                  return (
+                    <div key={index} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {contact?.name || 'Unknown Contact'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {contact?.company || 'No Company'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(interaction.date).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-foreground">{interaction.notes}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={showOrdersDialog} onOpenChange={setShowOrdersDialog}>
         <DialogContent className="max-w-2xl max-h-[80vh]">

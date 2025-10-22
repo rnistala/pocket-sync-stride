@@ -1,18 +1,22 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 interface MetricsCardProps {
-  todaysLeads: number;
+  todaysInteractions: number;
   leadsClosedThisMonth: number;
+  onTodaysClick?: () => void;
   onClosedClick?: () => void;
 }
 
-export const MetricsCard = ({ todaysLeads, leadsClosedThisMonth, onClosedClick }: MetricsCardProps) => {
+export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodaysClick, onClosedClick }: MetricsCardProps) => {
   return (
     <div className="grid grid-cols-2 gap-3 mb-4">
-      <Card>
+      <Card 
+        className="cursor-pointer hover:bg-accent transition-colors"
+        onClick={onTodaysClick}
+      >
         <CardContent className="p-4">
-          <p className="text-xs text-muted-foreground mb-1">Today's Leads</p>
-          <p className="text-2xl font-bold text-foreground">{todaysLeads}</p>
+          <p className="text-xs text-muted-foreground mb-1">Today's Interactions</p>
+          <p className="text-2xl font-bold text-foreground">{todaysInteractions}</p>
         </CardContent>
       </Card>
       <Card 
