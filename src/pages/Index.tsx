@@ -69,9 +69,9 @@ const Index = () => {
       }
     });
     
-    // Leads Closed This Month: contacts with status "Closed Won" this month
+    // Leads Closed This Month: contacts with status "Regular" this month
     const leadsClosedThisMonth = contacts.filter(contact => {
-      if (contact.status !== "Closed Won") return false;
+      if (contact.status !== "Regular") return false;
       
       // Find the most recent interaction for this contact
       const contactInteractions = interactions

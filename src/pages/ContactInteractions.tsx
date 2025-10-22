@@ -650,9 +650,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                             <SelectItem value="New">New</SelectItem>
                             <SelectItem value="Contacted">Contacted</SelectItem>
                             <SelectItem value="Qualified">Qualified</SelectItem>
-                            <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
-                            <SelectItem value="Closed Won">Closed Won</SelectItem>
-                            <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+                            <SelectItem value="Demo Done">Demo Done</SelectItem>
+                            <SelectItem value="Regular">Regular</SelectItem>
+                            <SelectItem value="Drop">Drop</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -739,9 +739,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                   <SelectItem value="New">New</SelectItem>
                   <SelectItem value="Contacted">Contacted</SelectItem>
                   <SelectItem value="Qualified">Qualified</SelectItem>
-                  <SelectItem value="Demo Scheduled">Demo Scheduled</SelectItem>
-                  <SelectItem value="Closed Won">Closed Won</SelectItem>
-                  <SelectItem value="Closed Lost">Closed Lost</SelectItem>
+                  <SelectItem value="Demo Done">Demo Done</SelectItem>
+                  <SelectItem value="Regular">Regular</SelectItem>
+                  <SelectItem value="Drop">Drop</SelectItem>
                 </SelectContent>
               </Select>
             </div>
