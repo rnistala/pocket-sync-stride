@@ -64,7 +64,7 @@ const Index = () => {
     if (!userId || !token) return;
 
     try {
-      const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/${token}`, {
+      const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: 78, offset: 0, limit: 0 })
