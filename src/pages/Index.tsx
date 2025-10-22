@@ -11,10 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { LogOut, Search, X, Star } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
   const { contacts, interactions, syncData, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [showOrdersDialog, setShowOrdersDialog] = useState(false);
   const navigate = useNavigate();
 
   const filteredContacts = useMemo(() => {
@@ -51,6 +56,34 @@ const Index = () => {
     });
   }, [contacts, searchQuery, showStarredOnly]);
 
+  // Fetch orders
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("userToken");
+      if (!userId || !token) return;
+
+      try {
+        const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/${token}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: 78, offset: 0, limit: 100 })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.data && result.data[0] && result.data[0].body) {
+            setOrders(result.data[0].body);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
   const metrics = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -58,6 +91,8 @@ const Index = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    lastDayOfMonth.setHours(23, 59, 59, 999);
     
     // Today's Leads: contacts with interactions today
     const contactsWithTodayInteractions = new Set<string>();
@@ -69,27 +104,18 @@ const Index = () => {
       }
     });
     
-    // Leads Closed This Month: contacts with status "Regular" this month
-    const leadsClosedThisMonth = contacts.filter(contact => {
-      if (contact.status !== "Regular") return false;
-      
-      // Find the most recent interaction for this contact
-      const contactInteractions = interactions
-        .filter(i => i.contactId === contact.id)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
-      if (contactInteractions.length > 0) {
-        const lastInteractionDate = new Date(contactInteractions[0].date);
-        return lastInteractionDate >= firstDayOfMonth;
-      }
-      return false;
+    // Orders Closed This Month: count orders created this month
+    const ordersClosedThisMonth = orders.filter(order => {
+      if (!order.created) return false;
+      const orderDate = new Date(order.created);
+      return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
     }).length;
     
     return {
       todaysLeads: contactsWithTodayInteractions.size,
-      leadsClosedThisMonth
+      leadsClosedThisMonth: ordersClosedThisMonth
     };
-  }, [contacts, interactions]);
+  }, [contacts, interactions, orders]);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -203,7 +229,8 @@ const Index = () => {
       <div className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
         <MetricsCard 
           todaysLeads={metrics.todaysLeads} 
-          leadsClosedThisMonth={metrics.leadsClosedThisMonth} 
+          leadsClosedThisMonth={metrics.leadsClosedThisMonth}
+          onClosedClick={() => setShowOrdersDialog(true)}
         />
 
         {isLoading ? (
@@ -215,6 +242,58 @@ const Index = () => {
         )}
       </div>
       <BackToTop />
+
+      <Dialog open={showOrdersDialog} onOpenChange={setShowOrdersDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Orders This Month</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            {orders.filter(order => {
+              if (!order.created) return false;
+              const orderDate = new Date(order.created);
+              const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+              const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+              return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
+            }).length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No orders this month
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {orders
+                  .filter(order => {
+                    if (!order.created) return false;
+                    const orderDate = new Date(order.created);
+                    const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+                    const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+                    return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
+                  })
+                  .map((order, index) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-semibold text-foreground">
+                            {order.po_no || 'No Order Number'}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {order.sodate ? new Date(order.sodate).toLocaleDateString() : 'No Date'}
+                          </p>
+                        </div>
+                        <p className="text-lg font-bold text-primary">
+                          ₹{order.total_basic ? parseFloat(order.total_basic).toLocaleString() : '0'}
+                        </p>
+                      </div>
+                      {order.comment && (
+                        <p className="text-sm text-muted-foreground">{order.comment}</p>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
