@@ -471,6 +471,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           phone: contact.mobile || "",
           email: contact.email || "",
           profile: contact.profile || "",
+          score: parseInt(contact.score) || 0,
         }));
         
         fetchedContacts = [...fetchedContacts, ...transformedContacts];

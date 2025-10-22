@@ -260,6 +260,7 @@ export const useLeadStorage = () => {
           lastNotes: contact.message || "",
           phone: contact.mobile || "",
           email: contact.email || "",
+          score: parseInt(contact.score) || 0,
         }));
         
         allContacts = [...allContacts, ...transformedContacts];
