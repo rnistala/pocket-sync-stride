@@ -88,6 +88,12 @@ const Index = () => {
     }
   };
 
+  // Helper function to get buyer name from contacts
+  const getBuyerName = (buyerId: string) => {
+    const contact = contacts.find(c => c.id === buyerId);
+    return contact ? contact.name : 'Unknown Buyer';
+  };
+
   // Fetch orders only when clicking "Closed This Month"
   const handleClosedClick = async () => {
     await fetchOrders();
@@ -299,24 +305,27 @@ const Index = () => {
                         return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
                       })
                       .map((order, index) => (
-                        <div key={index} className="border rounded-lg p-4 space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-semibold text-foreground">
-                                {order.po_no || 'No Order Number'}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {order.sodate ? new Date(order.sodate).toLocaleDateString() : 'No Date'}
-                              </p>
-                            </div>
-                            <p className="text-lg font-bold text-primary">
-                              ₹{order.total_basic ? parseFloat(order.total_basic).toLocaleString() : '0'}
+                      <div key={index} className="border rounded-lg p-4 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {order.po_no || 'No Order Number'}
+                            </p>
+                            <p className="text-sm font-medium text-foreground">
+                              {order.buyer ? getBuyerName(order.buyer) : 'No Buyer'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {order.sodate ? new Date(order.sodate).toLocaleDateString() : 'No Date'}
                             </p>
                           </div>
-                          {order.comment && (
-                            <p className="text-sm text-muted-foreground">{order.comment}</p>
-                          )}
+                          <p className="text-lg font-bold text-primary">
+                            ₹{order.total_basic ? parseFloat(order.total_basic).toLocaleString() : '0'}
+                          </p>
                         </div>
+                        {order.comment && (
+                          <p className="text-sm text-muted-foreground">{order.comment}</p>
+                        )}
+                      </div>
                       ))}
                   </div>
                 )}
@@ -337,6 +346,9 @@ const Index = () => {
                           <div>
                             <p className="font-semibold text-foreground">
                               {order.po_no || 'No Order Number'}
+                            </p>
+                            <p className="text-sm font-medium text-foreground">
+                              {order.buyer ? getBuyerName(order.buyer) : 'No Buyer'}
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {order.sodate ? new Date(order.sodate).toLocaleDateString() : 'No Date'}
