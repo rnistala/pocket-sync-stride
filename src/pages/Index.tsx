@@ -60,6 +60,7 @@ const Index = () => {
   const fetchOrders = async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("userToken");
+    console.log("Fetching orders with userId:", userId, "token:", token);
     if (!userId || !token) return;
 
     try {
@@ -71,9 +72,15 @@ const Index = () => {
 
       if (response.ok) {
         const result = await response.json();
+        console.log("Orders API response:", result);
         if (result.data && result.data[0] && result.data[0].body) {
+          console.log("Orders data:", result.data[0].body);
           setOrders(result.data[0].body);
+        } else {
+          console.log("No orders found in expected structure");
         }
+      } else {
+        console.error("Orders fetch failed with status:", response.status);
       }
     } catch (error) {
       console.error("Failed to fetch orders:", error);
@@ -121,8 +128,18 @@ const Index = () => {
     const ordersClosedThisMonth = orders.filter(order => {
       if (!order.created) return false;
       const orderDate = new Date(order.created);
-      return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
+      const isInRange = orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
+      console.log("Order check:", {
+        created: order.created,
+        orderDate: orderDate.toISOString(),
+        firstDayOfMonth: firstDayOfMonth.toISOString(),
+        lastDayOfMonth: lastDayOfMonth.toISOString(),
+        isInRange
+      });
+      return isInRange;
     }).length;
+    
+    console.log("Total orders:", orders.length, "Orders this month:", ordersClosedThisMonth);
     
     return {
       todaysLeads: contactsWithTodayInteractions.size,
