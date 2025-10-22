@@ -87,21 +87,9 @@ const Index = () => {
     }
   };
 
+  // Fetch orders independently
   useEffect(() => {
     fetchOrders();
-
-    // Refetch orders when page becomes visible
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchOrders();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
   }, []);
 
   const metrics = useMemo(() => {
@@ -155,8 +143,10 @@ const Index = () => {
 
     const handleOnline = () => {
       setIsOnline(true);
-      // Auto-sync when coming back online
+      // Auto-sync contacts when coming back online
       syncData();
+      // Also refresh orders
+      fetchOrders();
     };
     const handleOffline = () => setIsOnline(false);
 
@@ -168,7 +158,7 @@ const Index = () => {
       syncData();
     }
 
-    // Auto-sync every hour when online
+    // Auto-sync contacts every hour when online
     const syncInterval = setInterval(() => {
       if (navigator.onLine) {
         syncData();
