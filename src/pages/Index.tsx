@@ -115,11 +115,11 @@ const Index = () => {
     
     // Orders Closed This Month: count orders created this month
     const ordersClosedThisMonth = orders.filter(order => {
-      if (!order.created) return false;
-      const orderDate = new Date(order.created);
+      if (!order.sodate) return false;
+      const orderDate = new Date(order.sodate);
       const isInRange = orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
       console.log("Order check:", {
-        created: order.created,
+        sodate: order.sodate,
         orderDate: orderDate.toISOString(),
         firstDayOfMonth: firstDayOfMonth.toISOString(),
         lastDayOfMonth: lastDayOfMonth.toISOString(),
@@ -271,8 +271,8 @@ const Index = () => {
           </DialogHeader>
           <ScrollArea className="h-[60vh] pr-4">
             {orders.filter(order => {
-              if (!order.created) return false;
-              const orderDate = new Date(order.created);
+              if (!order.sodate) return false;
+              const orderDate = new Date(order.sodate);
               const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
               const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
               return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
@@ -284,8 +284,8 @@ const Index = () => {
               <div className="space-y-4">
                 {orders
                   .filter(order => {
-                    if (!order.created) return false;
-                    const orderDate = new Date(order.created);
+                    if (!order.sodate) return false;
+                    const orderDate = new Date(order.sodate);
                     const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
                     const lastDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
                     return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
