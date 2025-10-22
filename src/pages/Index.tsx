@@ -87,10 +87,11 @@ const Index = () => {
     }
   };
 
-  // Fetch orders independently
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  // Fetch orders only when clicking "Closed This Month"
+  const handleClosedClick = async () => {
+    await fetchOrders();
+    setShowOrdersDialog(true);
+  };
 
   const metrics = useMemo(() => {
     const today = new Date();
@@ -250,7 +251,7 @@ const Index = () => {
         <MetricsCard 
           todaysLeads={metrics.todaysLeads} 
           leadsClosedThisMonth={metrics.leadsClosedThisMonth}
-          onClosedClick={() => setShowOrdersDialog(true)}
+          onClosedClick={handleClosedClick}
         />
 
         {isLoading ? (
