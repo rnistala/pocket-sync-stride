@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { companyName } = await req.json();
+    const { companyName, city } = await req.json();
     
     if (!companyName) {
       return new Response(
@@ -30,7 +30,8 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Researching company: ${companyName}`);
+    const locationContext = city ? ` located in ${city}` : '';
+    console.log(`Researching company: ${companyName}${locationContext}`);
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -47,7 +48,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Research "${companyName}" and return a JSON object with: industry (sector), products (main offerings), size (employee count if known), recentNews (recent developments), summary (brief overview).`
+            content: `Research "${companyName}"${locationContext} and return a JSON object with: industry (sector), products (main offerings), size (employee count if known), recentNews (recent developments), summary (brief overview).`
           }
         ],
         temperature: 0.2,

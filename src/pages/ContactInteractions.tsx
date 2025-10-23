@@ -662,7 +662,10 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ companyName: contact.company }),
+          body: JSON.stringify({ 
+            companyName: contact.company,
+            city: contact.city 
+          }),
         }
       );
 
