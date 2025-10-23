@@ -71,7 +71,7 @@ serve(async (req) => {
             }
           }
         ],
-        tool_choice: { type: "function", function: { name: "company_research" } },
+        tool_choice: "required",
         temperature: 0.2,
         max_tokens: 1000
       }),
