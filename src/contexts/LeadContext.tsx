@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { Contact, Interaction } from "@/hooks/useLeadStorage";
 
 const DB_NAME = "LeadManagerDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const CONTACTS_STORE = "contacts";
 const INTERACTIONS_STORE = "interactions";
 const METADATA_STORE = "metadata";
@@ -38,7 +38,11 @@ class IndexedDBManager {
         }
 
         if (!db.objectStoreNames.contains(ORDERS_STORE)) {
-          db.createObjectStore(ORDERS_STORE, { keyPath: "po_no" });
+          db.createObjectStore(ORDERS_STORE, { keyPath: "id" });
+        } else if (event.oldVersion < 3) {
+          // Upgrade to version 3: recreate orders store with id as keyPath
+          db.deleteObjectStore(ORDERS_STORE);
+          db.createObjectStore(ORDERS_STORE, { keyPath: "id" });
         }
       };
     });
@@ -172,13 +176,16 @@ class IndexedDBManager {
 
       store.clear();
       orders.forEach(order => {
-        if (order.po_no) {
+        if (order.id) {
           store.add(order);
         }
       });
 
       transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
+      transaction.onerror = () => {
+        console.error("[ORDERS] IndexedDB transaction error:", transaction.error);
+        reject(transaction.error);
+      };
     });
   }
 }
