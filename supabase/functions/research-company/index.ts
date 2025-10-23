@@ -30,8 +30,12 @@ serve(async (req) => {
       );
     }
 
-    const locationContext = city ? ` located in ${city}` : '';
-    console.log(`Researching company: ${companyName}${locationContext}`);
+    console.log(`Researching company: ${companyName}${city ? ` in ${city}` : ''}`);
+
+    // Build a more location-specific search query
+    const searchQuery = city 
+      ? `Find information about the company "${companyName}" specifically in ${city}, India. Focus on the local business in this city, not companies with similar names in other countries.`
+      : `Research the company "${companyName}".`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -44,11 +48,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a business research assistant. Provide information in this exact JSON format: {"industry": "...", "products": "...", "size": "...", "recentNews": "...", "summary": "..."}. Be concise and factual.'
+            content: 'You are a business research assistant. Provide information in this exact JSON format: {"industry": "...", "products": "...", "size": "...", "recentNews": "...", "summary": "..."}. Be concise and factual. Always prioritize the specific location mentioned in the query.'
           },
           {
             role: 'user',
-            content: `Research "${companyName}"${locationContext} and return a JSON object with: industry (sector), products (main offerings), size (employee count if known), recentNews (recent developments), summary (brief overview).`
+            content: `${searchQuery} Return a JSON object with: industry (sector), products (main offerings), size (employee count if known), recentNews (recent developments), summary (brief overview).`
           }
         ],
         temperature: 0.2,
