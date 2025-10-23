@@ -571,13 +571,22 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         ],
       };
 
+      console.log("[ORDER SUBMIT] Sending request to:", `https://demo.opterix.in/api/public/tdata/${userId}`);
+      console.log("[ORDER SUBMIT] Payload:", JSON.stringify(payload, null, 2));
+      
       const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      console.log("[ORDER SUBMIT] Response status:", response.status);
+      console.log("[ORDER SUBMIT] Response ok:", response.ok);
+
       if (response.ok) {
+        const responseData = await response.text();
+        console.log("[ORDER SUBMIT] Response data:", responseData);
+        
         toast.success("Order submitted successfully");
         setIsOrderDialogOpen(false);
         setOrderFormData({
@@ -587,9 +596,13 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
           orderNotes: "",
         });
         // Refresh orders from API and update IndexedDB
+        console.log("[ORDER SUBMIT] Fetching updated orders...");
         await fetchOrders();
       } else {
-        toast.error("Failed to submit order");
+        const errorText = await response.text();
+        console.error("[ORDER SUBMIT] Failed with status:", response.status);
+        console.error("[ORDER SUBMIT] Error response:", errorText);
+        toast.error(`Failed to submit order (Status: ${response.status})`);
       }
     } catch (error) {
       console.error("Error submitting order:", error);
