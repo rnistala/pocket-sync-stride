@@ -17,9 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const { contacts, interactions, syncData, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly } = useLeadContext();
+  const { contacts, interactions, orders, syncData, fetchOrders, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [orders, setOrders] = useState<any[]>([]);
   const [showOrdersDialog, setShowOrdersDialog] = useState(false);
   const [showInteractionsDialog, setShowInteractionsDialog] = useState(false);
   const navigate = useNavigate();
@@ -58,47 +57,16 @@ const Index = () => {
     });
   }, [contacts, searchQuery, showStarredOnly]);
 
-  // Fetch orders
-  const fetchOrders = async () => {
-    const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("userToken");
-    console.log("Fetching orders with userId:", userId, "token:", token);
-    if (!userId || !token) return;
-
-    try {
-      const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: 78, offset: 0, limit: 0 })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log("Orders API response:", result);
-        if (result.data && result.data[0] && result.data[0].body) {
-          console.log("Orders data:", result.data[0].body);
-          setOrders(result.data[0].body);
-        } else {
-          console.log("No orders found in expected structure");
-        }
-      } else {
-        console.error("Orders fetch failed with status:", response.status);
-      }
-    } catch (error) {
-      console.error("Failed to fetch orders:", error);
-    }
+  // Fetch orders only when clicking "Closed This Month"
+  const handleClosedClick = async () => {
+    await fetchOrders();
+    setShowOrdersDialog(true);
   };
 
   // Helper function to get buyer name from contacts
   const getBuyerName = (buyerId: string) => {
     const contact = contacts.find(c => c.id === buyerId);
     return contact ? contact.name : 'Unknown Buyer';
-  };
-
-  // Fetch orders only when clicking "Closed This Month"
-  const handleClosedClick = async () => {
-    await fetchOrders();
-    setShowOrdersDialog(true);
   };
 
   // Show today's interactions
@@ -188,6 +156,7 @@ const Index = () => {
     const syncInterval = setInterval(() => {
       if (navigator.onLine) {
         syncData();
+        fetchOrders();
       }
     }, 60 * 60 * 1000);
 

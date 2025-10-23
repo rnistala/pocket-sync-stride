@@ -2,10 +2,11 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { Contact, Interaction } from "@/hooks/useLeadStorage";
 
 const DB_NAME = "LeadManagerDB";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const CONTACTS_STORE = "contacts";
 const INTERACTIONS_STORE = "interactions";
 const METADATA_STORE = "metadata";
+const ORDERS_STORE = "orders";
 
 class IndexedDBManager {
   private db: IDBDatabase | null = null;
@@ -34,6 +35,10 @@ class IndexedDBManager {
 
         if (!db.objectStoreNames.contains(METADATA_STORE)) {
           db.createObjectStore(METADATA_STORE, { keyPath: "key" });
+        }
+
+        if (!db.objectStoreNames.contains(ORDERS_STORE)) {
+          db.createObjectStore(ORDERS_STORE, { keyPath: "po_no" });
         }
       };
     });
@@ -146,6 +151,36 @@ class IndexedDBManager {
       request.onerror = () => reject(request.error);
     });
   }
+
+  async getAllOrders(): Promise<any[]> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(ORDERS_STORE, "readonly");
+      const store = transaction.objectStore(ORDERS_STORE);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveOrders(orders: any[]): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(ORDERS_STORE, "readwrite");
+      const store = transaction.objectStore(ORDERS_STORE);
+
+      store.clear();
+      orders.forEach(order => {
+        if (order.po_no) {
+          store.add(order);
+        }
+      });
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
 }
 
 const dbManager = new IndexedDBManager();
@@ -153,6 +188,7 @@ const dbManager = new IndexedDBManager();
 interface LeadContextType {
   contacts: Contact[];
   interactions: Interaction[];
+  orders: any[];
   lastSync: Date | null;
   isLoading: boolean;
   scrollPosition: number;
@@ -170,6 +206,7 @@ interface LeadContextType {
   mergeInteractionsFromAPI: (apiInteractions: any[], contactId: string) => Promise<void>;
   toggleStarred: (contactId: string) => Promise<void>;
   updateContactFollowUp: (contactId: string, followUpDate: string) => Promise<void>;
+  fetchOrders: () => Promise<void>;
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -177,6 +214,7 @@ const LeadContext = createContext<LeadContextType | undefined>(undefined);
 export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -189,14 +227,16 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     const loadData = async () => {
       try {
         await dbManager.init();
-        const [loadedContacts, loadedInteractions, syncTime] = await Promise.all([
+        const [loadedContacts, loadedInteractions, loadedOrders, syncTime] = await Promise.all([
           dbManager.getAllContacts(),
           dbManager.getAllInteractions(),
+          dbManager.getAllOrders(),
           dbManager.getMetadata("lastSync"),
         ]);
 
         setContacts(loadedContacts);
         setInteractions(loadedInteractions);
+        setOrders(loadedOrders);
         if (syncTime) {
           setLastSync(new Date(syncTime));
         }
@@ -519,9 +559,35 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     await dbManager.setMetadata("lastSync", now.toISOString());
   }, [contacts, interactions, saveContacts, saveInteractions]);
 
+  const fetchOrders = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("userToken");
+    if (!userId || !token) return;
+
+    try {
+      const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: 78, offset: 0, limit: 0 })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data && result.data[0] && result.data[0].body) {
+          const fetchedOrders = result.data[0].body;
+          await dbManager.saveOrders(fetchedOrders);
+          setOrders(fetchedOrders);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+    }
+  }, []);
+
   const value = useMemo(() => ({
     contacts,
     interactions,
+    orders,
     lastSync,
     isLoading,
     scrollPosition,
@@ -539,7 +605,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     mergeInteractionsFromAPI,
     toggleStarred,
     updateContactFollowUp,
-  }), [contacts, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred, updateContactFollowUp]);
+    fetchOrders,
+  }), [contacts, interactions, orders, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred, updateContactFollowUp, fetchOrders]);
 
   return (
     <LeadContext.Provider value={value}>
