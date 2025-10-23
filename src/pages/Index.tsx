@@ -126,36 +126,21 @@ const Index = () => {
       navigate("/login");
     }
 
-    const handleOnline = () => {
-      setIsOnline(true);
-      // Auto-sync contacts when coming back online
-      syncData();
-      // Also refresh orders
-      fetchOrders();
-    };
+    const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Auto-sync on mount if online
+    // Sync on mount (after login)
     if (navigator.onLine) {
       syncData();
       fetchOrders();
     }
 
-    // Auto-sync contacts every hour when online
-    const syncInterval = setInterval(() => {
-      if (navigator.onLine) {
-        syncData();
-        fetchOrders();
-      }
-    }, 60 * 60 * 1000);
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
-      clearInterval(syncInterval);
     };
   }, [navigate]);
 
