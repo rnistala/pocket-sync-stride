@@ -181,6 +181,7 @@ const Index = () => {
     // Auto-sync on mount if online
     if (navigator.onLine) {
       syncData();
+      fetchOrders();
     }
 
     // Auto-sync contacts every hour when online
