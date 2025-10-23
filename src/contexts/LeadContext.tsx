@@ -562,25 +562,55 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const fetchOrders = useCallback(async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("userToken");
-    if (!userId || !token) return;
+    
+    console.log("[ORDERS] Starting fetchOrders");
+    console.log("[ORDERS] userId:", userId);
+    console.log("[ORDERS] token exists:", !!token);
+    
+    if (!userId || !token) {
+      console.error("[ORDERS] Missing userId or token");
+      return;
+    }
 
     try {
-      const response = await fetch(`https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`, {
+      const url = `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`;
+      const payload = { id: 78, offset: 0, limit: 0 };
+      
+      console.log("[ORDERS] Fetching from:", url);
+      console.log("[ORDERS] Payload:", payload);
+      
+      const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: 78, offset: 0, limit: 0 })
+        body: JSON.stringify(payload)
       });
+
+      console.log("[ORDERS] Response status:", response.status);
+      console.log("[ORDERS] Response ok:", response.ok);
 
       if (response.ok) {
         const result = await response.json();
+        console.log("[ORDERS] Response data:", result);
+        
         if (result.data && result.data[0] && result.data[0].body) {
           const fetchedOrders = result.data[0].body;
+          console.log("[ORDERS] Fetched orders count:", fetchedOrders.length);
+          console.log("[ORDERS] Sample order:", fetchedOrders[0]);
+          
           await dbManager.saveOrders(fetchedOrders);
           setOrders(fetchedOrders);
+          console.log("[ORDERS] Orders saved to IndexedDB and state updated");
+        } else {
+          console.error("[ORDERS] Unexpected response structure:", result);
         }
+      } else {
+        const errorText = await response.text();
+        console.error("[ORDERS] API returned error status:", response.status);
+        console.error("[ORDERS] Error response:", errorText);
       }
     } catch (error) {
-      console.error("Failed to fetch orders:", error);
+      console.error("[ORDERS] Failed to fetch orders:", error);
+      console.error("[ORDERS] Error details:", error instanceof Error ? error.message : String(error));
     }
   }, []);
 
