@@ -31,12 +31,11 @@ serve(async (req) => {
     }
 
     console.log(`Researching company: ${companyName}${city ? ` in ${city}` : ''}`);
-    // Using Perplexity's sonar model for fast, cost-effective search
-
-    // Use a simple, direct query like the user would
+    
+    // Simple, focused query for faster results
     const searchQuery = city 
-      ? `Please brief me about ${companyName}, ${city}. Include owner/management names and contact details (address, phone, email).`
-      : `Please brief me about ${companyName}. Include owner/management names and contact details (address, phone, email).`;
+      ? `${companyName} in ${city} - industry, owner, address, phone, email`
+      : `${companyName} - industry, owner, address, phone, email`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -49,7 +48,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a business research assistant. After providing your brief, format the key information as JSON at the end: {"industry": "...", "products": "...", "size": "...", "owner": "...", "address": "...", "phone": "...", "email": "...", "recentNews": "...", "summary": "..."}. If any information is not available, use "Not available" for that field.'
+            content: 'Return brief company info as JSON: {"industry": "...", "products": "...", "size": "...", "owner": "...", "address": "...", "phone": "...", "email": "...", "recentNews": "...", "summary": "..."}. Use "Not available" if data missing.'
           },
           {
             role: 'user',
@@ -57,7 +56,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.2,
-        max_tokens: 800
+        max_tokens: 400
       }),
     });
 
