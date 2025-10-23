@@ -34,8 +34,8 @@ serve(async (req) => {
 
     // Use a simple, direct query like the user would
     const searchQuery = city 
-      ? `Please brief me about ${companyName}, ${city}`
-      : `Please brief me about ${companyName}`;
+      ? `Please brief me about ${companyName}, ${city}. Include owner/management names and contact details (address, phone, email).`
+      : `Please brief me about ${companyName}. Include owner/management names and contact details (address, phone, email).`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -48,7 +48,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a business research assistant. After providing your brief, format the key information as JSON at the end: {"industry": "...", "products": "...", "size": "...", "recentNews": "...", "summary": "..."}. Be concise and factual.'
+            content: 'You are a business research assistant. After providing your brief, format the key information as JSON at the end: {"industry": "...", "products": "...", "size": "...", "owner": "...", "address": "...", "phone": "...", "email": "...", "recentNews": "...", "summary": "..."}. If any information is not available, use "Not available" for that field.'
           },
           {
             role: 'user',

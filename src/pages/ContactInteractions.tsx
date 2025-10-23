@@ -1048,6 +1048,34 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                     <p className="text-sm text-muted-foreground">{researchData.products}</p>
                   </div>
 
+                  {researchData.owner && researchData.owner !== "Not available" && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Owner / Management</h3>
+                      <p className="text-sm text-muted-foreground">{researchData.owner}</p>
+                    </div>
+                  )}
+
+                  {researchData.address && researchData.address !== "Not available" && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Address</h3>
+                      <p className="text-sm text-muted-foreground">{researchData.address}</p>
+                    </div>
+                  )}
+
+                  {researchData.phone && researchData.phone !== "Not available" && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Phone</h3>
+                      <p className="text-sm text-muted-foreground">{researchData.phone}</p>
+                    </div>
+                  )}
+
+                  {researchData.email && researchData.email !== "Not available" && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Email</h3>
+                      <p className="text-sm text-muted-foreground">{researchData.email}</p>
+                    </div>
+                  )}
+
                   {researchData.size && (
                     <div>
                       <h3 className="text-sm font-semibold mb-2">Company Size</h3>
