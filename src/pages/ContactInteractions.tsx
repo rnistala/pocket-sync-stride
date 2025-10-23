@@ -186,7 +186,22 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   };
 
   const handleWhatsApp = () => {
-    if (contact.phone) window.open(`https://wa.me/${contact.phone.replace(/\D/g, "")}`, "_blank");
+    if (contact.phone) {
+      let phoneNumber = contact.phone;
+      
+      // If there's a comma, take only the part before it
+      if (phoneNumber.includes(',')) {
+        phoneNumber = phoneNumber.split(',')[0].trim();
+      }
+      
+      // Remove all non-digit characters
+      const cleanNumber = phoneNumber.replace(/\D/g, "");
+      
+      // If the original doesn't start with +, add +91
+      const finalNumber = phoneNumber.trim().startsWith('+') ? cleanNumber : '91' + cleanNumber;
+      
+      window.open(`https://wa.me/${finalNumber}`, "_blank");
+    }
   };
 
   const handleEmail = () => {
