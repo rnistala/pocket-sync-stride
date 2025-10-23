@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown } from "lucide-react";
+import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
@@ -69,6 +69,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     contact.followup_on ? format(new Date(contact.followup_on), "dd-MM-yyyy") : ""
   );
   const [nextFollowUpDateText, setNextFollowUpDateText] = useState("");
+  const [isResearchDialogOpen, setIsResearchDialogOpen] = useState(false);
+  const [isResearching, setIsResearching] = useState(false);
+  const [researchData, setResearchData] = useState<any>(null);
   const [editFormData, setEditFormData] = useState({
     name: contact.name || "",
     company: contact.company || "",
@@ -627,6 +630,55 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     }
   };
 
+  const handleResearchCompany = async () => {
+    if (!contact.company) {
+      toast.error("No company name available");
+      return;
+    }
+
+    setIsResearching(true);
+    setResearchData(null);
+    setIsResearchDialogOpen(true);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-company`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ companyName: contact.company }),
+        }
+      );
+
+      if (response.status === 429) {
+        toast.error("Rate limit exceeded. Please try again later.");
+        setIsResearchDialogOpen(false);
+        return;
+      }
+
+      if (response.status === 402) {
+        toast.error("AI credits depleted. Please add credits to your workspace.");
+        setIsResearchDialogOpen(false);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to research company");
+      }
+
+      const data = await response.json();
+      setResearchData(data.research);
+    } catch (error) {
+      console.error("Error researching company:", error);
+      toast.error("Failed to research company");
+      setIsResearchDialogOpen(false);
+    } finally {
+      setIsResearching(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-3 overflow-x-hidden">
@@ -933,7 +985,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-1.5 mt-2">
+          <div className="grid grid-cols-4 gap-1.5 mt-2">
             <Button onClick={handleCall} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.phone}>
               <Phone className="h-4 w-4" />
             </Button>
@@ -945,8 +997,62 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             <Button onClick={handleEmail} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.email}>
               <Mail className="h-4 w-4" />
             </Button>
+            <Button onClick={handleResearchCompany} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.company}>
+              <Info className="h-4 w-4" />
+            </Button>
           </div>
 
+          <Dialog open={isResearchDialogOpen} onOpenChange={setIsResearchDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Company Research: {contact.company}</DialogTitle>
+              </DialogHeader>
+              
+              {isResearching ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center space-y-3">
+                    <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Researching company information...</p>
+                  </div>
+                </div>
+              ) : researchData ? (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Summary</h3>
+                    <p className="text-sm text-muted-foreground">{researchData.summary}</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Industry</h3>
+                    <Badge variant="secondary">{researchData.industry}</Badge>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">Products & Services</h3>
+                    <p className="text-sm text-muted-foreground">{researchData.products}</p>
+                  </div>
+
+                  {researchData.size && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Company Size</h3>
+                      <p className="text-sm text-muted-foreground">{researchData.size}</p>
+                    </div>
+                  )}
+
+                  {researchData.recentNews && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-2">Recent News</h3>
+                      <p className="text-sm text-muted-foreground">{researchData.recentNews}</p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => setIsResearchDialogOpen(false)}>Close</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </Card>
 
         <div className="flex items-center justify-between mb-2">
