@@ -33,7 +33,7 @@ const ContactInteractions = () => {
 };
 
 const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string; navigate: any }) => {
-  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp } = useLeadContext();
+  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp, fetchOrders } = useLeadContext();
   
   // Get fresh contact from context every render
   const contact = contacts.find((c) => c.id === contactId);
@@ -586,6 +586,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
           orderValue: "",
           orderNotes: "",
         });
+        // Refresh orders from API and update IndexedDB
+        await fetchOrders();
       } else {
         toast.error("Failed to submit order");
       }
