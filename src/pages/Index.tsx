@@ -112,7 +112,7 @@ const Index = () => {
         const orderDate = new Date(order.sodate);
         return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
       })
-      .reduce((sum, order) => sum + (parseFloat(order.totalamount) || 0), 0);
+      .reduce((sum, order) => sum + (parseFloat(order.total_basic) || 0), 0);
     
     return {
       todaysInteractions,
