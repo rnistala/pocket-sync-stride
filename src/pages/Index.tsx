@@ -105,26 +105,18 @@ const Index = () => {
       return interactionDate >= today && interactionDate < tomorrow;
     }).length;
     
-    // Orders Closed This Month: count orders created this month
-    const ordersClosedThisMonth = orders.filter(order => {
-      if (!order.sodate) return false;
-      const orderDate = new Date(order.sodate);
-      const isInRange = orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
-      console.log("Order check:", {
-        sodate: order.sodate,
-        orderDate: orderDate.toISOString(),
-        firstDayOfMonth: firstDayOfMonth.toISOString(),
-        lastDayOfMonth: lastDayOfMonth.toISOString(),
-        isInRange
-      });
-      return isInRange;
-    }).length;
-    
-    console.log("Total orders:", orders.length, "Orders this month:", ordersClosedThisMonth);
+    // Total Order Value This Month: sum of order values created this month
+    const orderValueThisMonth = orders
+      .filter(order => {
+        if (!order.sodate) return false;
+        const orderDate = new Date(order.sodate);
+        return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
+      })
+      .reduce((sum, order) => sum + (parseFloat(order.totalamount) || 0), 0);
     
     return {
       todaysInteractions,
-      leadsClosedThisMonth: ordersClosedThisMonth
+      leadsClosedThisMonth: orderValueThisMonth
     };
   }, [contacts, interactions, orders]);
 
