@@ -36,7 +36,9 @@ const Login = () => {
       localStorage.setItem("userToken", JSON.stringify(data));
       
       toast.success("Login successful!");
-      navigate("/");
+      
+      // Navigate and trigger initial sync
+      navigate("/", { state: { shouldSync: true } });
     } catch (error) {
       setDebugInfo(`Error: ${error instanceof Error ? error.message : String(error)}`);
       toast.error("Invalid credentials");

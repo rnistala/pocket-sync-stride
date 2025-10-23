@@ -9,7 +9,7 @@ import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { LogOut, Search, X, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -22,6 +22,7 @@ const Index = () => {
   const [showOrdersDialog, setShowOrdersDialog] = useState(false);
   const [showInteractionsDialog, setShowInteractionsDialog] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const filteredContacts = useMemo(() => {
     let filtered = contacts;
@@ -124,6 +125,15 @@ const Index = () => {
     const userId = localStorage.getItem("userId");
     if (!userId) {
       navigate("/login");
+      return;
+    }
+
+    // Only sync if coming from login
+    if (location.state?.shouldSync && navigator.onLine) {
+      syncData();
+      fetchOrders();
+      // Clear the state
+      window.history.replaceState({}, document.title);
     }
 
     const handleOnline = () => setIsOnline(true);
@@ -132,17 +142,11 @@ const Index = () => {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Sync on mount (after login)
-    if (navigator.onLine) {
-      syncData();
-      fetchOrders();
-    }
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [navigate]);
+  }, [navigate, location.state, syncData, fetchOrders]);
 
   const handleLogout = () => {
     localStorage.removeItem("userId");
