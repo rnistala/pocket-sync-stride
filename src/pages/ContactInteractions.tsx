@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown, Info } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -87,6 +87,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   });
 
   const interactions = getContactInteractions(contact.id);
+  
+  // Track which contacts have been fetched
+  const fetchedContactsRef = useRef<Set<string>>(new Set());
 
   // useEffect hooks
   useEffect(() => {
@@ -109,14 +112,22 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     return () => clearInterval(syncInterval);
   }, [interactions, isSyncing]);
 
+  // Fetch interactions only once when contact is first loaded
   useEffect(() => {
     const fetchInteractionHistory = async () => {
+      // Skip if already fetched for this contact
+      if (fetchedContactsRef.current.has(contact.id)) return;
+      
+      // Skip if already have interactions or currently loading
       if (interactions.length > 0 || isLoadingHistory) return;
       
       const userId = localStorage.getItem("userId");
       if (!userId) return;
 
+      // Mark as fetched before starting to prevent duplicate calls
+      fetchedContactsRef.current.add(contact.id);
       setIsLoadingHistory(true);
+      
       try {
         const response = await fetch(
           `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
@@ -150,13 +161,15 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         }
       } catch (error) {
         console.error("Error fetching interaction history:", error);
+        // Remove from fetched set on error so it can be retried
+        fetchedContactsRef.current.delete(contact.id);
       } finally {
         setIsLoadingHistory(false);
       }
     };
 
     fetchInteractionHistory();
-  }, [contact.id, interactions.length, isLoadingHistory, mergeInteractionsFromAPI]);
+  }, [contact.id]); // Only depend on contact.id
 
   // handler functions
   const handleAddInteraction = async () => {
