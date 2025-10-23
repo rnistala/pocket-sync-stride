@@ -31,6 +31,7 @@ serve(async (req) => {
     }
 
     console.log(`Researching company: ${companyName}${city ? ` in ${city}` : ''}`);
+    // Using Perplexity's sonar model for fast, cost-effective search
 
     // Use a simple, direct query like the user would
     const searchQuery = city 
