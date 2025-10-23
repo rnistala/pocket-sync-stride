@@ -43,35 +43,13 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a business research assistant. Provide concise, factual information about companies including their industry, key products/services, size, and recent news or developments. Keep responses under 250 words.'
+            content: 'You are a business research assistant. Provide information in this exact JSON format: {"industry": "...", "products": "...", "size": "...", "recentNews": "...", "summary": "..."}. Be concise and factual.'
           },
           {
             role: 'user',
-            content: `Research the company "${companyName}" and provide: 1) Industry/sector, 2) Main products/services, 3) Company size (if known), 4) Recent news or developments (if any). Be concise and factual.`
+            content: `Research "${companyName}" and return a JSON object with: industry (sector), products (main offerings), size (employee count if known), recentNews (recent developments), summary (brief overview).`
           }
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "company_research",
-              description: "Return structured company research data",
-              parameters: {
-                type: "object",
-                properties: {
-                  industry: { type: "string", description: "Primary industry or sector" },
-                  products: { type: "string", description: "Main products or services" },
-                  size: { type: "string", description: "Company size or employee count if known" },
-                  recentNews: { type: "string", description: "Recent news or developments" },
-                  summary: { type: "string", description: "Brief overview of the company" }
-                },
-                required: ["industry", "products", "summary"],
-                additionalProperties: false
-              }
-            }
-          }
-        ],
-        tool_choice: "required",
         temperature: 0.2,
         max_tokens: 1000
       }),
@@ -104,18 +82,32 @@ serve(async (req) => {
     const data = await response.json();
     console.log('AI response received:', JSON.stringify(data));
 
-    // Extract the tool call result
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall || !toolCall.function?.arguments) {
-      console.error('No tool call in response:', data);
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      console.error('No content in response:', data);
       return new Response(
         JSON.stringify({ error: 'Invalid AI response format' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const research = JSON.parse(toolCall.function.arguments);
-    console.log('Research data parsed:', research);
+    // Extract JSON from response (it might be wrapped in markdown code blocks)
+    let research;
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        research = JSON.parse(jsonMatch[0]);
+      } else {
+        research = JSON.parse(content);
+      }
+      console.log('Research data parsed:', research);
+    } catch (parseError) {
+      console.error('Failed to parse JSON:', parseError, 'Content:', content);
+      return new Response(
+        JSON.stringify({ error: 'Failed to parse research data' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     return new Response(
       JSON.stringify({ research }),
