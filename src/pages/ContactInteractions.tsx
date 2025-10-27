@@ -699,7 +699,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   };
 
   return (
-    <div className="min-h-screen bg-background p-3 overflow-x-hidden">
+    <div className="min-h-screen bg-textured p-3 overflow-x-hidden">
       <div className="max-w-3xl mx-auto space-y-3 w-full">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate('/')} size="sm" className="gap-1.5">
