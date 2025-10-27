@@ -62,45 +62,75 @@ export const FeatureTour = ({ steps, onComplete, onSkip }: FeatureTourProps) => 
 
     const position = currentStepData.position || "bottom";
     const padding = 20;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const tooltipWidth = 320; // w-80 = 20rem = 320px
+    const isMobile = viewportWidth < 640;
 
+    // Calculate initial position
+    let style: any = {};
+    
     switch (position) {
       case "top":
-        return {
-          top: `${targetRect.top - padding}px`,
+        style = {
+          top: `${Math.max(padding, targetRect.top - padding)}px`,
           left: `${targetRect.left + targetRect.width / 2}px`,
           transform: "translate(-50%, -100%)",
         };
+        break;
       case "bottom":
-        return {
+        style = {
           top: `${targetRect.bottom + padding}px`,
           left: `${targetRect.left + targetRect.width / 2}px`,
           transform: "translate(-50%, 0)",
         };
+        break;
       case "left":
-        return {
+        style = {
           top: `${targetRect.top + targetRect.height / 2}px`,
-          left: `${targetRect.left - padding}px`,
+          left: `${Math.max(padding, targetRect.left - padding)}px`,
           transform: "translate(-100%, -50%)",
         };
+        break;
       case "right":
-        return {
+        style = {
           top: `${targetRect.top + targetRect.height / 2}px`,
-          left: `${targetRect.right + padding}px`,
+          left: `${Math.min(viewportWidth - tooltipWidth - padding, targetRect.right + padding)}px`,
           transform: "translate(0, -50%)",
         };
+        break;
       default:
-        return {
+        style = {
           top: `${targetRect.bottom + padding}px`,
           left: `${targetRect.left + targetRect.width / 2}px`,
           transform: "translate(-50%, 0)",
         };
     }
+
+    // Adjust for mobile to keep tooltip within viewport
+    if (isMobile) {
+      // Center horizontally on mobile with padding
+      style.left = "50%";
+      style.transform = "translate(-50%, 0)";
+      style.maxWidth = `calc(100vw - ${padding * 2}px)`;
+      
+      // Position below target on mobile, but ensure it's visible
+      const topPosition = targetRect.bottom + padding;
+      if (topPosition + 300 > viewportHeight) {
+        // If tooltip would go off bottom, position it above
+        style.top = `${Math.max(padding, targetRect.top - 200)}px`;
+      } else {
+        style.top = `${topPosition}px`;
+      }
+    }
+
+    return style;
   };
 
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 z-[9998] bg-black/70 animate-fade-in">
+      <div className="fixed inset-0 z-[9998] bg-black/70 animate-fade-in overflow-hidden">
         {/* Spotlight */}
         {targetRect && (
           <div
@@ -118,7 +148,7 @@ export const FeatureTour = ({ steps, onComplete, onSkip }: FeatureTourProps) => 
       {/* Tooltip */}
       <Card
         ref={tooltipRef}
-        className="fixed z-[9999] w-80 shadow-xl animate-scale-in"
+        className="fixed z-[9999] w-80 max-w-[calc(100vw-2rem)] shadow-xl animate-scale-in mx-4 sm:mx-0"
         style={getTooltipPosition()}
       >
         <CardHeader>
