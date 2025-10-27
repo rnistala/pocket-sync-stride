@@ -193,7 +193,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-textured">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border">
+      <div className="sticky top-0 z-10 bg-textured/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-3xl mx-auto px-3 py-2 md:px-8 md:py-4">
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <div>
