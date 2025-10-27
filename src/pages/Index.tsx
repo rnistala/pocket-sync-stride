@@ -13,7 +13,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Search, X, Star } from "lucide-react";
+import { LogOut, Search, X, Star, HelpCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -269,11 +269,11 @@ const Index = () => {
               <ThemeToggle />
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => setShowTour(true)}
-                className="text-xs h-8 px-2"
+                className="h-8 w-8"
               >
-                Tour
+                <HelpCircle className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />

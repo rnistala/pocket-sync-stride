@@ -746,7 +746,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     {
       target: '[data-tour="log-interaction"]',
       title: "Log Interaction",
-      description: "Record calls, meetings, and other interactions with this contact.",
+      description: "Record calls, meetings, and other interactions with this contact. Interactions sync automatically.",
       position: "top" as const,
     },
     {
@@ -759,12 +759,6 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       target: '[data-tour="research-company"]',
       title: "Research Company",
       description: "Use AI to research the contact's company for insights.",
-      position: "top" as const,
-    },
-    {
-      target: '[data-tour="sync-interactions"]',
-      title: "Sync Interactions",
-      description: "Synchronize your interaction logs with the server.",
       position: "top" as const,
     },
   ];
@@ -793,12 +787,11 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => setShowTour(true)}
-              className="gap-1.5"
             >
-              <HelpCircle className="h-3.5 w-3.5" />
-              Tour
+              <HelpCircle className="h-4 w-4" />
             </Button>
             <ThemeToggle />
           </div>
@@ -1403,18 +1396,6 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               </div>
             </DialogContent>
           </Dialog>
-          </div>
-          <div data-tour="sync-interactions">
-            <Button 
-              onClick={handleSyncInteractions} 
-              size="sm" 
-              variant="outline"
-              disabled={isSyncing}
-              className="h-8 gap-1.5"
-            >
-              <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              Sync
-            </Button>
           </div>
           </div>
         </div>
