@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown, Info } from "lucide-react";
+import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown, Info, HelpCircle } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import { getApiRoot, getStatuses } from "@/lib/config";
 import { format, addYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { FeatureTour } from "@/components/FeatureTour";
 
 const ContactInteractions = () => {
   const { id } = useParams();
@@ -55,6 +56,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [statuses, setStatuses] = useState<string[]>([]);
+  const [showTour, setShowTour] = useState(false);
   const [orderFormData, setOrderFormData] = useState({
     orderNumber: "",
     orderDate: new Date(),
@@ -716,15 +718,90 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     }
   };
 
+  const tourSteps = [
+    {
+      target: '[data-tour="contact-actions"]',
+      title: "Contact Actions",
+      description: "Star to favorite, drop to archive, or edit contact details.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="contact-status"]',
+      title: "Contact Status",
+      description: "Update the status of this contact to track progress.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="follow-up-date"]',
+      title: "Follow-up Date",
+      description: "Set or update when to follow up with this contact.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="quick-actions"]',
+      title: "Quick Actions",
+      description: "Quickly call, message on WhatsApp, or email this contact.",
+      position: "top" as const,
+    },
+    {
+      target: '[data-tour="log-interaction"]',
+      title: "Log Interaction",
+      description: "Record calls, meetings, and other interactions with this contact.",
+      position: "top" as const,
+    },
+    {
+      target: '[data-tour="create-order"]',
+      title: "Create Order",
+      description: "Submit a new order for this contact.",
+      position: "top" as const,
+    },
+    {
+      target: '[data-tour="research-company"]',
+      title: "Research Company",
+      description: "Use AI to research the contact's company for insights.",
+      position: "top" as const,
+    },
+    {
+      target: '[data-tour="sync-interactions"]',
+      title: "Sync Interactions",
+      description: "Synchronize your interaction logs with the server.",
+      position: "top" as const,
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-textured p-3 overflow-x-hidden">
+      {showTour && (
+        <FeatureTour
+          steps={tourSteps}
+          onComplete={() => {
+            setShowTour(false);
+            localStorage.setItem("contactDetailsTourCompleted", "true");
+          }}
+          onSkip={() => {
+            setShowTour(false);
+            localStorage.setItem("contactDetailsTourCompleted", "true");
+          }}
+        />
+      )}
       <div className="max-w-3xl mx-auto space-y-3 w-full">
         <div className="flex items-center justify-between">
           <Button variant="ghost" onClick={() => navigate('/')} size="sm" className="gap-1.5">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back
           </Button>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTour(true)}
+              className="gap-1.5"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+              Tour
+            </Button>
+            <ThemeToggle />
+          </div>
         </div>
 
         <Card className="p-3">
@@ -733,7 +810,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               <h1 className="text-lg font-bold mb-0.5">{contact.name}</h1>
               <p className="text-xs text-muted-foreground mb-2">{contact.company} • {contact.city}</p>
             </div>
-            <div className="flex items-center gap-0.5 shrink-0">
+            <div className="flex items-center gap-0.5 shrink-0" data-tour="contact-actions">
               <Button
                 variant="ghost"
                 size="icon"
@@ -927,7 +1004,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5" data-tour="contact-status">
               <span className="text-xs text-muted-foreground shrink-0">Status:</span>
               <Select
                 value={contact.status || "New"}
@@ -947,7 +1024,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               </Select>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5" data-tour="follow-up-date">
               <span className="text-xs text-muted-foreground shrink-0">Follow-Up:</span>
               <Popover open={isFollowUpCalendarOpen} onOpenChange={setIsFollowUpCalendarOpen}>
                 <div className="relative flex-1">
@@ -1022,7 +1099,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             </div>
           </div>
           
-          <div className="grid grid-cols-4 gap-1.5 mt-2">
+          <div className="grid grid-cols-4 gap-1.5 mt-2" data-tour="quick-actions">
             <Button onClick={handleCall} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.phone}>
               <Phone className="h-4 w-4" />
             </Button>
@@ -1034,9 +1111,11 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             <Button onClick={handleEmail} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.email}>
               <Mail className="h-4 w-4" />
             </Button>
-            <Button onClick={handleResearchCompany} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.company}>
-              <Info className="h-4 w-4" />
-            </Button>
+            <div data-tour="research-company">
+              <Button onClick={handleResearchCompany} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.company}>
+                <Info className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           <Dialog open={isResearchDialogOpen} onOpenChange={setIsResearchDialogOpen}>
@@ -1123,13 +1202,14 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-base font-semibold">Interaction History</h2>
           <div className="flex gap-2">
-            <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-8" variant="outline">
-                  <Plus className="h-3 w-3 mr-1" />
-                  Order
-                </Button>
-              </DialogTrigger>
+            <div data-tour="create-order">
+              <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="h-8" variant="outline">
+                    <Plus className="h-3 w-3 mr-1" />
+                    Order
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle className="text-lg">Create Order</DialogTitle>
@@ -1219,13 +1299,15 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                 </div>
               </DialogContent>
             </Dialog>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-8">
-                  <Plus className="h-3 w-3 mr-1" />
-                  Log
-                </Button>
-              </DialogTrigger>
+            </div>
+            <div data-tour="log-interaction">
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="h-8">
+                    <Plus className="h-3 w-3 mr-1" />
+                    Log
+                  </Button>
+                </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-lg">Log Interaction</DialogTitle>
@@ -1321,6 +1403,19 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               </div>
             </DialogContent>
           </Dialog>
+          </div>
+          <div data-tour="sync-interactions">
+            <Button 
+              onClick={handleSyncInteractions} 
+              size="sm" 
+              variant="outline"
+              disabled={isSyncing}
+              className="h-8 gap-1.5"
+            >
+              <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+              Sync
+            </Button>
+          </div>
           </div>
         </div>
 
