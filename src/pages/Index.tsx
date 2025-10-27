@@ -7,6 +7,7 @@ import { FollowUpReminder } from "@/components/FollowUpReminder";
 import { MetricsCard } from "@/components/MetricsCard";
 import { AdvancedSearchDialog, AdvancedFilters } from "@/components/AdvancedSearchDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { FeatureTour } from "@/components/FeatureTour";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,47 @@ const Index = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOrdersDialog, setShowOrdersDialog] = useState(false);
   const [showInteractionsDialog, setShowInteractionsDialog] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+
+  const tourSteps = [
+    {
+      target: '[data-tour="search"]',
+      title: "Search & Filter",
+      description: "Search contacts by name, company, or email. Use advanced filters to narrow down your results.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="metrics"]',
+      title: "Key Metrics",
+      description: "Track today's interactions and this month's order values at a glance.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="add-contact"]',
+      title: "Add Contacts",
+      description: "Quickly add new contacts with their details and assign them a status.",
+      position: "left" as const,
+    },
+    {
+      target: '[data-tour="sync"]',
+      title: "Sync Data",
+      description: "Keep your data synchronized with the server. The indicator shows your connection status.",
+      position: "left" as const,
+    },
+    {
+      target: '[data-tour="contact-list"]',
+      title: "Contact List",
+      description: "View and manage all your contacts. Click on a contact to see detailed interactions and history.",
+      position: "top" as const,
+    },
+  ];
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem("hasSeenTour");
+    if (!hasSeenTour && contacts.length > 0) {
+      setTimeout(() => setShowTour(true), 1000);
+    }
+  }, [contacts.length]);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -193,6 +235,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-textured">
+      {showTour && (
+        <FeatureTour
+          steps={tourSteps}
+          onComplete={() => {
+            setShowTour(false);
+            localStorage.setItem("hasSeenTour", "true");
+          }}
+          onSkip={() => {
+            setShowTour(false);
+            localStorage.setItem("hasSeenTour", "true");
+          }}
+        />
+      )}
+      
       <div className="sticky top-0 z-10 bg-textured backdrop-blur-sm border-b border-border shadow-sm">
         <div className="max-w-3xl mx-auto px-3 py-2 md:px-8 md:py-4">
           <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -205,13 +261,21 @@ const Index = () => {
               <NetworkStatus />
               <FollowUpReminder />
               <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowTour(true)}
+                className="text-xs h-8 px-2"
+              >
+                Tour
+              </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          <div className="relative mb-3">
+          <div className="relative mb-3" data-tour="search">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
@@ -254,7 +318,9 @@ const Index = () => {
                     <span className="text-xs text-muted-foreground ml-1">of {contacts.length}</span>
                   )}
                 </span>
-                <SyncButton lastSync={lastSync} isOnline={isOnline} />
+                <div data-tour="sync">
+                  <SyncButton lastSync={lastSync} isOnline={isOnline} />
+                </div>
               </div>
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -267,26 +333,32 @@ const Index = () => {
                 <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
                 Starred
               </Button>
-              <AddContactForm />
+              <div data-tour="add-contact">
+                <AddContactForm />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
-        <MetricsCard 
-          todaysInteractions={metrics.todaysInteractions} 
-          leadsClosedThisMonth={metrics.leadsClosedThisMonth}
-          onTodaysClick={handleTodaysClick}
-          onClosedClick={handleClosedClick}
-        />
+        <div data-tour="metrics">
+          <MetricsCard 
+            todaysInteractions={metrics.todaysInteractions} 
+            leadsClosedThisMonth={metrics.leadsClosedThisMonth}
+            onTodaysClick={handleTodaysClick}
+            onClosedClick={handleClosedClick}
+          />
+        </div>
 
         {isLoading ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
             Loading contacts...
           </div>
         ) : (
-          <ContactList contacts={filteredContacts} />
+          <div data-tour="contact-list">
+            <ContactList contacts={filteredContacts} />
+          </div>
         )}
       </div>
       <BackToTop />
