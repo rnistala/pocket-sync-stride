@@ -174,8 +174,8 @@ All colors MUST be HSL.
       radial-gradient(circle at 50% 50%, hsl(var(--primary) / 0.015) 0%, transparent 50%);
   }
 
-  /* Default texture - currently using option 1 */
+  /* Default texture - currently using option 4 */
   .bg-textured {
-    @apply bg-texture-1;
+    @apply bg-texture-4;
   }
 }
