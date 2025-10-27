@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { getApiRoot } from "@/lib/config";
 import { format, addYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -130,8 +131,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       setIsLoadingHistory(true);
       
       try {
+        const apiRoot = await getApiRoot();
         const response = await fetch(
-          `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+          `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -267,8 +269,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         ],
       };
 
+      const apiRoot = await getApiRoot();
       const response = await fetch(
-        `https://demo.opterix.in/api/public/tdata/${userId}`,
+        `${apiRoot}/api/public/tdata/${userId}`,
         {
           method: "POST",
           headers: {
@@ -350,7 +353,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
           console.log("[SYNC] Uploading interaction:", interaction.notes);
 
-          await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+          const apiRoot = await getApiRoot();
+          await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -435,7 +439,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         ],
       };
 
-      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+      const apiRoot = await getApiRoot();
+      const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -490,7 +495,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         ],
       };
 
-      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+      const apiRoot = await getApiRoot();
+      const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -538,7 +544,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         ],
       };
 
-      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+      const apiRoot = await getApiRoot();
+      const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -604,10 +611,11 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         ],
       };
 
-      console.log("[ORDER SUBMIT] Sending request to:", `https://demo.opterix.in/api/public/tdata/${userId}`);
+      const apiRoot = await getApiRoot();
+      console.log("[ORDER SUBMIT] Sending request to:", `${apiRoot}/api/public/tdata/${userId}`);
       console.log("[ORDER SUBMIT] Payload:", JSON.stringify(payload, null, 2));
       
-      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+      const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

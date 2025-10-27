@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import logoFull from "@/assets/logo-full.png";
+import { getApiRoot } from "@/lib/config";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -19,7 +20,8 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("https://demo.opterix.in/api/public/token", {
+      const apiRoot = await getApiRoot();
+      const response = await fetch(`${apiRoot}/api/public/token`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json"

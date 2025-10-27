@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { Contact, Interaction } from "@/hooks/useLeadStorage";
+import { getApiRoot } from "@/lib/config";
 
 const DB_NAME = "LeadManagerDB";
 const DB_VERSION = 3;
@@ -444,6 +445,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           console.log("[SYNC] Uploading interactions for contact:", contact.name, contactId);
 
           for (const interaction of contactInteractions) {
+            const apiRoot = await getApiRoot();
             const payload = {
               meta: {
                 btable: "followup",
@@ -466,9 +468,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             };
 
             console.log("[SYNC] Uploading payload:", JSON.stringify(payload, null, 2));
-            console.log("[SYNC] API URL:", `https://demo.opterix.in/api/public/tdata/${userId}`);
+            console.log("[SYNC] API URL:", `${apiRoot}/api/public/tdata/${userId}`);
 
-            const uploadResponse = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+            const uploadResponse = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload),
@@ -501,8 +503,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     let hasMore = true;
 
     while (hasMore) {
+      const apiRoot = await getApiRoot();
       const response = await fetch(
-        `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+        `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -595,7 +598,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const url = `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`;
+      const apiRoot = await getApiRoot();
+      const url = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
       const payload = { id: 78, offset: 0, limit: 0 };
       
       console.log("[ORDERS] Fetching from:", url);

@@ -8,6 +8,7 @@ import { useLeadContext } from "@/contexts/LeadContext";
 import { Star, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { format, addYears } from "date-fns";
+import { getApiRoot } from "@/lib/config";
 
 interface ContactListProps {
   contacts: Contact[];
@@ -174,7 +175,8 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
         ],
       };
 
-      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+      const apiRoot = await getApiRoot();
+      const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getApiRoot } from "@/lib/config";
 
 export interface Contact {
   id: string;
@@ -231,8 +232,9 @@ export const useLeadStorage = () => {
 
     // Fetch contacts in batches
     while (hasMore) {
+      const apiRoot = await getApiRoot();
       const response = await fetch(
-        `https://demo.opterix.in/api/public/formwidgetdatahardcode/${userId}/token`,
+        `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

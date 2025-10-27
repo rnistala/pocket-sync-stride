@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { getApiRoot } from "@/lib/config";
 import {
   Dialog,
   DialogContent,
@@ -90,8 +91,9 @@ export const AddContactForm = () => {
         ],
       };
 
+      const apiRoot = await getApiRoot();
       const response = await fetch(
-        `https://demo.opterix.in/api/public/tdata/${userId}`,
+        `${apiRoot}/api/public/tdata/${userId}`,
         {
           method: "POST",
           headers: {
