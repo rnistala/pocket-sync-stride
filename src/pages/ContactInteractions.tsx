@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown, Info } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
@@ -700,10 +701,13 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   return (
     <div className="min-h-screen bg-background p-3 overflow-x-hidden">
       <div className="max-w-3xl mx-auto space-y-3 w-full">
-        <Button variant="ghost" onClick={() => navigate('/')} size="sm" className="gap-1.5">
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate('/')} size="sm" className="gap-1.5">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
+          </Button>
+          <ThemeToggle />
+        </div>
 
         <Card className="p-3">
           <div className="flex items-start justify-between gap-2 mb-2">

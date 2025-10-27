@@ -6,6 +6,7 @@ import { AddContactForm } from "@/components/AddContactForm";
 import { FollowUpReminder } from "@/components/FollowUpReminder";
 import { MetricsCard } from "@/components/MetricsCard";
 import { AdvancedSearchDialog, AdvancedFilters } from "@/components/AdvancedSearchDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -203,6 +204,7 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <NetworkStatus />
               <FollowUpReminder />
+              <ThemeToggle />
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
