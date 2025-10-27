@@ -166,6 +166,7 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
               {
                 id: contactId,
                 followup_on: format(futureDate, "yyyy-MM-dd"),
+                status: "Drop",
               },
             ],
             dirty: "true",

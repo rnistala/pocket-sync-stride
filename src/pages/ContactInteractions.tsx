@@ -481,6 +481,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
               {
                 id: contact.id,
                 followup_on: format(futureDate, "yyyy-MM-dd"),
+                status: "Drop",
               },
             ],
             dirty: "true",
