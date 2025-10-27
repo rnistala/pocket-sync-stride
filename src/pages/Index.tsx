@@ -507,6 +507,12 @@ const Index = () => {
           </Tabs>
         </DialogContent>
       </Dialog>
+      
+      <footer className="mt-8 pb-4 text-center">
+        <p className="text-xs text-muted-foreground">
+          © Copyright ProductRx Consulting Pvt Ltd. All rights reserved.
+        </p>
+      </footer>
     </div>
   );
 };
