@@ -250,18 +250,44 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     const loadData = async () => {
       try {
         await dbManager.init();
-        const [loadedContacts, loadedInteractions, loadedOrders, syncTime] = await Promise.all([
-          dbManager.getAllContacts(),
-          dbManager.getAllInteractions(),
-          dbManager.getAllOrders(),
-          dbManager.getMetadata("lastSync"),
-        ]);
+        
+        // Check if API root has changed
+        const currentApiRoot = await getApiRoot();
+        const storedApiRoot = await dbManager.getMetadata("apiRoot");
+        
+        if (storedApiRoot && storedApiRoot !== currentApiRoot) {
+          console.log("API root changed, clearing local data");
+          // Clear all local data
+          await dbManager.saveContacts([]);
+          await dbManager.saveInteractions([]);
+          await dbManager.saveOrders([]);
+          await dbManager.setMetadata("lastSync", null);
+          await dbManager.setMetadata("apiRoot", currentApiRoot);
+          
+          setContacts([]);
+          setInteractions([]);
+          setOrders([]);
+          setLastSync(null);
+        } else {
+          // Load existing data
+          const [loadedContacts, loadedInteractions, loadedOrders, syncTime] = await Promise.all([
+            dbManager.getAllContacts(),
+            dbManager.getAllInteractions(),
+            dbManager.getAllOrders(),
+            dbManager.getMetadata("lastSync"),
+          ]);
 
-        setContacts(loadedContacts);
-        setInteractions(loadedInteractions);
-        setOrders(loadedOrders);
-        if (syncTime) {
-          setLastSync(new Date(syncTime));
+          setContacts(loadedContacts);
+          setInteractions(loadedInteractions);
+          setOrders(loadedOrders);
+          if (syncTime) {
+            setLastSync(new Date(syncTime));
+          }
+          
+          // Store current API root if not set
+          if (!storedApiRoot) {
+            await dbManager.setMetadata("apiRoot", currentApiRoot);
+          }
         }
       } catch (error) {
         console.error("Error loading data from IndexedDB:", error);
