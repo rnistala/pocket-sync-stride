@@ -130,11 +130,11 @@ export const FeatureTour = ({ steps, onComplete, onSkip }: FeatureTourProps) => 
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 z-[9998] bg-black/70 animate-fade-in overflow-hidden">
+      <div className="fixed inset-0 z-[9998] bg-black/30 dark:bg-black/50 animate-fade-in overflow-hidden">
         {/* Spotlight */}
         {targetRect && (
           <div
-            className="absolute border-4 border-primary rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] animate-scale-in pointer-events-none"
+            className="absolute border-4 border-primary rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.3)] dark:shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] animate-scale-in pointer-events-none"
             style={{
               top: `${targetRect.top - 8}px`,
               left: `${targetRect.left - 8}px`,
