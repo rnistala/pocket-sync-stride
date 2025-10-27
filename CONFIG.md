@@ -14,17 +14,21 @@ Edit the `public/config.json` file before building, or edit `config.json` in the
 
 ```json
 {
-  "apiRoot": "https://demo.opterix.in"
+  "apiRoot": "https://demo.opterix.in",
+  "statuses": ["Fresh", "Regular", "Hot", "Cold"]
 }
 ```
 
 Replace `https://demo.opterix.in` with your API server URL.
 
+The `statuses` array defines the available contact status values that will appear in dropdowns throughout the application.
+
 ### Important Notes
 
 1. **No trailing slash**: Do not include a trailing slash in the API root URL
 2. **Protocol required**: Always include `https://` or `http://` in the URL
-3. **Multiple instances**: Each deployment folder can have its own `config.json` with different API endpoints
+3. **Statuses**: The statuses array must contain at least one status value
+4. **Multiple instances**: Each deployment folder can have its own `config.json` with different API endpoints and status values
 
 ### Deployment in Different Folders
 
@@ -35,21 +39,24 @@ The application is designed to work from any folder path. You can copy the entir
 **Production API:**
 ```json
 {
-  "apiRoot": "https://api.production.com"
+  "apiRoot": "https://api.production.com",
+  "statuses": ["New", "Contacted", "Qualified", "Closed"]
 }
 ```
 
 **Staging API:**
 ```json
 {
-  "apiRoot": "https://api.staging.com"
+  "apiRoot": "https://api.staging.com",
+  "statuses": ["Fresh", "Regular", "Hot", "Cold"]
 }
 ```
 
 **Local Development:**
 ```json
 {
-  "apiRoot": "http://localhost:3000"
+  "apiRoot": "http://localhost:3000",
+  "statuses": ["Lead", "Prospect", "Customer"]
 }
 ```
 

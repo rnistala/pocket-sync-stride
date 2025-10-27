@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { getApiRoot } from "@/lib/config";
+import { getApiRoot, getStatuses } from "@/lib/config";
 import { format, addYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -54,6 +54,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [statuses, setStatuses] = useState<string[]>([]);
   const [orderFormData, setOrderFormData] = useState({
     orderNumber: "",
     orderDate: new Date(),
@@ -92,6 +93,15 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   
   // Track which contacts have been fetched
   const fetchedContactsRef = useRef<Set<string>>(new Set());
+
+  // Load statuses from config
+  useEffect(() => {
+    const loadStatuses = async () => {
+      const loadedStatuses = await getStatuses();
+      setStatuses(loadedStatuses);
+    };
+    loadStatuses();
+  }, []);
 
   // useEffect hooks
   useEffect(() => {
@@ -840,12 +850,11 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="New">New</SelectItem>
-                            <SelectItem value="Contacted">Contacted</SelectItem>
-                            <SelectItem value="Qualified">Qualified</SelectItem>
-                            <SelectItem value="Demo Done">Demo Done</SelectItem>
-                            <SelectItem value="Regular">Regular</SelectItem>
-                            <SelectItem value="Drop">Drop</SelectItem>
+                            {statuses.map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {status}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -929,12 +938,11 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                   <SelectValue placeholder={contact.status || "Select status"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="New">New</SelectItem>
-                  <SelectItem value="Contacted">Contacted</SelectItem>
-                  <SelectItem value="Qualified">Qualified</SelectItem>
-                  <SelectItem value="Demo Done">Demo Done</SelectItem>
-                  <SelectItem value="Regular">Regular</SelectItem>
-                  <SelectItem value="Drop">Drop</SelectItem>
+                  {statuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

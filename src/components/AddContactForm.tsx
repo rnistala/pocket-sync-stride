@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { getApiRoot } from "@/lib/config";
+import { getApiRoot, getStatuses } from "@/lib/config";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ import { useLeadContext } from "@/contexts/LeadContext";
 export const AddContactForm = () => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statuses, setStatuses] = useState<string[]>([]);
   const { toast } = useToast();
   const { syncData } = useLeadContext();
   
@@ -36,12 +37,21 @@ export const AddContactForm = () => {
     mobile: "",
     email: "",
     profile: "",
-    status: "Fresh",
+    status: "",
     contact_person: "",
     address: "",
     remarks: "",
     industry: "",
   });
+
+  useEffect(() => {
+    const loadStatuses = async () => {
+      const loadedStatuses = await getStatuses();
+      setStatuses(loadedStatuses);
+      setFormData(prev => ({ ...prev, status: loadedStatuses[0] || "" }));
+    };
+    loadStatuses();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +130,7 @@ export const AddContactForm = () => {
         mobile: "",
         email: "",
         profile: "",
-        status: "Fresh",
+        status: statuses[0] || "",
         contact_person: "",
         address: "",
         remarks: "",
@@ -246,10 +256,11 @@ export const AddContactForm = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Fresh">Fresh</SelectItem>
-                  <SelectItem value="Regular">Regular</SelectItem>
-                  <SelectItem value="Hot">Hot</SelectItem>
-                  <SelectItem value="Cold">Cold</SelectItem>
+                  {statuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

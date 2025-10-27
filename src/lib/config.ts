@@ -1,4 +1,4 @@
-let cachedConfig: { apiRoot: string } | null = null;
+let cachedConfig: { apiRoot: string; statuses: string[] } | null = null;
 
 export const getConfig = async () => {
   if (cachedConfig) return cachedConfig;
@@ -13,11 +13,19 @@ export const getConfig = async () => {
     return cachedConfig;
   } catch (error) {
     console.error('Failed to load config.json, using default:', error);
-    return { apiRoot: 'https://demo.opterix.in' };
+    return { 
+      apiRoot: 'https://demo.opterix.in',
+      statuses: ['Fresh', 'Regular', 'Hot', 'Cold']
+    };
   }
 };
 
 export const getApiRoot = async () => {
   const config = await getConfig();
   return config.apiRoot;
+};
+
+export const getStatuses = async () => {
+  const config = await getConfig();
+  return config.statuses;
 };
