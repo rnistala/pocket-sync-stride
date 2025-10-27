@@ -216,18 +216,31 @@ const Index = () => {
               placeholder="Search contacts..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-9 h-9"
+              className="pl-9 pr-20 h-9"
             />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-9 w-9"
-                onClick={() => setSearchQuery("")}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            )}
+            <div className="absolute right-0 top-0 h-9 flex items-center gap-0.5 pr-0.5">
+              <AdvancedSearchDialog
+                contacts={contacts}
+                filters={advancedFilters}
+                onApplyFilters={setAdvancedFilters}
+                onClearFilters={() => setAdvancedFilters({
+                  statuses: [],
+                  city: "",
+                  dateFrom: undefined,
+                  dateTo: undefined
+                })}
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -243,28 +256,15 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={showStarredOnly ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => setShowStarredOnly(!showStarredOnly)}
-                  className="h-8 px-3"
-                >
-                  <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
-                  Starred
-                </Button>
-                <AdvancedSearchDialog
-                  contacts={contacts}
-                  filters={advancedFilters}
-                  onApplyFilters={setAdvancedFilters}
-                  onClearFilters={() => setAdvancedFilters({
-                    statuses: [],
-                    city: "",
-                    dateFrom: undefined,
-                    dateTo: undefined
-                  })}
-                />
-              </div>
+              <Button
+                variant={showStarredOnly ? "default" : "secondary"}
+                size="sm"
+                onClick={() => setShowStarredOnly(!showStarredOnly)}
+                className="h-8 px-3"
+              >
+                <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+                Starred
+              </Button>
               <AddContactForm />
             </div>
           </div>

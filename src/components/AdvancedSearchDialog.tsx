@@ -87,11 +87,20 @@ export const AdvancedSearchDialog = ({ contacts, filters, onApplyFilters, onClea
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant={hasActiveFilters ? "default" : "outline"} size="sm" className="h-8 relative">
-          <Filter className="h-3.5 w-3.5 mr-1.5" />
-          Filters
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={cn(
+            "h-8 w-8 relative",
+            hasActiveFilters && "text-primary"
+          )}
+        >
+          <Filter className="h-3.5 w-3.5" />
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px] font-bold min-w-[16px] justify-center">
+            <Badge 
+              variant="default" 
+              className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] font-bold flex items-center justify-center rounded-full"
+            >
               {activeFilterCount}
             </Badge>
           )}
