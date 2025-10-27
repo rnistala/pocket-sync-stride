@@ -150,7 +150,7 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
       const futureDate = addYears(new Date(), 100);
       
       // Update local state immediately for instant UI feedback
-      await updateContactFollowUp(contactId, futureDate.toISOString());
+      await updateContactFollowUp(contactId, futureDate.toISOString(), "Drop");
       
       const payload = {
         meta: {

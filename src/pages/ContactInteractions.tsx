@@ -464,7 +464,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
     try {
       const futureDate = addYears(new Date(), 100);
-      await updateContactFollowUp(contact.id, futureDate.toISOString());
+      await updateContactFollowUp(contact.id, futureDate.toISOString(), "Drop");
       setFollowUpDate(futureDate);
       
       const payload = {

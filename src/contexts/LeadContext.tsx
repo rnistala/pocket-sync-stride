@@ -212,7 +212,7 @@ interface LeadContextType {
   markInteractionsAsSynced: (contactId: string) => Promise<void>;
   mergeInteractionsFromAPI: (apiInteractions: any[], contactId: string) => Promise<void>;
   toggleStarred: (contactId: string) => Promise<void>;
-  updateContactFollowUp: (contactId: string, followUpDate: string) => Promise<void>;
+  updateContactFollowUp: (contactId: string, followUpDate: string, status?: string) => Promise<void>;
   fetchOrders: () => Promise<void>;
 }
 
@@ -366,9 +366,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     setContacts(updatedContacts);
   }, [contacts]);
 
-  const updateContactFollowUp = useCallback(async (contactId: string, followUpDate: string) => {
+  const updateContactFollowUp = useCallback(async (contactId: string, followUpDate: string, status?: string) => {
     const updatedContacts = contacts.map(c => 
-      c.id === contactId ? { ...c, followup_on: followUpDate } : c
+      c.id === contactId ? { ...c, followup_on: followUpDate, ...(status && { status }) } : c
     );
     
     // Update the changed contact in IndexedDB first
