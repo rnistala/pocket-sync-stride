@@ -192,6 +192,13 @@ class IndexedDBManager {
 
 const dbManager = new IndexedDBManager();
 
+export interface AdvancedFilters {
+  statuses: string[];
+  city: string;
+  dateFrom: Date | undefined;
+  dateTo: Date | undefined;
+}
+
 interface LeadContextType {
   contacts: Contact[];
   interactions: Interaction[];
@@ -202,10 +209,12 @@ interface LeadContextType {
   displayCount: number;
   searchQuery: string;
   showStarredOnly: boolean;
+  advancedFilters: AdvancedFilters;
   setScrollPosition: (position: number) => void;
   setDisplayCount: (count: number) => void;
   setSearchQuery: (query: string) => void;
   setShowStarredOnly: (show: boolean) => void;
+  setAdvancedFilters: (filters: AdvancedFilters) => void;
   addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string, followup_on?: string) => Promise<void>;
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
@@ -228,6 +237,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const [displayCount, setDisplayCount] = useState(50);
   const [searchQuery, setSearchQuery] = useState("");
   const [showStarredOnly, setShowStarredOnly] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>({
+    statuses: [],
+    city: "",
+    dateFrom: undefined,
+    dateTo: undefined
+  });
 
   // Load data once on mount
   useEffect(() => {
@@ -631,10 +646,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     displayCount,
     searchQuery,
     showStarredOnly,
+    advancedFilters,
     setScrollPosition,
     setDisplayCount,
     setSearchQuery,
     setShowStarredOnly,
+    setAdvancedFilters,
     addInteraction,
     getContactInteractions,
     syncData,
@@ -643,7 +660,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     toggleStarred,
     updateContactFollowUp,
     fetchOrders,
-  }), [contacts, interactions, orders, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred, updateContactFollowUp, fetchOrders]);
+  }), [contacts, interactions, orders, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, advancedFilters, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred, updateContactFollowUp, fetchOrders]);
 
   return (
     <LeadContext.Provider value={value}>

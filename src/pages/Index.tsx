@@ -5,6 +5,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { AddContactForm } from "@/components/AddContactForm";
 import { FollowUpReminder } from "@/components/FollowUpReminder";
 import { MetricsCard } from "@/components/MetricsCard";
+import { AdvancedSearchDialog, AdvancedFilters } from "@/components/AdvancedSearchDialog";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const { contacts, interactions, orders, syncData, fetchOrders, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly } = useLeadContext();
+  const { contacts, interactions, orders, syncData, fetchOrders, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly, advancedFilters, setAdvancedFilters } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOrdersDialog, setShowOrdersDialog] = useState(false);
   const [showInteractionsDialog, setShowInteractionsDialog] = useState(false);
@@ -30,6 +31,41 @@ const Index = () => {
     // Apply starred filter first
     if (showStarredOnly) {
       filtered = filtered.filter(contact => contact.starred);
+    }
+    
+    // Apply advanced filters
+    if (advancedFilters.statuses.length > 0) {
+      filtered = filtered.filter(contact => 
+        advancedFilters.statuses.includes(contact.status)
+      );
+    }
+    
+    if (advancedFilters.city) {
+      filtered = filtered.filter(contact => 
+        contact.city.toLowerCase() === advancedFilters.city.toLowerCase()
+      );
+    }
+    
+    if (advancedFilters.dateFrom || advancedFilters.dateTo) {
+      filtered = filtered.filter(contact => {
+        if (!contact.followup_on) return false;
+        const contactDate = new Date(contact.followup_on);
+        contactDate.setHours(0, 0, 0, 0);
+        
+        if (advancedFilters.dateFrom) {
+          const fromDate = new Date(advancedFilters.dateFrom);
+          fromDate.setHours(0, 0, 0, 0);
+          if (contactDate < fromDate) return false;
+        }
+        
+        if (advancedFilters.dateTo) {
+          const toDate = new Date(advancedFilters.dateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (contactDate > toDate) return false;
+        }
+        
+        return true;
+      });
     }
     
     // Then apply search filter
@@ -56,7 +92,7 @@ const Index = () => {
       const dateB = b.followup_on ? new Date(b.followup_on).getTime() : Infinity;
       return dateA - dateB;
     });
-  }, [contacts, searchQuery, showStarredOnly]);
+  }, [contacts, searchQuery, showStarredOnly, advancedFilters]);
 
   // Fetch orders only when clicking "Closed This Month"
   const handleClosedClick = async () => {
@@ -199,7 +235,7 @@ const Index = () => {
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium text-foreground">
                   {filteredContacts.length} {filteredContacts.length === 1 ? 'Contact' : 'Contacts'}
-                  {(searchQuery || showStarredOnly) && (
+                  {(searchQuery || showStarredOnly || advancedFilters.statuses.length > 0 || advancedFilters.city || advancedFilters.dateFrom || advancedFilters.dateTo) && (
                     <span className="text-xs text-muted-foreground ml-1">of {contacts.length}</span>
                   )}
                 </span>
@@ -207,15 +243,28 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <Button
-                variant={showStarredOnly ? "default" : "secondary"}
-                size="sm"
-                onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className="h-8 px-3"
-              >
-                <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
-                Starred
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={showStarredOnly ? "default" : "secondary"}
+                  size="sm"
+                  onClick={() => setShowStarredOnly(!showStarredOnly)}
+                  className="h-8 px-3"
+                >
+                  <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+                  Starred
+                </Button>
+                <AdvancedSearchDialog
+                  contacts={contacts}
+                  filters={advancedFilters}
+                  onApplyFilters={setAdvancedFilters}
+                  onClearFilters={() => setAdvancedFilters({
+                    statuses: [],
+                    city: "",
+                    dateFrom: undefined,
+                    dateTo: undefined
+                  })}
+                />
+              </div>
               <AddContactForm />
             </div>
           </div>
