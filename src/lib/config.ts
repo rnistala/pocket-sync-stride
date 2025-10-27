@@ -4,7 +4,11 @@ export const getConfig = async () => {
   if (cachedConfig) return cachedConfig;
   
   try {
-    const response = await fetch('./config.json');
+    // Use an absolute path relative to the current page location
+    const baseUrl = window.location.pathname.endsWith('/') 
+      ? window.location.pathname 
+      : window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    const response = await fetch(`${baseUrl}config.json`);
     cachedConfig = await response.json();
     return cachedConfig;
   } catch (error) {
