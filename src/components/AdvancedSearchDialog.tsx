@@ -124,22 +124,33 @@ export const AdvancedSearchDialog = ({ contacts, filters, onApplyFilters, onClea
           {/* City Filter */}
           <div className="space-y-2">
             <Label htmlFor="city">City</Label>
-            <Select
-              value={localFilters.city}
-              onValueChange={(value) => setLocalFilters(prev => ({ ...prev, city: value }))}
-            >
-              <SelectTrigger id="city">
-                <SelectValue placeholder="Select city" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">All cities</SelectItem>
-                {uniqueCities.map(city => (
-                  <SelectItem key={city} value={city}>
-                    {city}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Select
+                value={localFilters.city || undefined}
+                onValueChange={(value) => setLocalFilters(prev => ({ ...prev, city: value }))}
+              >
+                <SelectTrigger id="city" className="flex-1">
+                  <SelectValue placeholder="All cities" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueCities.map(city => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {localFilters.city && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setLocalFilters(prev => ({ ...prev, city: "" }))}
+                  className="shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Date Range Filter */}
