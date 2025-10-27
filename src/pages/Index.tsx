@@ -40,6 +40,12 @@ const Index = () => {
       position: "bottom" as const,
     },
     {
+      target: '[data-tour="starred"]',
+      title: "Starred Contacts",
+      description: "Toggle to view only your starred/favorite contacts for quick access.",
+      position: "top" as const,
+    },
+    {
       target: '[data-tour="add-contact"]',
       title: "Add Contacts",
       description: "Quickly add new contacts with their details and assign them a status.",
@@ -52,9 +58,9 @@ const Index = () => {
       position: "left" as const,
     },
     {
-      target: '[data-tour="contact-list"]',
-      title: "Contact List",
-      description: "View and manage all your contacts. Click on a contact to see detailed interactions and history.",
+      target: '[data-tour="contact-actions"]',
+      title: "Contact Actions",
+      description: "Each contact has a star button to mark favorites and a down arrow to drop/archive contacts for later.",
       position: "top" as const,
     },
   ];
@@ -324,15 +330,17 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <Button
-                variant={showStarredOnly ? "default" : "secondary"}
-                size="sm"
-                onClick={() => setShowStarredOnly(!showStarredOnly)}
-                className="h-8 px-3"
-              >
-                <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
-                Starred
-              </Button>
+              <div data-tour="starred">
+                <Button
+                  variant={showStarredOnly ? "default" : "secondary"}
+                  size="sm"
+                  onClick={() => setShowStarredOnly(!showStarredOnly)}
+                  className="h-8 px-3"
+                >
+                  <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+                  Starred
+                </Button>
+              </div>
               <div data-tour="add-contact">
                 <AddContactForm />
               </div>
@@ -356,9 +364,7 @@ const Index = () => {
             Loading contacts...
           </div>
         ) : (
-          <div data-tour="contact-list">
-            <ContactList contacts={filteredContacts} />
-          </div>
+          <ContactList contacts={filteredContacts} />
         )}
       </div>
       <BackToTop />

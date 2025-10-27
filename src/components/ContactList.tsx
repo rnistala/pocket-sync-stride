@@ -50,7 +50,7 @@ const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { cont
             <span className="opacity-70">Follow-up:</span> {formattedDate}
           </p>
         </div>
-        <div className="flex gap-1">
+        <div className="flex gap-1" data-tour="contact-actions">
           <Button
             variant="ghost"
             size="icon"
