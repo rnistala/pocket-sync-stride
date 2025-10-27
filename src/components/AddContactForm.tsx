@@ -80,7 +80,7 @@ export const AddContactForm = () => {
                 contact_person: formData.contact_person,
                 address: formData.address,
                 remarks: formData.remarks,
-                agent: "7",
+                agent: userId,
                 contact_id: "",
                 followup_on: new Date().toISOString().split("T")[0],
                 industry: formData.industry,
