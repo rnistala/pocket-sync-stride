@@ -869,6 +869,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               target_date: ticket.targetDate,
               remarks: ticket.remarks || "",
               root_cause: ticket.rootCause || "",
+              ...(ticket.status === "CLOSED" && { closed_date: new Date().toISOString() }),
               updated: new Date().toISOString(),
               updatedby: userId
             }],
