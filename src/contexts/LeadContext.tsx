@@ -1061,15 +1061,15 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           
           // Update or add server tickets
           for (const serverTicket of serverTickets) {
-            const existingIndex = mergedTickets.findIndex(t => t.id === serverTicket.id);
+            const existingIndex = mergedTickets.findIndex(t => t.ticketId === serverTicket.ticketId);
             if (existingIndex >= 0) {
-              // Update existing ticket
-              mergedTickets[existingIndex] = serverTicket;
-              console.log("[SYNC TICKETS] Updated ticket:", serverTicket.id);
+              // Update existing ticket - merge with local ID
+              mergedTickets[existingIndex] = { ...serverTicket, id: mergedTickets[existingIndex].id };
+              console.log("[SYNC TICKETS] Updated ticket:", serverTicket.ticketId);
             } else {
               // Add new ticket from server
               mergedTickets.push(serverTicket);
-              console.log("[SYNC TICKETS] Added new ticket:", serverTicket.id);
+              console.log("[SYNC TICKETS] Added new ticket:", serverTicket.ticketId);
             }
           }
           
