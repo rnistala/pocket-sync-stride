@@ -5,6 +5,7 @@ import { BackToTop } from "@/components/BackToTop";
 import { AddContactForm } from "@/components/AddContactForm";
 import { FollowUpReminder } from "@/components/FollowUpReminder";
 import { MetricsCard } from "@/components/MetricsCard";
+import { TicketsWidget } from "@/components/TicketsWidget";
 import { AdvancedSearchDialog, AdvancedFilters } from "@/components/AdvancedSearchDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { FeatureTour } from "@/components/FeatureTour";
@@ -350,13 +351,18 @@ const Index = () => {
       </div>
 
       <div className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
-        <div data-tour="metrics">
-          <MetricsCard 
-            todaysInteractions={metrics.todaysInteractions} 
-            leadsClosedThisMonth={metrics.leadsClosedThisMonth}
-            onTodaysClick={handleTodaysClick}
-            onClosedClick={handleClosedClick}
-          />
+        <div data-tour="metrics" className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <div className="md:col-span-2">
+            <MetricsCard 
+              todaysInteractions={metrics.todaysInteractions} 
+              leadsClosedThisMonth={metrics.leadsClosedThisMonth}
+              onTodaysClick={handleTodaysClick}
+              onClosedClick={handleClosedClick}
+            />
+          </div>
+          <div className="md:col-span-1">
+            <TicketsWidget />
+          </div>
         </div>
 
         {isLoading ? (

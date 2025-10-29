@@ -3,11 +3,25 @@ import { Contact, Interaction } from "@/hooks/useLeadStorage";
 import { getApiRoot } from "@/lib/config";
 
 const DB_NAME = "LeadManagerDB";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const CONTACTS_STORE = "contacts";
 const INTERACTIONS_STORE = "interactions";
 const METADATA_STORE = "metadata";
 const ORDERS_STORE = "orders";
+const TICKETS_STORE = "tickets";
+
+export interface Ticket {
+  id: string;
+  contactId: string;
+  reportedDate: string;
+  targetDate: string;
+  closedDate?: string;
+  issueType: string;
+  status: "open" | "in-progress" | "closed";
+  description: string;
+  screenshots: string[]; // Array of base64 encoded images
+  syncStatus: "synced" | "pending" | "local";
+}
 
 class IndexedDBManager {
   private db: IDBDatabase | null = null;
@@ -44,6 +58,12 @@ class IndexedDBManager {
           // Upgrade to version 3: recreate orders store with id as keyPath
           db.deleteObjectStore(ORDERS_STORE);
           db.createObjectStore(ORDERS_STORE, { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains(TICKETS_STORE)) {
+          const ticketsStore = db.createObjectStore(TICKETS_STORE, { keyPath: "id" });
+          ticketsStore.createIndex("contactId", "contactId", { unique: false });
+          ticketsStore.createIndex("status", "status", { unique: false });
         }
       };
     });
@@ -189,6 +209,56 @@ class IndexedDBManager {
       };
     });
   }
+
+  async getAllTickets(): Promise<Ticket[]> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(TICKETS_STORE, "readonly");
+      const store = transaction.objectStore(TICKETS_STORE);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveTickets(tickets: Ticket[]): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(TICKETS_STORE, "readwrite");
+      const store = transaction.objectStore(TICKETS_STORE);
+
+      store.clear();
+      tickets.forEach(ticket => store.add(ticket));
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async addTicket(ticket: Ticket): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(TICKETS_STORE, "readwrite");
+      const store = transaction.objectStore(TICKETS_STORE);
+      const request = store.add(ticket);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async updateTicket(ticket: Ticket): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(TICKETS_STORE, "readwrite");
+      const store = transaction.objectStore(TICKETS_STORE);
+      const request = store.put(ticket);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
 const dbManager = new IndexedDBManager();
@@ -204,6 +274,7 @@ interface LeadContextType {
   contacts: Contact[];
   interactions: Interaction[];
   orders: any[];
+  tickets: Ticket[];
   lastSync: Date | null;
   isLoading: boolean;
   scrollPosition: number;
@@ -224,6 +295,9 @@ interface LeadContextType {
   toggleStarred: (contactId: string) => Promise<void>;
   updateContactFollowUp: (contactId: string, followUpDate: string, status?: string) => Promise<void>;
   fetchOrders: () => Promise<void>;
+  addTicket: (ticket: Omit<Ticket, "id" | "syncStatus">) => Promise<void>;
+  updateTicket: (ticket: Ticket) => Promise<void>;
+  getContactTickets: (contactId: string) => Ticket[];
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -232,6 +306,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -270,16 +345,18 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           setLastSync(null);
         } else {
           // Load existing data
-          const [loadedContacts, loadedInteractions, loadedOrders, syncTime] = await Promise.all([
+          const [loadedContacts, loadedInteractions, loadedOrders, loadedTickets, syncTime] = await Promise.all([
             dbManager.getAllContacts(),
             dbManager.getAllInteractions(),
             dbManager.getAllOrders(),
+            dbManager.getAllTickets(),
             dbManager.getMetadata("lastSync"),
           ]);
 
           setContacts(loadedContacts);
           setInteractions(loadedInteractions);
           setOrders(loadedOrders);
+          setTickets(loadedTickets);
           if (syncTime) {
             setLastSync(new Date(syncTime));
           }
@@ -666,10 +743,33 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">) => {
+    const newTicket: Ticket = {
+      ...ticket,
+      id: crypto.randomUUID(),
+      syncStatus: "local",
+    };
+    
+    await dbManager.addTicket(newTicket);
+    setTickets(prev => [...prev, newTicket]);
+  }, []);
+
+  const updateTicket = useCallback(async (ticket: Ticket) => {
+    await dbManager.updateTicket(ticket);
+    setTickets(prev => prev.map(t => t.id === ticket.id ? ticket : t));
+  }, []);
+
+  const getContactTickets = useCallback((contactId: string) => {
+    return tickets
+      .filter(t => t.contactId === contactId)
+      .sort((a, b) => new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime());
+  }, [tickets]);
+
   const value = useMemo(() => ({
     contacts,
     interactions,
     orders,
+    tickets,
     lastSync,
     isLoading,
     scrollPosition,
@@ -690,7 +790,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     toggleStarred,
     updateContactFollowUp,
     fetchOrders,
-  }), [contacts, interactions, orders, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, advancedFilters, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred, updateContactFollowUp, fetchOrders]);
+    addTicket,
+    updateTicket,
+    getContactTickets,
+  }), [contacts, interactions, orders, tickets, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, advancedFilters, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred, updateContactFollowUp, fetchOrders, addTicket, updateTicket, getContactTickets]);
 
   return (
     <LeadContext.Provider value={value}>
