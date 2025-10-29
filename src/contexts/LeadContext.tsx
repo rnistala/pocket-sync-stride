@@ -846,7 +846,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      console.log("[TICKET] Updating ticket status:", ticket.id);
+      console.log("[TICKET] Updating ticket:", ticket.id);
       
       const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
         method: "POST",
@@ -866,6 +866,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             body: [{
               id: ticket.id,
               status: ticket.status,
+              remarks: ticket.remarks || "",
+              root_cause: ticket.rootCause || "",
               updated: new Date().toISOString(),
               updatedby: userId
             }],
