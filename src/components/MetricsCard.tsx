@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { formatNumberShort } from "@/lib/utils";
+import { startTransition } from "react";
 
 interface MetricsCardProps {
   todaysInteractions: number;
@@ -9,11 +10,27 @@ interface MetricsCardProps {
 }
 
 export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodaysClick, onClosedClick }: MetricsCardProps) => {
+  const handleTodaysClick = () => {
+    if (onTodaysClick) {
+      startTransition(() => {
+        onTodaysClick();
+      });
+    }
+  };
+
+  const handleClosedClick = () => {
+    if (onClosedClick) {
+      startTransition(() => {
+        onClosedClick();
+      });
+    }
+  };
+
   return (
     <>
       <Card 
         className="cursor-pointer hover:bg-accent transition-colors h-full"
-        onClick={onTodaysClick}
+        onClick={handleTodaysClick}
       >
         <CardContent className="p-4 flex flex-col">
           <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Today's Interactions</p>
@@ -22,7 +39,7 @@ export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodays
       </Card>
       <Card 
         className="cursor-pointer hover:bg-accent transition-colors h-full"
-        onClick={onClosedClick}
+        onClick={handleClosedClick}
       >
         <CardContent className="p-4 flex flex-col">
           <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Sales This Month (₹)</p>

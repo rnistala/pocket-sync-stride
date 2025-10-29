@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useDeferredValue } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,9 @@ export default function Tickets() {
   const [issueTypeFilter, setIssueTypeFilter] = useState<string>("all");
   const [contactFilter, setContactFilter] = useState<string>("all");
   const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
+
+  // Defer search query for non-blocking updates
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   // Create contact lookup map for O(1) access
   const contactMap = useMemo(() => {
@@ -54,9 +57,9 @@ export default function Tickets() {
       filtered = filtered.filter(t => t.contactId === contactFilter);
     }
 
-    // Search filter - use contactMap for O(1) lookup
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    // Search filter - use contactMap for O(1) lookup and deferred query
+    if (deferredSearchQuery.trim()) {
+      const query = deferredSearchQuery.toLowerCase();
       filtered = filtered.filter(ticket => {
         const contact = contactMap.get(ticket.contactId);
         return (
@@ -72,7 +75,7 @@ export default function Tickets() {
     return filtered.sort((a, b) => 
       new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime()
     );
-  }, [tickets, contactMap, searchQuery, statusFilter, issueTypeFilter, contactFilter]);
+  }, [tickets, contactMap, deferredSearchQuery, statusFilter, issueTypeFilter, contactFilter]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
