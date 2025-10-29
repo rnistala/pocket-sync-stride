@@ -393,12 +393,14 @@ export default function Tickets() {
 
       {/* Full Screen Image Dialog */}
       <Dialog open={!!fullScreenImage} onOpenChange={(open) => !open && setFullScreenImage(null)}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] p-2">
-          <img
-            src={fullScreenImage || ""}
-            alt="Full screen screenshot"
-            className="w-full h-full object-contain"
-          />
+        <DialogContent className="max-w-[90vw] max-h-[90vh] w-auto p-4 overflow-auto">
+          <div className="flex items-center justify-center">
+            <img
+              src={fullScreenImage || ""}
+              alt="Full screen screenshot"
+              className="max-w-full max-h-[85vh] w-auto h-auto object-contain"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
