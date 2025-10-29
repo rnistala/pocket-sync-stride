@@ -352,17 +352,13 @@ const Index = () => {
 
       <div className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
         <div data-tour="metrics" className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-          <div className="md:col-span-2">
-            <MetricsCard 
-              todaysInteractions={metrics.todaysInteractions} 
-              leadsClosedThisMonth={metrics.leadsClosedThisMonth}
-              onTodaysClick={handleTodaysClick}
-              onClosedClick={handleClosedClick}
-            />
-          </div>
-          <div className="md:col-span-1">
-            <TicketsWidget />
-          </div>
+          <MetricsCard 
+            todaysInteractions={metrics.todaysInteractions} 
+            leadsClosedThisMonth={metrics.leadsClosedThisMonth}
+            onTodaysClick={handleTodaysClick}
+            onClosedClick={handleClosedClick}
+          />
+          <TicketsWidget />
         </div>
 
         {isLoading ? (
