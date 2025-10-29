@@ -838,8 +838,61 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const updateTicket = useCallback(async (ticket: Ticket) => {
-    await dbManager.updateTicket(ticket);
-    setTickets(prev => prev.map(t => t.id === ticket.id ? ticket : t));
+    const userId = localStorage.getItem("userId");
+    
+    if (!userId) {
+      console.error("[TICKET] Missing userId for update");
+      return;
+    }
+
+    try {
+      console.log("[TICKET] Updating ticket status:", ticket.id);
+      
+      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          meta: {
+            btable: "ticket",
+            htable: "",
+            parentkey: "",
+            preapi: "",
+            draftid: ""
+          },
+          data: [{
+            head: [],
+            body: [{
+              id: ticket.id,
+              status: ticket.status,
+              updated: new Date().toISOString(),
+              updatedby: userId
+            }],
+            dirty: "true"
+          }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("[TICKET] Update response:", result);
+
+      // Update local storage
+      await dbManager.updateTicket(ticket);
+      setTickets(prev => prev.map(t => t.id === ticket.id ? ticket : t));
+      
+      console.log("[TICKET] Ticket updated successfully");
+    } catch (error) {
+      console.error("[TICKET] Failed to update ticket:", error);
+      
+      // Still update locally even if API fails
+      await dbManager.updateTicket(ticket);
+      setTickets(prev => prev.map(t => t.id === ticket.id ? ticket : t));
+    }
   }, []);
 
   const getContactTickets = useCallback((contactId: string) => {
