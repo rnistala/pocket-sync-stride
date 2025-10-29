@@ -866,6 +866,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             body: [{
               id: ticket.id,
               status: ticket.status,
+              target_date: ticket.targetDate,
               remarks: ticket.remarks || "",
               root_cause: ticket.rootCause || "",
               updated: new Date().toISOString(),
