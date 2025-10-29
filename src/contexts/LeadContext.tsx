@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from "react";
 import { Contact, Interaction } from "@/hooks/useLeadStorage";
 import { getApiRoot } from "@/lib/config";
+import { toast } from "sonner";
 
 const DB_NAME = "LeadManagerDB";
 const DB_VERSION = 4;
@@ -750,7 +751,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchTickets = useCallback(async () => {
     const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("userToken");
     
     if (!userId || !token) {
       console.error("[TICKETS] Missing userId or token");
@@ -817,10 +818,16 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
   const syncTickets = useCallback(async () => {
     const userId = localStorage.getItem("userId");
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("userToken");
+    
+    console.log("[SYNC TICKETS] Starting sync...");
+    console.log("[SYNC TICKETS] userId:", userId);
+    console.log("[SYNC TICKETS] token:", token ? "present" : "missing");
+    console.log("[SYNC TICKETS] All localStorage keys:", Object.keys(localStorage));
     
     if (!userId || !token) {
       console.error("[SYNC TICKETS] Missing userId or token");
+      toast.error("Unable to sync: User not authenticated");
       return;
     }
 
@@ -986,8 +993,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       
       localStorage.setItem("lastTicketSync", new Date().toISOString());
       console.log("[SYNC TICKETS] Sync completed");
+      toast.success("Tickets synced successfully");
     } catch (error) {
       console.error("[SYNC TICKETS] Failed to sync tickets:", error);
+      toast.error("Failed to sync tickets. Please try again.");
     }
   }, [tickets]);
 
