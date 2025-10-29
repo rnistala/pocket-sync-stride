@@ -25,6 +25,7 @@ export default function Tickets() {
   const [contactFilter, setContactFilter] = useState<string>("all");
   const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
   const [editingTicket, setEditingTicket] = useState<typeof tickets[0] | null>(null);
+  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   // Defer search query for non-blocking updates
@@ -332,7 +333,11 @@ export default function Tickets() {
                             key={idx}
                             src={screenshot}
                             alt={`Screenshot ${idx + 1}`}
-                            className="rounded-lg border border-border w-full h-auto"
+                            className="rounded-lg border border-border w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFullScreenImage(screenshot);
+                            }}
                           />
                         ))}
                       </div>
@@ -382,6 +387,17 @@ export default function Tickets() {
           onOpenChange={(open) => !open && setEditingTicket(null)}
         />
       )}
+
+      {/* Full Screen Image Dialog */}
+      <Dialog open={!!fullScreenImage} onOpenChange={(open) => !open && setFullScreenImage(null)}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-2">
+          <img
+            src={fullScreenImage || ""}
+            alt="Full screen screenshot"
+            className="w-full h-full object-contain"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
