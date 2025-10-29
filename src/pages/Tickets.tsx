@@ -336,11 +336,11 @@ export default function Tickets() {
                   {selectedTicket.screenshots.length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium text-foreground mb-3">Screenshots</h4>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-3">
                         {selectedTicket.screenshots.map((screenshot, idx) => (
                           <div
                             key={idx}
-                            className="relative w-full h-32 rounded-lg border border-border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-muted flex items-center justify-center"
+                            className="relative w-full aspect-[4/3] rounded-lg border border-border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-muted flex items-center justify-center"
                             onClick={(e) => {
                               e.stopPropagation();
                               setFullScreenImage(screenshot);
