@@ -4,14 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { useMemo, startTransition } from "react";
 
 export const TicketsWidget = () => {
-  const { tickets } = useLeadContext();
+  const { tickets, fetchTickets } = useLeadContext();
   const navigate = useNavigate();
 
   const openTicketsCount = useMemo(() => 
     tickets.filter(t => t.status === "OPEN").length
   , [tickets]);
 
-  const handleClick = () => {
+  const handleClick = async () => {
+    await fetchTickets();
     startTransition(() => {
       navigate("/tickets?filter=OPEN");
     });

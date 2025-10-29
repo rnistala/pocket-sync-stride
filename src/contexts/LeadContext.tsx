@@ -298,6 +298,7 @@ interface LeadContextType {
   toggleStarred: (contactId: string) => Promise<void>;
   updateContactFollowUp: (contactId: string, followUpDate: string, status?: string) => Promise<void>;
   fetchOrders: () => Promise<void>;
+  fetchTickets: () => Promise<void>;
   addTicket: (ticket: Omit<Ticket, "id" | "syncStatus">) => Promise<Ticket | undefined>;
   updateTicket: (ticket: Ticket) => Promise<void>;
   getContactTickets: (contactId: string) => Ticket[];
@@ -746,6 +747,73 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const fetchTickets = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+    
+    if (!userId || !token) {
+      console.error("[TICKETS] Missing userId or token");
+      return;
+    }
+
+    try {
+      const apiRoot = await getApiRoot();
+      const url = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
+      const payload = { id: 555, offset: 0, limit: 100 };
+      
+      console.log("[TICKETS] Fetching from:", url);
+      console.log("[TICKETS] Payload:", payload);
+      
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      console.log("[TICKETS] Response status:", response.status);
+      console.log("[TICKETS] Response ok:", response.ok);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("[TICKETS] Response data:", result);
+        
+        if (result.data && result.data[0] && result.data[0].body) {
+          const fetchedTickets = result.data[0].body.map((apiTicket: any) => ({
+            id: apiTicket.id || crypto.randomUUID(),
+            ticketId: apiTicket.ticket_id,
+            contactId: apiTicket.contact || "",
+            reportedDate: apiTicket.report_date || new Date().toISOString(),
+            targetDate: apiTicket.target_date || new Date().toISOString(),
+            closedDate: apiTicket.close_date,
+            issueType: apiTicket.issue_type || "",
+            status: apiTicket.status || "OPEN",
+            description: apiTicket.description || "",
+            remarks: apiTicket.remarks || "",
+            rootCause: apiTicket.root_cause || "",
+            screenshots: [],
+            syncStatus: "synced" as const
+          }));
+          
+          console.log("[TICKETS] Fetched tickets count:", fetchedTickets.length);
+          console.log("[TICKETS] Sample ticket:", fetchedTickets[0]);
+          
+          await dbManager.saveTickets(fetchedTickets);
+          setTickets(fetchedTickets);
+          console.log("[TICKETS] Tickets saved to IndexedDB and state updated");
+        } else {
+          console.error("[TICKETS] Unexpected response structure:", result);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error("[TICKETS] API returned error status:", response.status);
+        console.error("[TICKETS] Error response:", errorText);
+      }
+    } catch (error) {
+      console.error("[TICKETS] Failed to fetch tickets:", error);
+      console.error("[TICKETS] Error details:", error instanceof Error ? error.message : String(error));
+    }
+  }, []);
+
   const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">): Promise<Ticket | undefined> => {
     const userId = localStorage.getItem("userId");
     
@@ -930,6 +998,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     toggleStarred,
     updateContactFollowUp,
     fetchOrders,
+    fetchTickets,
     addTicket,
     updateTicket,
     getContactTickets,
