@@ -24,6 +24,13 @@ export default function Tickets() {
   const [contactFilter, setContactFilter] = useState<string>("all");
   const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
 
+  // Create contact lookup map for O(1) access
+  const contactMap = useMemo(() => {
+    const map = new Map<string, typeof contacts[0]>();
+    contacts.forEach(contact => map.set(contact.id, contact));
+    return map;
+  }, [contacts]);
+
   // Get unique issue types for filter
   const issueTypes = useMemo(() => {
     return Array.from(new Set(tickets.map(t => t.issueType))).filter(Boolean);
@@ -47,11 +54,11 @@ export default function Tickets() {
       filtered = filtered.filter(t => t.contactId === contactFilter);
     }
 
-    // Search filter
+    // Search filter - use contactMap for O(1) lookup
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(ticket => {
-        const contact = contacts.find(c => c.id === ticket.contactId);
+        const contact = contactMap.get(ticket.contactId);
         return (
           ticket.issueType.toLowerCase().includes(query) ||
           ticket.description.toLowerCase().includes(query) ||
@@ -65,7 +72,7 @@ export default function Tickets() {
     return filtered.sort((a, b) => 
       new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime()
     );
-  }, [tickets, contacts, searchQuery, statusFilter, issueTypeFilter, contactFilter]);
+  }, [tickets, contactMap, searchQuery, statusFilter, issueTypeFilter, contactFilter]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -186,7 +193,7 @@ export default function Tickets() {
         ) : (
           <div className="grid gap-4">
             {filteredTickets.map(ticket => {
-              const contact = contacts.find(c => c.id === ticket.contactId);
+              const contact = contactMap.get(ticket.contactId);
               return (
                 <Card
                   key={ticket.id}
@@ -267,10 +274,10 @@ export default function Tickets() {
                       <Badge variant="outline">{selectedTicket.issueType}</Badge>
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-1">
-                      {contacts.find(c => c.id === selectedTicket.contactId)?.name || "Unknown Contact"}
+                      {contactMap.get(selectedTicket.contactId)?.name || "Unknown Contact"}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {contacts.find(c => c.id === selectedTicket.contactId)?.company}
+                      {contactMap.get(selectedTicket.contactId)?.company}
                     </p>
                   </div>
 
