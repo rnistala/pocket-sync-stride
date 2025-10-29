@@ -999,18 +999,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       const fetchPayload = {
         id: 555,
         offset: 0,
-        limit: 100,
-        extra: [{
-          operator: ">",
-          value: `"${lastSyncDate}"`,
-          tablename: "ticket",
-          columnname: "updated",
-          function: "",
-          datatype: "Selection",
-          enable: "true",
-          show: lastSyncDate,
-          extracolumn: "name"
-        }]
+        limit: 100
       };
       
       console.log("[SYNC TICKETS] Fetch payload:", JSON.stringify(fetchPayload, null, 2));
