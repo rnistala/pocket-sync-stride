@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { formatNumberShort } from "@/lib/utils";
 
 interface MetricsCardProps {
   todaysInteractions: number;
@@ -26,7 +27,7 @@ export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodays
         <CardContent className="p-4 flex flex-col">
           <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Sales This Month (₹)</p>
           <p className="text-2xl font-bold text-foreground">
-            {leadsClosedThisMonth.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+            {formatNumberShort(leadsClosedThisMonth)}
           </p>
         </CardContent>
       </Card>
