@@ -75,6 +75,13 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Create contact lookup map for O(1) access
+  const contactMap = useMemo(() => {
+    const map = new Map<string, typeof contacts[0]>();
+    contacts.forEach(contact => map.set(contact.id, contact));
+    return map;
+  }, [contacts]);
+
   const filteredContacts = useMemo(() => {
     let filtered = contacts;
     
@@ -152,7 +159,7 @@ const Index = () => {
 
   // Helper function to get buyer name from contacts
   const getBuyerName = (buyerId: string) => {
-    const contact = contacts.find(c => c.id === buyerId);
+    const contact = contactMap.get(buyerId);
     return contact ? contact.name : 'Unknown Buyer';
   };
 
@@ -161,51 +168,60 @@ const Index = () => {
     setShowInteractionsDialog(true);
   };
 
-  // Get today's interactions
-  const todaysInteractions = useMemo(() => {
+  // Compute metrics efficiently - memoize date objects
+  const dateRanges = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    return interactions.filter(interaction => {
-      const interactionDate = new Date(interaction.date);
-      interactionDate.setHours(0, 0, 0, 0);
-      return interactionDate >= today && interactionDate < tomorrow;
-    });
-  }, [interactions]);
-
-  const metrics = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     lastDayOfMonth.setHours(23, 59, 59, 999);
     
-    // Today's Interactions: count of interactions today
-    const todaysInteractions = interactions.filter(interaction => {
-      const interactionDate = new Date(interaction.date);
-      interactionDate.setHours(0, 0, 0, 0);
-      return interactionDate >= today && interactionDate < tomorrow;
-    }).length;
+    return { today, tomorrow, firstDayOfMonth, lastDayOfMonth };
+  }, []);
+
+  const metrics = useMemo(() => {
+    const { today, tomorrow, firstDayOfMonth, lastDayOfMonth } = dateRanges;
     
-    // Total Order Value This Month: sum of order values created this month
-    const orderValueThisMonth = orders
-      .filter(order => {
-        if (!order.sodate) return false;
+    // Count today's interactions
+    let todaysCount = 0;
+    for (const interaction of interactions) {
+      const date = new Date(interaction.date);
+      date.setHours(0, 0, 0, 0);
+      if (date >= today && date < tomorrow) {
+        todaysCount++;
+      }
+    }
+    
+    // Sum this month's order values
+    let orderValueThisMonth = 0;
+    for (const order of orders) {
+      if (order.sodate) {
         const orderDate = new Date(order.sodate);
-        return orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth;
-      })
-      .reduce((sum, order) => sum + (parseFloat(order.total_basic) || 0), 0);
+        if (orderDate >= firstDayOfMonth && orderDate <= lastDayOfMonth) {
+          orderValueThisMonth += parseFloat(order.total_basic) || 0;
+        }
+      }
+    }
     
     return {
-      todaysInteractions,
+      todaysInteractions: todaysCount,
       leadsClosedThisMonth: orderValueThisMonth
     };
-  }, [contacts, interactions, orders]);
+  }, [interactions, orders, dateRanges]);
+
+  // Get today's interactions list (only when dialog is shown)
+  const todaysInteractions = useMemo(() => {
+    if (!showInteractionsDialog) return [];
+    
+    const { today, tomorrow } = dateRanges;
+    return interactions.filter(interaction => {
+      const date = new Date(interaction.date);
+      date.setHours(0, 0, 0, 0);
+      return date >= today && date < tomorrow;
+    });
+  }, [interactions, dateRanges, showInteractionsDialog]);
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
@@ -384,7 +400,7 @@ const Index = () => {
             ) : (
               <div className="space-y-4">
                 {todaysInteractions.map((interaction, index) => {
-                  const contact = contacts.find(c => c.id === interaction.contactId);
+                  const contact = contactMap.get(interaction.contactId);
                   return (
                     <div key={index} className="border rounded-lg p-4 space-y-2">
                       <div className="flex justify-between items-start">
