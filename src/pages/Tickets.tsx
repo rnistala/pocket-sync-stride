@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Search, Plus, X, Calendar } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Calendar, Edit } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
+import { UpdateTicketForm } from "@/components/UpdateTicketForm";
 import { format } from "date-fns";
 
 export default function Tickets() {
@@ -23,6 +24,7 @@ export default function Tickets() {
   const [issueTypeFilter, setIssueTypeFilter] = useState<string>("all");
   const [contactFilter, setContactFilter] = useState<string>("all");
   const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
+  const [editingTicket, setEditingTicket] = useState<typeof tickets[0] | null>(null);
   const [mounted, setMounted] = useState(false);
 
   // Defer search query for non-blocking updates
@@ -337,11 +339,49 @@ export default function Tickets() {
                     </div>
                   )}
                 </div>
+
+                {selectedTicket.remarks && (
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-2">Remarks / Analysis</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {selectedTicket.remarks}
+                    </p>
+                  </div>
+                )}
+
+                {selectedTicket.rootCause && (
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-2">Root Cause</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {selectedTicket.rootCause}
+                    </p>
+                  </div>
+                )}
+
+                <Button 
+                  className="w-full mt-4"
+                  onClick={() => {
+                    setEditingTicket(selectedTicket);
+                    setSelectedTicket(null);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Update Ticket
+                </Button>
               </ScrollArea>
             </>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Update Ticket Dialog */}
+      {editingTicket && (
+        <UpdateTicketForm
+          ticket={editingTicket}
+          open={!!editingTicket}
+          onOpenChange={(open) => !open && setEditingTicket(null)}
+        />
+      )}
     </div>
   );
 }

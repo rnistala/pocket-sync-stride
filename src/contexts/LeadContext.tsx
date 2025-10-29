@@ -19,6 +19,8 @@ export interface Ticket {
   issueType: string;
   status: "open" | "in-progress" | "closed";
   description: string;
+  remarks?: string;
+  rootCause?: string;
   screenshots: string[]; // Array of base64 encoded images
   syncStatus: "synced" | "pending" | "local";
 }
