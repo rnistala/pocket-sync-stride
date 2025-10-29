@@ -188,11 +188,6 @@ export default function Tickets() {
                       {contact.name}
                     </SelectItem>
                   ))}
-                  {mounted && contacts.length > 100 && (
-                    <SelectItem value="" disabled>
-                      Showing first 100 of {contacts.length} contacts
-                    </SelectItem>
-                  )}
                 </SelectContent>
               </Select>
             </div>
