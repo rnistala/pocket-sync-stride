@@ -19,7 +19,6 @@ export const AddTicketForm = () => {
   const [contactId, setContactId] = useState("");
   const [contactSearch, setContactSearch] = useState("");
   const [issueType, setIssueType] = useState("");
-  const [targetDate, setTargetDate] = useState("");
   const [description, setDescription] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
 
@@ -46,7 +45,7 @@ export const AddTicketForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!contactId || !issueType || !targetDate || !description) {
+    if (!contactId || !issueType || !description) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -55,10 +54,10 @@ export const AddTicketForm = () => {
       return;
     }
 
-    await addTicket({
+    const newTicket = await addTicket({
       contactId,
       reportedDate: new Date().toISOString(),
-      targetDate: new Date(targetDate).toISOString(),
+      targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default to 7 days from now
       issueType,
       status: "open",
       description,
@@ -67,14 +66,15 @@ export const AddTicketForm = () => {
 
     toast({
       title: "Ticket Created",
-      description: "Action item has been added successfully",
+      description: newTicket?.ticketId 
+        ? `Ticket ${newTicket.ticketId} has been created successfully`
+        : "Action item has been added successfully",
     });
 
     // Reset form
     setContactId("");
     setContactSearch("");
     setIssueType("");
-    setTargetDate("");
     setDescription("");
     setScreenshots([]);
     setOpen(false);
@@ -187,17 +187,6 @@ export const AddTicketForm = () => {
                 <SelectItem value="Support">Support</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="targetDate">Target Date *</Label>
-            <Input
-              id="targetDate"
-              type="date"
-              value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
-              required
-            />
           </div>
 
           <div className="space-y-2">

@@ -298,7 +298,7 @@ interface LeadContextType {
   toggleStarred: (contactId: string) => Promise<void>;
   updateContactFollowUp: (contactId: string, followUpDate: string, status?: string) => Promise<void>;
   fetchOrders: () => Promise<void>;
-  addTicket: (ticket: Omit<Ticket, "id" | "syncStatus">) => Promise<void>;
+  addTicket: (ticket: Omit<Ticket, "id" | "syncStatus">) => Promise<Ticket | undefined>;
   updateTicket: (ticket: Ticket) => Promise<void>;
   getContactTickets: (contactId: string) => Ticket[];
 }
@@ -746,12 +746,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">) => {
+  const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">): Promise<Ticket | undefined> => {
     const userId = localStorage.getItem("userId");
     
     if (!userId) {
       console.error("[TICKET] Missing userId");
-      return;
+      return undefined;
     }
 
     try {
@@ -820,6 +820,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       setTickets(prev => [...prev, newTicket]);
       
       console.log("[TICKET] Ticket created successfully. ID:", serverId, "Ticket ID:", serverTicketId);
+      return newTicket;
     } catch (error) {
       console.error("[TICKET] Failed to create ticket:", error);
       
@@ -832,6 +833,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       
       await dbManager.addTicket(newTicket);
       setTickets(prev => [...prev, newTicket]);
+      return newTicket;
     }
   }, []);
 
