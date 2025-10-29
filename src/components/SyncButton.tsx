@@ -6,9 +6,10 @@ import { Button } from "./ui/button";
 interface SyncButtonProps {
   lastSync: Date | null;
   isOnline: boolean;
+  onSync?: () => Promise<void>;
 }
 
-export const SyncButton = ({ lastSync, isOnline }: SyncButtonProps) => {
+export const SyncButton = ({ lastSync, isOnline, onSync }: SyncButtonProps) => {
   const { syncData } = useLeadContext();
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -27,7 +28,11 @@ export const SyncButton = ({ lastSync, isOnline }: SyncButtonProps) => {
     if (!isOnline || isSyncing) return;
     setIsSyncing(true);
     try {
-      await syncData();
+      if (onSync) {
+        await onSync();
+      } else {
+        await syncData();
+      }
     } finally {
       setIsSyncing(false);
     }

@@ -299,6 +299,7 @@ interface LeadContextType {
   updateContactFollowUp: (contactId: string, followUpDate: string, status?: string) => Promise<void>;
   fetchOrders: () => Promise<void>;
   fetchTickets: () => Promise<void>;
+  syncTickets: () => Promise<void>;
   addTicket: (ticket: Omit<Ticket, "id" | "syncStatus">) => Promise<Ticket | undefined>;
   updateTicket: (ticket: Ticket) => Promise<void>;
   getContactTickets: (contactId: string) => Ticket[];
@@ -814,6 +815,105 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const syncTickets = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("token");
+    
+    if (!userId || !token) {
+      console.error("[SYNC TICKETS] Missing userId or token");
+      return;
+    }
+
+    try {
+      const unsyncedTickets = tickets.filter(t => t.syncStatus !== "synced");
+      console.log("[SYNC TICKETS] Unsynced tickets:", unsyncedTickets.length);
+
+      for (const ticket of unsyncedTickets) {
+        const apiRoot = await getApiRoot();
+        
+        // For tickets without ID - create new
+        if (!ticket.id || ticket.id.includes('-')) {
+          const createUrl = `${apiRoot}/api/public/formwidgetdata/${userId}/token`;
+          const createPayload: any = {
+            contact: ticket.contactId,
+            report_date: ticket.reportedDate,
+            target_date: ticket.targetDate,
+            issue_type: ticket.issueType,
+            status: ticket.status,
+            description: ticket.description,
+            remarks: ticket.remarks,
+            root_cause: ticket.rootCause
+          };
+          
+          if (ticket.status === "CLOSED" && ticket.closedDate) {
+            createPayload.close_date = ticket.closedDate;
+          }
+
+          console.log("[SYNC TICKETS] Creating ticket:", createPayload);
+          
+          const createResponse = await fetch(createUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(createPayload)
+          });
+
+          if (createResponse.ok) {
+            const result = await createResponse.json();
+            console.log("[SYNC TICKETS] Created ticket response:", result);
+            
+            // Update ticket with synced status
+            const updatedTicket = { ...ticket, syncStatus: "synced" as const };
+            await dbManager.updateTicket(updatedTicket);
+          }
+        } else {
+          // For tickets with ID - update existing
+          const updateUrl = `${apiRoot}/api/public/formwidgetdata/${userId}/token`;
+          const updatePayload: any = {
+            id: ticket.id,
+            ticket_id: ticket.ticketId,
+            contact: ticket.contactId,
+            report_date: ticket.reportedDate,
+            target_date: ticket.targetDate,
+            issue_type: ticket.issueType,
+            status: ticket.status,
+            description: ticket.description,
+            remarks: ticket.remarks,
+            root_cause: ticket.rootCause
+          };
+          
+          if (ticket.status === "CLOSED" && ticket.closedDate) {
+            updatePayload.close_date = ticket.closedDate;
+          }
+
+          console.log("[SYNC TICKETS] Updating ticket:", updatePayload);
+          
+          const updateResponse = await fetch(updateUrl, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatePayload)
+          });
+
+          if (updateResponse.ok) {
+            console.log("[SYNC TICKETS] Updated ticket successfully");
+            
+            // Update ticket with synced status
+            const updatedTicket = { ...ticket, syncStatus: "synced" as const };
+            await dbManager.updateTicket(updatedTicket);
+          }
+        }
+      }
+
+      // Refresh tickets from state
+      const updatedTickets = await dbManager.getAllTickets();
+      setTickets(updatedTickets);
+      
+      localStorage.setItem("lastTicketSync", new Date().toISOString());
+      console.log("[SYNC TICKETS] Sync completed");
+    } catch (error) {
+      console.error("[SYNC TICKETS] Failed to sync tickets:", error);
+    }
+  }, [tickets]);
+
   const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">): Promise<Ticket | undefined> => {
     const userId = localStorage.getItem("userId");
     
@@ -999,6 +1099,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     updateContactFollowUp,
     fetchOrders,
     fetchTickets,
+    syncTickets,
     addTicket,
     updateTicket,
     getContactTickets,

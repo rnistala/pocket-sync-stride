@@ -12,10 +12,13 @@ import { ArrowLeft, Search, Plus, X, Calendar, Edit } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { UpdateTicketForm } from "@/components/UpdateTicketForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SyncButton } from "@/components/SyncButton";
 import { format } from "date-fns";
 
 export default function Tickets() {
-  const { tickets, contacts, updateTicket } = useLeadContext();
+  const { tickets, contacts, updateTicket, syncTickets } = useLeadContext();
+  const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("filter") || "all";
@@ -37,6 +40,30 @@ export default function Tickets() {
     const timer = setTimeout(() => setMounted(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  // Track online status and last sync
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    
+    const lastSyncStr = localStorage.getItem("lastTicketSync");
+    if (lastSyncStr) {
+      setLastSync(new Date(lastSyncStr));
+    }
+    
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  const handleSync = async () => {
+    await syncTickets();
+    setLastSync(new Date());
+  };
 
   // Create contact lookup map for O(1) access
   const contactMap = useMemo(() => {
@@ -131,6 +158,7 @@ export default function Tickets() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <SyncButton lastSync={lastSync} isOnline={isOnline} onSync={handleSync} />
               <ThemeToggle />
               <AddTicketForm />
             </div>
