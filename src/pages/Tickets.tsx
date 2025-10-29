@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Search, Plus, X, Calendar, Edit } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { UpdateTicketForm } from "@/components/UpdateTicketForm";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { format } from "date-fns";
 
 export default function Tickets() {
@@ -129,7 +130,10 @@ export default function Tickets() {
                 </p>
               </div>
             </div>
-            <AddTicketForm />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <AddTicketForm />
+            </div>
           </div>
 
           {/* Search and Filters */}
