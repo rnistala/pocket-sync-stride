@@ -1001,7 +1001,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         offset: 0,
         limit: 100,
         extra: [{
-          operator: "in",
+          operator: ">",
           value: `"${lastSyncDate}"`,
           tablename: "ticket",
           columnname: "updated",
