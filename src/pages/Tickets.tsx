@@ -241,7 +241,7 @@ export default function Tickets() {
               const contact = contactMap.get(ticket.contactId);
               return (
                 <Card
-                  key={ticket.id}
+                  key={`${ticket.id}-${ticket.ticketId || ''}`}
                   className="cursor-pointer hover:bg-accent/50 transition-colors"
                   onClick={() => setSelectedTicket(ticket)}
                 >
