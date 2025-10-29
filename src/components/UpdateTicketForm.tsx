@@ -133,7 +133,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
             )}
           </div>
 
-          {ticket.status === "closed" && (
+          {ticket.status === "CLOSED" && (
             <div className="space-y-2">
               <Label htmlFor="rootCause">Root Cause</Label>
               <Select value={rootCause} onValueChange={setRootCause}>

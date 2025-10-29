@@ -89,25 +89,25 @@ export default function Tickets() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "open":
-        return <Badge variant="destructive">Open</Badge>;
-      case "in-progress":
-        return <Badge variant="secondary">In Progress</Badge>;
-      case "closed":
-        return <Badge variant="outline">Closed</Badge>;
+      case "OPEN":
+        return <Badge variant="destructive">OPEN</Badge>;
+      case "IN PROGRESS":
+        return <Badge variant="secondary">IN PROGRESS</Badge>;
+      case "CLOSED":
+        return <Badge variant="outline">CLOSED</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
-  const handleStatusChange = async (ticketId: string, newStatus: "open" | "in-progress" | "closed") => {
+  const handleStatusChange = async (ticketId: string, newStatus: "OPEN" | "IN PROGRESS" | "CLOSED") => {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
 
     const updatedTicket = {
       ...ticket,
       status: newStatus,
-      closedDate: newStatus === "closed" ? new Date().toISOString() : ticket.closedDate,
+      closedDate: newStatus === "CLOSED" ? new Date().toISOString() : ticket.closedDate,
     };
 
     await updateTicket(updatedTicket);
@@ -162,9 +162,9 @@ export default function Tickets() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in-progress">In Progress</SelectItem>
-                  <SelectItem value="closed">Closed</SelectItem>
+                  <SelectItem value="OPEN">OPEN</SelectItem>
+                  <SelectItem value="IN PROGRESS">IN PROGRESS</SelectItem>
+                  <SelectItem value="CLOSED">CLOSED</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -236,9 +236,9 @@ export default function Tickets() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="open">Open</SelectItem>
-                            <SelectItem value="in-progress">In Progress</SelectItem>
-                            <SelectItem value="closed">Closed</SelectItem>
+                            <SelectItem value="OPEN">OPEN</SelectItem>
+                            <SelectItem value="IN PROGRESS">IN PROGRESS</SelectItem>
+                            <SelectItem value="CLOSED">CLOSED</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

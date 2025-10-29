@@ -8,12 +8,12 @@ export const TicketsWidget = () => {
   const navigate = useNavigate();
 
   const openTicketsCount = useMemo(() => 
-    tickets.filter(t => t.status === "open").length
+    tickets.filter(t => t.status === "OPEN").length
   , [tickets]);
 
   const handleClick = () => {
     startTransition(() => {
-      navigate("/tickets?filter=open");
+      navigate("/tickets?filter=OPEN");
     });
   };
 

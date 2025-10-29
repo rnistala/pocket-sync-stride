@@ -18,7 +18,7 @@ export interface Ticket {
   targetDate: string;
   closedDate?: string;
   issueType: string;
-  status: "open" | "in-progress" | "closed";
+  status: "OPEN" | "IN PROGRESS" | "CLOSED";
   description: string;
   remarks?: string;
   rootCause?: string;

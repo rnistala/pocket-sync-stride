@@ -59,7 +59,7 @@ export const AddTicketForm = () => {
       reportedDate: new Date().toISOString(),
       targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default to 7 days from now
       issueType,
-      status: "open",
+      status: "OPEN",
       description,
       screenshots,
     });
