@@ -277,7 +277,19 @@ export default function Tickets() {
           {selectedTicket && (
             <>
               <DialogHeader>
-                <DialogTitle>Ticket Details</DialogTitle>
+                <div className="flex items-center justify-between">
+                  <DialogTitle>Ticket Details</DialogTitle>
+                  <Button 
+                    size="sm"
+                    onClick={() => {
+                      setEditingTicket(selectedTicket);
+                      setSelectedTicket(null);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Ticket
+                  </Button>
+                </div>
               </DialogHeader>
               <ScrollArea className="max-h-[70vh] pr-4">
                 <div className="space-y-4">
@@ -362,17 +374,6 @@ export default function Tickets() {
                     </p>
                   </div>
                 )}
-
-                <Button 
-                  className="w-full mt-4"
-                  onClick={() => {
-                    setEditingTicket(selectedTicket);
-                    setSelectedTicket(null);
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Update Ticket
-                </Button>
               </ScrollArea>
             </>
           )}
