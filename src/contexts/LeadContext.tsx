@@ -793,7 +793,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     addTicket,
     updateTicket,
     getContactTickets,
-  }), [contacts, interactions, orders, tickets, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, advancedFilters, addInteraction, getContactInteractions, syncData, markInteractionsAsSynced, mergeInteractionsFromAPI, toggleStarred, updateContactFollowUp, fetchOrders, addTicket, updateTicket, getContactTickets]);
+  }), [contacts, interactions, orders, tickets, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, advancedFilters]);
 
   return (
     <LeadContext.Provider value={value}>
