@@ -1062,10 +1062,27 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             }
           }
           
+          // Remove synced tickets that are no longer on server
+          const serverTicketIds = new Set(serverTickets.map(t => t.ticketId));
+          const filteredTickets = mergedTickets.filter(ticket => {
+            // Keep locally created tickets (pending sync)
+            if (ticket.syncStatus === "pending") {
+              console.log("[SYNC TICKETS] Keeping locally created ticket:", ticket.id);
+              return true;
+            }
+            // Keep tickets that exist on server
+            if (serverTicketIds.has(ticket.ticketId)) {
+              return true;
+            }
+            // Remove synced tickets not found on server
+            console.log("[SYNC TICKETS] Removing deleted ticket:", ticket.ticketId);
+            return false;
+          });
+          
           // Save merged tickets
-          await dbManager.saveTickets(mergedTickets);
-          setTickets(mergedTickets);
-          console.log("[SYNC TICKETS] Merge completed. Total tickets after merge:", mergedTickets.length);
+          await dbManager.saveTickets(filteredTickets);
+          setTickets(filteredTickets);
+          console.log("[SYNC TICKETS] Merge completed. Total tickets after merge:", filteredTickets.length);
         } else {
           console.warn("[SYNC TICKETS] No tickets in server response or unexpected structure");
           console.warn("[SYNC TICKETS] Response structure:", JSON.stringify(result, null, 2));
