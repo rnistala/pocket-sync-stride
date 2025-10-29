@@ -746,14 +746,86 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">) => {
-    const newTicket: Ticket = {
-      ...ticket,
-      id: crypto.randomUUID(),
-      syncStatus: "local",
-    };
+    const userId = localStorage.getItem("userId");
     
-    await dbManager.addTicket(newTicket);
-    setTickets(prev => [...prev, newTicket]);
+    if (!userId) {
+      console.error("[TICKET] Missing userId");
+      return;
+    }
+
+    try {
+      // Prepare API payload
+      const apiPayload = {
+        meta: {
+          btable: "ticket",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: ""
+        },
+        data: [{
+          head: [],
+          body: [{
+            id: crypto.randomUUID(),
+            contact: ticket.contactId,
+            issue_type: ticket.issueType,
+            description: ticket.description,
+            report_date: ticket.reportedDate,
+            created: new Date().toISOString(),
+            createdby: userId,
+            remarks: ticket.remarks || "",
+            action_taken: ""
+          }],
+          dirty: "true"
+        }]
+      };
+
+      console.log("[TICKET] Submitting ticket to API:", apiPayload);
+
+      // Submit to API
+      const response = await fetch(`https://coolx.opterix.in/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiPayload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`API returned status ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("[TICKET] API response:", result);
+
+      // Extract ticket_id from response
+      let ticketId = crypto.randomUUID();
+      if (result.data && result.data[0] && result.data[0].body && result.data[0].body[0]) {
+        ticketId = result.data[0].body[0].ticket_id || result.data[0].body[0].id || ticketId;
+      }
+
+      // Create ticket with server-assigned ID
+      const newTicket: Ticket = {
+        ...ticket,
+        id: ticketId,
+        syncStatus: "synced",
+      };
+      
+      await dbManager.addTicket(newTicket);
+      setTickets(prev => [...prev, newTicket]);
+      
+      console.log("[TICKET] Ticket created successfully with ID:", ticketId);
+    } catch (error) {
+      console.error("[TICKET] Failed to create ticket:", error);
+      
+      // Fallback: create ticket locally if API fails
+      const newTicket: Ticket = {
+        ...ticket,
+        id: crypto.randomUUID(),
+        syncStatus: "local",
+      };
+      
+      await dbManager.addTicket(newTicket);
+      setTickets(prev => [...prev, newTicket]);
+    }
   }, []);
 
   const updateTicket = useCallback(async (ticket: Ticket) => {
