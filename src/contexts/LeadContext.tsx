@@ -12,6 +12,7 @@ const TICKETS_STORE = "tickets";
 
 export interface Ticket {
   id: string;
+  ticketId?: string; // Server-assigned ticket ID from API
   contactId: string;
   reportedDate: string;
   targetDate: string;
@@ -755,6 +756,17 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       // Prepare API payload
+      // Build API payload, skipping null id and ticket_id for first submission
+      const bodyData: any = {
+        contact: ticket.contactId,
+        issue_type: ticket.issueType,
+        description: ticket.description,
+        report_date: ticket.reportedDate,
+        created: new Date().toISOString(),
+        createdby: userId,
+        remarks: ticket.remarks || ""
+      };
+
       const apiPayload = {
         meta: {
           btable: "ticket",
@@ -765,17 +777,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         },
         data: [{
           head: [],
-          body: [{
-            id: crypto.randomUUID(),
-            contact: ticket.contactId,
-            issue_type: ticket.issueType,
-            description: ticket.description,
-            report_date: ticket.reportedDate,
-            created: new Date().toISOString(),
-            createdby: userId,
-            remarks: ticket.remarks || "",
-            action_taken: ""
-          }],
+          body: [bodyData],
           dirty: "true"
         }]
       };
@@ -796,23 +798,28 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       const result = await response.json();
       console.log("[TICKET] API response:", result);
 
-      // Extract ticket_id from response
-      let ticketId = crypto.randomUUID();
-      if (result.data && result.data[0] && result.data[0].body && result.data[0].body[0]) {
-        ticketId = result.data[0].body[0].ticket_id || result.data[0].body[0].id || ticketId;
+      // Extract id and ticket_id from response (API returns in Detail array)
+      let serverId = crypto.randomUUID();
+      let serverTicketId = undefined;
+      
+      if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
+        const responseBody = result.Detail[0].body[0];
+        serverId = responseBody.id || serverId;
+        serverTicketId = responseBody.ticket_id;
       }
 
-      // Create ticket with server-assigned ID
+      // Create ticket with server-assigned IDs
       const newTicket: Ticket = {
         ...ticket,
-        id: ticketId,
+        id: serverId,
+        ticketId: serverTicketId,
         syncStatus: "synced",
       };
       
       await dbManager.addTicket(newTicket);
       setTickets(prev => [...prev, newTicket]);
       
-      console.log("[TICKET] Ticket created successfully with ID:", ticketId);
+      console.log("[TICKET] Ticket created successfully. ID:", serverId, "Ticket ID:", serverTicketId);
     } catch (error) {
       console.error("[TICKET] Failed to create ticket:", error);
       
