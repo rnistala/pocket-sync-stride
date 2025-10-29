@@ -841,21 +841,37 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       for (const ticket of unsyncedTickets) {
         // For tickets without ID - create new
         if (!ticket.id || ticket.id.includes('-')) {
-          const createUrl = `${apiRoot}/api/public/formwidgetdata/${userId}/token`;
-          const createPayload: any = {
+          const createUrl = `${apiRoot}/api/public/tdata/${userId}`;
+          
+          const bodyData: any = {
             contact: ticket.contactId,
+            issue_type: ticket.issueType,
+            description: ticket.description,
             report_date: ticket.reportedDate,
             target_date: ticket.targetDate,
-            issue_type: ticket.issueType,
             status: ticket.status,
-            description: ticket.description,
-            remarks: ticket.remarks,
-            root_cause: ticket.rootCause
+            remarks: ticket.remarks || "",
+            root_cause: ticket.rootCause || ""
           };
           
           if (ticket.status === "CLOSED" && ticket.closedDate) {
-            createPayload.close_date = ticket.closedDate;
+            bodyData.close_date = ticket.closedDate;
           }
+
+          const createPayload = {
+            meta: {
+              btable: "ticket",
+              htable: "",
+              parentkey: "",
+              preapi: "",
+              draftid: ""
+            },
+            data: [{
+              head: [],
+              body: [bodyData],
+              dirty: "true"
+            }]
+          };
 
           console.log("[SYNC TICKETS] Creating ticket:", createPayload);
           
@@ -869,34 +885,65 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             const result = await createResponse.json();
             console.log("[SYNC TICKETS] Created ticket response:", result);
             
-            // Update ticket with synced status
-            const updatedTicket = { ...ticket, syncStatus: "synced" as const };
+            // Extract server IDs from response
+            let serverId = ticket.id;
+            let serverTicketId = ticket.ticketId;
+            
+            if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
+              const responseBody = result.Detail[0].body[0];
+              serverId = responseBody.id || serverId;
+              serverTicketId = responseBody.ticket_id || serverTicketId;
+            }
+            
+            // Update ticket with synced status and server IDs
+            const updatedTicket = { 
+              ...ticket, 
+              id: serverId,
+              ticketId: serverTicketId,
+              syncStatus: "synced" as const 
+            };
             await dbManager.updateTicket(updatedTicket);
           }
         } else {
           // For tickets with ID - update existing
-          const updateUrl = `${apiRoot}/api/public/formwidgetdata/${userId}/token`;
-          const updatePayload: any = {
+          const updateUrl = `${apiRoot}/api/public/tdata/${userId}`;
+          
+          const bodyData: any = {
             id: ticket.id,
             ticket_id: ticket.ticketId,
             contact: ticket.contactId,
+            issue_type: ticket.issueType,
+            description: ticket.description,
             report_date: ticket.reportedDate,
             target_date: ticket.targetDate,
-            issue_type: ticket.issueType,
             status: ticket.status,
-            description: ticket.description,
-            remarks: ticket.remarks,
-            root_cause: ticket.rootCause
+            remarks: ticket.remarks || "",
+            root_cause: ticket.rootCause || ""
           };
           
           if (ticket.status === "CLOSED" && ticket.closedDate) {
-            updatePayload.close_date = ticket.closedDate;
+            bodyData.close_date = ticket.closedDate;
           }
+
+          const updatePayload = {
+            meta: {
+              btable: "ticket",
+              htable: "",
+              parentkey: "",
+              preapi: "",
+              draftid: ""
+            },
+            data: [{
+              head: [],
+              body: [bodyData],
+              dirty: "true"
+            }]
+          };
 
           console.log("[SYNC TICKETS] Updating ticket:", updatePayload);
           
           const updateResponse = await fetch(updateUrl, {
-            method: "PUT",
+            method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatePayload)
           });
