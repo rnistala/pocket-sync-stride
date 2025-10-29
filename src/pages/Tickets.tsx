@@ -324,6 +324,15 @@ export default function Tickets() {
                     </p>
                   </div>
 
+                  {selectedTicket.remarks && (
+                    <div>
+                      <h4 className="text-sm font-medium text-foreground mb-2">Remarks / Analysis</h4>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {selectedTicket.remarks}
+                      </p>
+                    </div>
+                  )}
+
                   {selectedTicket.screenshots.length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium text-foreground mb-3">Screenshots</h4>
@@ -348,15 +357,6 @@ export default function Tickets() {
                     </div>
                   )}
                 </div>
-
-                {selectedTicket.remarks && (
-                  <div>
-                    <h4 className="text-sm font-medium text-foreground mb-2">Remarks / Analysis</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {selectedTicket.remarks}
-                    </p>
-                  </div>
-                )}
 
                 {selectedTicket.rootCause && (
                   <div>
