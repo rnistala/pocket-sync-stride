@@ -15,8 +15,8 @@ export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodays
         onClick={onTodaysClick}
       >
         <CardContent className="p-4">
-          <p className="text-xs text-muted-foreground mb-1">Today's Interactions</p>
-          <p className="text-2xl font-bold text-foreground">{todaysInteractions}</p>
+          <p className="text-xs text-muted-foreground mb-1 leading-tight">Today's Interactions</p>
+          <p className="text-2xl font-bold text-foreground leading-tight">{todaysInteractions}</p>
         </CardContent>
       </Card>
       <Card 
@@ -24,8 +24,8 @@ export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodays
         onClick={onClosedClick}
       >
         <CardContent className="p-4">
-          <p className="text-xs text-muted-foreground mb-1">Closed This Month</p>
-          <p className="text-2xl font-bold text-foreground">
+          <p className="text-xs text-muted-foreground mb-1 leading-tight">Closed This Month</p>
+          <p className="text-2xl font-bold text-foreground leading-tight">
             ₹{leadsClosedThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
         </CardContent>

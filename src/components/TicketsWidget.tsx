@@ -18,8 +18,8 @@ export const TicketsWidget = () => {
       onClick={handleClick}
     >
       <CardContent className="p-4">
-        <p className="text-xs text-muted-foreground mb-1">Open Tickets</p>
-        <p className="text-2xl font-bold text-foreground">{openTickets.length}</p>
+        <p className="text-xs text-muted-foreground mb-1 leading-tight">Open Tickets</p>
+        <p className="text-2xl font-bold text-foreground leading-tight">{openTickets.length}</p>
       </CardContent>
     </Card>
   );
