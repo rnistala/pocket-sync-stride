@@ -340,7 +340,7 @@ export default function Tickets() {
                         {selectedTicket.screenshots.map((screenshot, idx) => (
                           <div
                             key={idx}
-                            className="relative w-full h-48 rounded-lg border border-border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                            className="relative w-full h-32 rounded-lg border border-border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
                               setFullScreenImage(screenshot);
