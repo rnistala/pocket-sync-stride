@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Upload, X, Check, ChevronsUpDown } from "lucide-react";
@@ -176,13 +177,16 @@ export const AddTicketForm = () => {
 
           <div className="space-y-2">
             <Label htmlFor="issueType">Issue Type *</Label>
-            <Input
-              id="issueType"
-              value={issueType}
-              onChange={(e) => setIssueType(e.target.value)}
-              placeholder="e.g., Bug, Feature Request, Documentation"
-              required
-            />
+            <Select value={issueType} onValueChange={setIssueType}>
+              <SelectTrigger id="issueType">
+                <SelectValue placeholder="Select issue type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Bug">Bug</SelectItem>
+                <SelectItem value="Feature Request">Feature Request</SelectItem>
+                <SelectItem value="Support">Support</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
