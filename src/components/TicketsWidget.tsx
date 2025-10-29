@@ -17,9 +17,9 @@ export const TicketsWidget = () => {
       className="cursor-pointer hover:bg-accent transition-colors h-full"
       onClick={handleClick}
     >
-      <CardContent className="p-4">
-        <p className="text-xs text-muted-foreground mb-1 leading-tight">Open Tickets</p>
-        <p className="text-2xl font-bold text-foreground leading-tight">{openTickets.length}</p>
+      <CardContent className="p-4 flex flex-col">
+        <p className="text-xs text-muted-foreground mb-2">Open Tickets</p>
+        <p className="text-2xl font-bold text-foreground">{openTickets.length}</p>
       </CardContent>
     </Card>
   );
