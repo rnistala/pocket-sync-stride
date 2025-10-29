@@ -1,4 +1,5 @@
 {
-  "apiRoot": "https://opterix.in/william",
-  "statuses": ["Fresh", "Regular", "Hot", "Cold"]
+  "apiRoot": "https://demo.opterix.in",
+  "statuses": ["New", "Contacted", "Qualified","Demo Done","Regular", "Drop"]
 }
+
