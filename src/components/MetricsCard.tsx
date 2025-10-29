@@ -24,9 +24,9 @@ export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodays
         onClick={onClosedClick}
       >
         <CardContent className="p-4 flex flex-col">
-          <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Closed This Month</p>
+          <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Sales This Month (₹)</p>
           <p className="text-2xl font-bold text-foreground">
-            ₹{leadsClosedThisMonth.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {leadsClosedThisMonth.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
           </p>
         </CardContent>
       </Card>
