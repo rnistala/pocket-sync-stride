@@ -278,17 +278,6 @@ export default function Tickets() {
             <>
               <DialogHeader>
                 <DialogTitle>Ticket Details</DialogTitle>
-                <Button 
-                  size="sm"
-                  className="mt-2"
-                  onClick={() => {
-                    setEditingTicket(selectedTicket);
-                    setSelectedTicket(null);
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Update Ticket
-                </Button>
               </DialogHeader>
               <ScrollArea className="max-h-[70vh] pr-4">
                 <div className="space-y-4">
@@ -374,6 +363,16 @@ export default function Tickets() {
                   </div>
                 )}
               </ScrollArea>
+              <Button 
+                className="w-full mt-4"
+                onClick={() => {
+                  setEditingTicket(selectedTicket);
+                  setSelectedTicket(null);
+                }}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Update Ticket
+              </Button>
             </>
           )}
         </DialogContent>
