@@ -1,31 +1,46 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, X } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, Upload, X, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export const AddTicketForm = () => {
   const { contacts, addTicket } = useLeadContext();
   const [open, setOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [contactId, setContactId] = useState("");
+  const [contactSearch, setContactSearch] = useState("");
   const [issueType, setIssueType] = useState("");
   const [targetDate, setTargetDate] = useState("");
   const [description, setDescription] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
-  const [loadContacts, setLoadContacts] = useState(false);
 
-  // Only load contacts when dialog opens
-  useEffect(() => {
-    if (open && !loadContacts) {
-      const timer = setTimeout(() => setLoadContacts(true), 50);
-      return () => clearTimeout(timer);
-    }
-  }, [open, loadContacts]);
+  // Get selected contact display name
+  const selectedContact = useMemo(() => 
+    contacts.find(c => c.id === contactId),
+    [contacts, contactId]
+  );
+
+  // Filter contacts based on search
+  const filteredContacts = useMemo(() => {
+    if (!contactSearch.trim()) return contacts.slice(0, 50);
+    
+    const query = contactSearch.toLowerCase();
+    return contacts
+      .filter(contact => 
+        contact.name.toLowerCase().includes(query) ||
+        contact.company.toLowerCase().includes(query) ||
+        (contact.phone && contact.phone.includes(query))
+      )
+      .slice(0, 50);
+  }, [contacts, contactSearch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +71,7 @@ export const AddTicketForm = () => {
 
     // Reset form
     setContactId("");
+    setContactSearch("");
     setIssueType("");
     setTargetDate("");
     setDescription("");
@@ -99,27 +115,63 @@ export const AddTicketForm = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="contact">Contact *</Label>
-            <Select value={contactId} onValueChange={setContactId}>
-              <SelectTrigger id="contact">
-                <SelectValue placeholder="Select a contact" />
-              </SelectTrigger>
-              <SelectContent>
-                {loadContacts ? (
-                  contacts.slice(0, 100).map(contact => (
-                    <SelectItem key={contact.id} value={contact.id}>
-                      {contact.name} - {contact.company}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="" disabled>Loading contacts...</SelectItem>
-                )}
-                {loadContacts && contacts.length > 100 && (
-                  <SelectItem value="" disabled>
-                    Showing first 100 of {contacts.length} contacts
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            <Popover open={contactOpen} onOpenChange={setContactOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  id="contact"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={contactOpen}
+                  className="w-full justify-between"
+                >
+                  {selectedContact ? (
+                    <span className="truncate">{selectedContact.name} - {selectedContact.company}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Search and select contact...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[400px] p-0" align="start">
+                <Command shouldFilter={false}>
+                  <CommandInput 
+                    placeholder="Search by name, company, or phone..." 
+                    value={contactSearch}
+                    onValueChange={setContactSearch}
+                  />
+                  <CommandList>
+                    <CommandEmpty>No contacts found.</CommandEmpty>
+                    <CommandGroup>
+                      {filteredContacts.map((contact) => (
+                        <CommandItem
+                          key={contact.id}
+                          value={contact.id}
+                          onSelect={(currentValue) => {
+                            setContactId(currentValue);
+                            setContactOpen(false);
+                            setContactSearch("");
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              contactId === contact.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{contact.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {contact.company}
+                              {contact.phone && ` • ${contact.phone}`}
+                            </span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="space-y-2">
