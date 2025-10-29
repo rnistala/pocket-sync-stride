@@ -825,12 +825,13 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      const apiRoot = await getApiRoot();
+      
+      // Step 1: Upload unsynced local tickets
       const unsyncedTickets = tickets.filter(t => t.syncStatus !== "synced");
       console.log("[SYNC TICKETS] Unsynced tickets:", unsyncedTickets.length);
 
       for (const ticket of unsyncedTickets) {
-        const apiRoot = await getApiRoot();
-        
         // For tickets without ID - create new
         if (!ticket.id || ticket.id.includes('-')) {
           const createUrl = `${apiRoot}/api/public/formwidgetdata/${userId}/token`;
@@ -903,9 +904,85 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Refresh tickets from state
-      const updatedTickets = await dbManager.getAllTickets();
-      setTickets(updatedTickets);
+      // Step 2: Fetch tickets changed on server since last sync
+      const lastSyncStr = localStorage.getItem("lastTicketSync");
+      const lastSyncDate = lastSyncStr || new Date(0).toISOString();
+      
+      console.log("[SYNC TICKETS] Fetching changed tickets since:", lastSyncDate);
+      
+      const fetchUrl = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
+      const fetchPayload = {
+        id: 555,
+        offset: 0,
+        limit: 100,
+        extra: [{
+          operator: "in",
+          value: lastSyncDate,
+          tablename: "ticket",
+          columnname: "updated",
+          function: "",
+          datatype: "Selection",
+          enable: "true",
+          show: lastSyncDate,
+          extracolumn: "name"
+        }]
+      };
+      
+      console.log("[SYNC TICKETS] Fetch payload:", fetchPayload);
+      
+      const fetchResponse = await fetch(fetchUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fetchPayload)
+      });
+
+      if (fetchResponse.ok) {
+        const result = await fetchResponse.json();
+        console.log("[SYNC TICKETS] Fetched changed tickets:", result);
+        
+        if (result.data && result.data[0] && result.data[0].body) {
+          const serverTickets = result.data[0].body.map((apiTicket: any) => ({
+            id: apiTicket.id || crypto.randomUUID(),
+            ticketId: apiTicket.ticket_id,
+            contactId: apiTicket.contact || "",
+            reportedDate: apiTicket.report_date || new Date().toISOString(),
+            targetDate: apiTicket.target_date || new Date().toISOString(),
+            closedDate: apiTicket.close_date,
+            issueType: apiTicket.issue_type || "",
+            status: apiTicket.status || "OPEN",
+            description: apiTicket.description || "",
+            remarks: apiTicket.remarks || "",
+            rootCause: apiTicket.root_cause || "",
+            screenshots: [],
+            syncStatus: "synced" as const
+          }));
+          
+          console.log("[SYNC TICKETS] Server tickets to merge:", serverTickets.length);
+          
+          // Step 3: Merge with local data
+          const localTickets = await dbManager.getAllTickets();
+          const mergedTickets = [...localTickets];
+          
+          // Update or add server tickets
+          for (const serverTicket of serverTickets) {
+            const existingIndex = mergedTickets.findIndex(t => t.id === serverTicket.id);
+            if (existingIndex >= 0) {
+              // Update existing ticket
+              mergedTickets[existingIndex] = serverTicket;
+              console.log("[SYNC TICKETS] Updated ticket:", serverTicket.id);
+            } else {
+              // Add new ticket from server
+              mergedTickets.push(serverTicket);
+              console.log("[SYNC TICKETS] Added new ticket:", serverTicket.id);
+            }
+          }
+          
+          // Save merged tickets
+          await dbManager.saveTickets(mergedTickets);
+          setTickets(mergedTickets);
+          console.log("[SYNC TICKETS] Merge completed. Total tickets:", mergedTickets.length);
+        }
+      }
       
       localStorage.setItem("lastTicketSync", new Date().toISOString());
       console.log("[SYNC TICKETS] Sync completed");
