@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -17,6 +17,15 @@ export const AddTicketForm = () => {
   const [targetDate, setTargetDate] = useState("");
   const [description, setDescription] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [loadContacts, setLoadContacts] = useState(false);
+
+  // Only load contacts when dialog opens
+  useEffect(() => {
+    if (open && !loadContacts) {
+      const timer = setTimeout(() => setLoadContacts(true), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [open, loadContacts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,11 +104,20 @@ export const AddTicketForm = () => {
                 <SelectValue placeholder="Select a contact" />
               </SelectTrigger>
               <SelectContent>
-                {contacts.map(contact => (
-                  <SelectItem key={contact.id} value={contact.id}>
-                    {contact.name} - {contact.company}
+                {loadContacts ? (
+                  contacts.slice(0, 100).map(contact => (
+                    <SelectItem key={contact.id} value={contact.id}>
+                      {contact.name} - {contact.company}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="" disabled>Loading contacts...</SelectItem>
+                )}
+                {loadContacts && contacts.length > 100 && (
+                  <SelectItem value="" disabled>
+                    Showing first 100 of {contacts.length} contacts
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>

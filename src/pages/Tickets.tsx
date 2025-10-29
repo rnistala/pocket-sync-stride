@@ -23,9 +23,16 @@ export default function Tickets() {
   const [issueTypeFilter, setIssueTypeFilter] = useState<string>("all");
   const [contactFilter, setContactFilter] = useState<string>("all");
   const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   // Defer search query for non-blocking updates
   const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  // Defer heavy renders until after initial paint
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Create contact lookup map for O(1) access
   const contactMap = useMemo(() => {
@@ -164,7 +171,7 @@ export default function Tickets() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  {issueTypes.map(type => (
+                  {mounted && issueTypes.map(type => (
                     <SelectItem key={type} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
@@ -176,11 +183,16 @@ export default function Tickets() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Contacts</SelectItem>
-                  {contacts.map(contact => (
+                  {mounted && contacts.slice(0, 100).map(contact => (
                     <SelectItem key={contact.id} value={contact.id}>
                       {contact.name}
                     </SelectItem>
                   ))}
+                  {mounted && contacts.length > 100 && (
+                    <SelectItem value="" disabled>
+                      Showing first 100 of {contacts.length} contacts
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
