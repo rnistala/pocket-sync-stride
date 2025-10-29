@@ -9,9 +9,9 @@ interface MetricsCardProps {
 
 export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodaysClick, onClosedClick }: MetricsCardProps) => {
   return (
-    <div className="grid grid-cols-2 gap-3 mb-4">
+    <>
       <Card 
-        className="cursor-pointer hover:bg-accent transition-colors"
+        className="cursor-pointer hover:bg-accent transition-colors h-full"
         onClick={onTodaysClick}
       >
         <CardContent className="p-4">
@@ -20,7 +20,7 @@ export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodays
         </CardContent>
       </Card>
       <Card 
-        className="cursor-pointer hover:bg-accent transition-colors"
+        className="cursor-pointer hover:bg-accent transition-colors h-full"
         onClick={onClosedClick}
       >
         <CardContent className="p-4">
@@ -30,6 +30,6 @@ export const MetricsCard = ({ todaysInteractions, leadsClosedThisMonth, onTodays
           </p>
         </CardContent>
       </Card>
-    </div>
+    </>
   );
 };

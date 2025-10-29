@@ -351,7 +351,7 @@ const Index = () => {
       </div>
 
       <div className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
-        <div data-tour="metrics" className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div data-tour="metrics" className="grid grid-cols-3 gap-2 md:gap-3 mb-4">
           <MetricsCard 
             todaysInteractions={metrics.todaysInteractions} 
             leadsClosedThisMonth={metrics.leadsClosedThisMonth}
