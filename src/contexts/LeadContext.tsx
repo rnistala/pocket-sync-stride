@@ -820,28 +820,35 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("userToken");
     
-    console.log("[SYNC TICKETS] Starting sync...");
+    console.log("=== [SYNC TICKETS] STARTING SYNC ===");
     console.log("[SYNC TICKETS] userId:", userId);
     console.log("[SYNC TICKETS] token:", token ? "present" : "missing");
     console.log("[SYNC TICKETS] All localStorage keys:", Object.keys(localStorage));
     
     if (!userId || !token) {
-      console.error("[SYNC TICKETS] Missing userId or token");
+      console.error("[SYNC TICKETS] Missing userId or token - ABORTING");
       toast.error("Unable to sync: User not authenticated");
       return;
     }
 
     try {
       const apiRoot = await getApiRoot();
+      console.log("[SYNC TICKETS] API Root:", apiRoot);
       
       // Step 1: Upload unsynced local tickets
       const unsyncedTickets = tickets.filter(t => t.syncStatus !== "synced");
+      console.log("[SYNC TICKETS] Total tickets:", tickets.length);
       console.log("[SYNC TICKETS] Unsynced tickets:", unsyncedTickets.length);
+      console.log("[SYNC TICKETS] Unsynced ticket IDs:", unsyncedTickets.map(t => ({ id: t.id, ticketId: t.ticketId, status: t.syncStatus })));
 
       for (const ticket of unsyncedTickets) {
+        console.log(`\n--- [SYNC TICKETS] Processing ticket: ${ticket.id} ---`);
+        
         // For tickets without ID - create new
         if (!ticket.id || ticket.id.includes('-')) {
+          console.log("[SYNC TICKETS] Creating NEW ticket (no server ID)");
           const createUrl = `${apiRoot}/api/public/tdata/${userId}`;
+          console.log("[SYNC TICKETS] Create URL:", createUrl);
           
           const bodyData: any = {
             contact: ticket.contactId,
@@ -873,7 +880,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             }]
           };
 
-          console.log("[SYNC TICKETS] Creating ticket:", createPayload);
+          console.log("[SYNC TICKETS] Create payload:", JSON.stringify(createPayload, null, 2));
           
           const createResponse = await fetch(createUrl, {
             method: "POST",
@@ -881,9 +888,15 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             body: JSON.stringify(createPayload)
           });
 
+          console.log("[SYNC TICKETS] Create response status:", createResponse.status);
+          console.log("[SYNC TICKETS] Create response ok:", createResponse.ok);
+
+          const responseText = await createResponse.text();
+          console.log("[SYNC TICKETS] Create response body:", responseText);
+
           if (createResponse.ok) {
-            const result = await createResponse.json();
-            console.log("[SYNC TICKETS] Created ticket response:", result);
+            const result = JSON.parse(responseText);
+            console.log("[SYNC TICKETS] Create SUCCESS - parsed result:", result);
             
             // Extract server IDs from response
             let serverId = ticket.id;
@@ -893,6 +906,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               const responseBody = result.Detail[0].body[0];
               serverId = responseBody.id || serverId;
               serverTicketId = responseBody.ticket_id || serverTicketId;
+              console.log("[SYNC TICKETS] Extracted server IDs - id:", serverId, "ticket_id:", serverTicketId);
             }
             
             // Update ticket with synced status and server IDs
@@ -903,10 +917,15 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               syncStatus: "synced" as const 
             };
             await dbManager.updateTicket(updatedTicket);
+            console.log("[SYNC TICKETS] Updated ticket in IndexedDB with synced status");
+          } else {
+            console.error("[SYNC TICKETS] Create FAILED with status:", createResponse.status);
+            console.error("[SYNC TICKETS] Error response:", responseText);
           }
         } else {
-          // For tickets with ID - update existing
+          console.log("[SYNC TICKETS] Updating EXISTING ticket (has server ID)");
           const updateUrl = `${apiRoot}/api/public/tdata/${userId}`;
+          console.log("[SYNC TICKETS] Update URL:", updateUrl);
           
           const bodyData: any = {
             id: ticket.id,
@@ -940,7 +959,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             }]
           };
 
-          console.log("[SYNC TICKETS] Updating ticket:", updatePayload);
+          console.log("[SYNC TICKETS] Update payload:", JSON.stringify(updatePayload, null, 2));
           
           const updateResponse = await fetch(updateUrl, {
             method: "POST",
@@ -948,23 +967,35 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             body: JSON.stringify(updatePayload)
           });
 
+          console.log("[SYNC TICKETS] Update response status:", updateResponse.status);
+          console.log("[SYNC TICKETS] Update response ok:", updateResponse.ok);
+
+          const responseText = await updateResponse.text();
+          console.log("[SYNC TICKETS] Update response body:", responseText);
+
           if (updateResponse.ok) {
-            console.log("[SYNC TICKETS] Updated ticket successfully");
+            console.log("[SYNC TICKETS] Update SUCCESS");
             
             // Update ticket with synced status
             const updatedTicket = { ...ticket, syncStatus: "synced" as const };
             await dbManager.updateTicket(updatedTicket);
+            console.log("[SYNC TICKETS] Updated ticket in IndexedDB with synced status");
+          } else {
+            console.error("[SYNC TICKETS] Update FAILED with status:", updateResponse.status);
+            console.error("[SYNC TICKETS] Error response:", responseText);
           }
         }
       }
 
+      console.log("\n=== [SYNC TICKETS] Step 2: Fetching changed tickets from server ===");
       // Step 2: Fetch tickets changed on server since last sync
       const lastSyncStr = localStorage.getItem("lastTicketSync");
       const lastSyncDate = lastSyncStr || new Date(0).toISOString();
       
-      console.log("[SYNC TICKETS] Fetching changed tickets since:", lastSyncDate);
+      console.log("[SYNC TICKETS] Last sync date:", lastSyncDate);
       
       const fetchUrl = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
+      console.log("[SYNC TICKETS] Fetch URL:", fetchUrl);
       const fetchPayload = {
         id: 555,
         offset: 0,
@@ -982,7 +1013,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         }]
       };
       
-      console.log("[SYNC TICKETS] Fetch payload:", fetchPayload);
+      console.log("[SYNC TICKETS] Fetch payload:", JSON.stringify(fetchPayload, null, 2));
       
       const fetchResponse = await fetch(fetchUrl, {
         method: "POST",
@@ -990,11 +1021,19 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         body: JSON.stringify(fetchPayload)
       });
 
+      console.log("[SYNC TICKETS] Fetch response status:", fetchResponse.status);
+      console.log("[SYNC TICKETS] Fetch response ok:", fetchResponse.ok);
+
+      const fetchResponseText = await fetchResponse.text();
+      console.log("[SYNC TICKETS] Fetch response body:", fetchResponseText);
+
       if (fetchResponse.ok) {
-        const result = await fetchResponse.json();
-        console.log("[SYNC TICKETS] Fetched changed tickets:", result);
+        const result = JSON.parse(fetchResponseText);
+        console.log("[SYNC TICKETS] Fetch SUCCESS - parsed result:", result);
         
         if (result.data && result.data[0] && result.data[0].body) {
+          console.log("[SYNC TICKETS] Server tickets found:", result.data[0].body.length);
+          
           const serverTickets = result.data[0].body.map((apiTicket: any) => ({
             id: apiTicket.id || crypto.randomUUID(),
             ticketId: apiTicket.ticket_id,
@@ -1011,10 +1050,13 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             syncStatus: "synced" as const
           }));
           
-          console.log("[SYNC TICKETS] Server tickets to merge:", serverTickets.length);
+          console.log("[SYNC TICKETS] Mapped server tickets:", serverTickets.length);
+          console.log("[SYNC TICKETS] First server ticket sample:", serverTickets[0]);
           
           // Step 3: Merge with local data
           const localTickets = await dbManager.getAllTickets();
+          console.log("[SYNC TICKETS] Local tickets before merge:", localTickets.length);
+          
           const mergedTickets = [...localTickets];
           
           // Update or add server tickets
@@ -1034,15 +1076,23 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           // Save merged tickets
           await dbManager.saveTickets(mergedTickets);
           setTickets(mergedTickets);
-          console.log("[SYNC TICKETS] Merge completed. Total tickets:", mergedTickets.length);
+          console.log("[SYNC TICKETS] Merge completed. Total tickets after merge:", mergedTickets.length);
+        } else {
+          console.warn("[SYNC TICKETS] No tickets in server response or unexpected structure");
+          console.warn("[SYNC TICKETS] Response structure:", JSON.stringify(result, null, 2));
         }
+      } else {
+        console.error("[SYNC TICKETS] Fetch FAILED with status:", fetchResponse.status);
+        console.error("[SYNC TICKETS] Error response:", fetchResponseText);
       }
       
       localStorage.setItem("lastTicketSync", new Date().toISOString());
-      console.log("[SYNC TICKETS] Sync completed");
+      console.log("=== [SYNC TICKETS] SYNC COMPLETED SUCCESSFULLY ===");
       toast.success("Tickets synced successfully");
     } catch (error) {
-      console.error("[SYNC TICKETS] Failed to sync tickets:", error);
+      console.error("=== [SYNC TICKETS] SYNC FAILED WITH ERROR ===");
+      console.error("[SYNC TICKETS] Error:", error);
+      console.error("[SYNC TICKETS] Error stack:", error instanceof Error ? error.stack : "No stack trace");
       toast.error("Failed to sync tickets. Please try again.");
     }
   }, [tickets]);
