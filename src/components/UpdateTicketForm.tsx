@@ -19,14 +19,33 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   const [targetDate, setTargetDate] = useState("");
   const [remarks, setRemarks] = useState("");
   const [rootCause, setRootCause] = useState("");
+  const [screenshots, setScreenshots] = useState<string[]>([]);
 
   useEffect(() => {
     if (ticket) {
       setTargetDate(ticket.targetDate.split('T')[0]);
       setRemarks(ticket.remarks || "");
       setRootCause(ticket.rootCause || "");
+      setScreenshots(ticket.screenshots || []);
     }
   }, [ticket]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshots((prev) => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setScreenshots((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +55,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
       targetDate: new Date(targetDate).toISOString(),
       remarks: remarks.trim(),
       rootCause: rootCause.trim(),
+      screenshots,
     };
 
     await updateTicket(updatedTicket);
@@ -78,6 +98,39 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
               placeholder="Add your analysis or remarks about this ticket..."
               className="min-h-[120px]"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="screenshots">Upload Images</Label>
+            <Input
+              id="screenshots"
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+            />
+            {screenshots.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {screenshots.map((screenshot, index) => (
+                  <div key={index} className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center">
+                    <img
+                      src={screenshot}
+                      alt={`Screenshot ${index + 1}`}
+                      className="w-full h-full object-contain"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-1 right-1 h-6 w-6"
+                      onClick={() => handleRemoveImage(index)}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {ticket.status === "closed" && (
