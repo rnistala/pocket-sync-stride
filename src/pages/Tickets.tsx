@@ -329,16 +329,20 @@ export default function Tickets() {
                       <h4 className="text-sm font-medium text-foreground mb-3">Screenshots</h4>
                       <div className="grid grid-cols-2 gap-3">
                         {selectedTicket.screenshots.map((screenshot, idx) => (
-                          <img
+                          <div
                             key={idx}
-                            src={screenshot}
-                            alt={`Screenshot ${idx + 1}`}
-                            className="rounded-lg border border-border w-full h-auto cursor-pointer hover:opacity-80 transition-opacity"
+                            className="relative w-full h-48 rounded-lg border border-border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
                               setFullScreenImage(screenshot);
                             }}
-                          />
+                          >
+                            <img
+                              src={screenshot}
+                              alt={`Screenshot ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>
