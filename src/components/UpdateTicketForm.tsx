@@ -47,6 +47,36 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
     setScreenshots((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handlePaste = (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    Array.from(items).forEach(item => {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            setScreenshots(prev => [...prev, result]);
+            toast({
+              title: "Image Pasted",
+              description: "Screenshot added from clipboard",
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener('paste', handlePaste);
+      return () => document.removeEventListener('paste', handlePaste);
+    }
+  }, [open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -102,6 +132,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
 
           <div className="space-y-2">
             <Label htmlFor="screenshots">Upload Images</Label>
+            <p className="text-xs text-muted-foreground">Upload files or paste screenshots (Ctrl+V / Cmd+V)</p>
             <Input
               id="screenshots"
               type="file"

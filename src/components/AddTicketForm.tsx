@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -97,6 +97,36 @@ export const AddTicketForm = () => {
   const removeScreenshot = (index: number) => {
     setScreenshots(prev => prev.filter((_, i) => i !== index));
   };
+
+  const handlePaste = (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    Array.from(items).forEach(item => {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            setScreenshots(prev => [...prev, result]);
+            toast({
+              title: "Image Pasted",
+              description: "Screenshot added from clipboard",
+            });
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener('paste', handlePaste);
+      return () => document.removeEventListener('paste', handlePaste);
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -203,6 +233,7 @@ export const AddTicketForm = () => {
 
           <div className="space-y-2">
             <Label>Screenshots (optional)</Label>
+            <p className="text-xs text-muted-foreground">Upload files or paste screenshots (Ctrl+V / Cmd+V)</p>
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Button
