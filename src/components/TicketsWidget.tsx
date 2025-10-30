@@ -14,7 +14,7 @@ export const TicketsWidget = () => {
   const handleClick = async () => {
     await fetchTickets();
     startTransition(() => {
-      navigate("/tickets?filter=OPEN");
+      navigate("/tickets");
     });
   };
 
