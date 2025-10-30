@@ -36,7 +36,7 @@ const ContactInteractions = () => {
 };
 
 const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string; navigate: any }) => {
-  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp, fetchOrders } = useLeadContext();
+  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp, updateContactStatus, fetchOrders } = useLeadContext();
   
   // Get fresh contact from context every render
   const contact = contacts.find((c) => c.id === contactId);
@@ -461,7 +461,6 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       if (response.ok) {
         await updateContactFollowUp(contact.id, date.toISOString());
         toast.success("Follow-up date updated");
-        await syncData();
       } else {
         toast.error("Failed to update follow-up date");
       }
@@ -564,8 +563,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       });
 
       if (response.ok) {
+        await updateContactStatus(contact.id, newStatus);
         toast.success("Status updated successfully");
-        await syncData();
       } else {
         toast.error("Failed to update status");
       }

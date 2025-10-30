@@ -298,6 +298,7 @@ interface LeadContextType {
   mergeInteractionsFromAPI: (apiInteractions: any[], contactId: string) => Promise<void>;
   toggleStarred: (contactId: string) => Promise<void>;
   updateContactFollowUp: (contactId: string, followUpDate: string, status?: string) => Promise<void>;
+  updateContactStatus: (contactId: string, status: string) => Promise<void>;
   fetchOrders: () => Promise<void>;
   fetchTickets: () => Promise<void>;
   syncTickets: () => Promise<void>;
@@ -494,6 +495,21 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const updateContactFollowUp = useCallback(async (contactId: string, followUpDate: string, status?: string) => {
     const updatedContacts = contacts.map(c => 
       c.id === contactId ? { ...c, followup_on: followUpDate, ...(status && { status }) } : c
+    );
+    
+    // Update the changed contact in IndexedDB first
+    const updatedContact = updatedContacts.find(c => c.id === contactId);
+    if (updatedContact) {
+      await dbManager.updateContact(updatedContact);
+    }
+    
+    // Then update state
+    setContacts(updatedContacts);
+  }, [contacts]);
+
+  const updateContactStatus = useCallback(async (contactId: string, status: string) => {
+    const updatedContacts = contacts.map(c => 
+      c.id === contactId ? { ...c, status } : c
     );
     
     // Update the changed contact in IndexedDB first
@@ -1286,6 +1302,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     mergeInteractionsFromAPI,
     toggleStarred,
     updateContactFollowUp,
+    updateContactStatus,
     fetchOrders,
     fetchTickets,
     syncTickets,
