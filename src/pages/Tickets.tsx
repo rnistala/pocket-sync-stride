@@ -201,26 +201,11 @@ export default function Tickets() {
 
           {/* Count and Sync */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-foreground">
-              <span className="font-medium">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-foreground">
                 {filteredTickets.length} {filteredTickets.length === 1 ? 'Ticket' : 'Tickets'}
               </span>
-              {lastSync && (
-                <>
-                  <span className="text-muted-foreground">
-                    {format(lastSync, "h:mm a")}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={handleSync}
-                    disabled={!isOnline}
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5 rotate-90" />
-                  </Button>
-                </>
-              )}
+              <SyncButton lastSync={lastSync} isOnline={isOnline} onSync={handleSync} />
             </div>
           </div>
         </div>
