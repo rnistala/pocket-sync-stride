@@ -48,7 +48,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Return brief company info as JSON: {"industry": "...", "products": "...", "size": "...", "owner": "...", "address": "...", "phone": "...", "email": "...", "recentNews": "...", "summary": "..."}. Use "Not available" if data missing.'
+            content: 'You must return ONLY valid JSON with no markdown formatting, no code blocks, no explanations. Return this exact structure: {"industry": "...", "products": "...", "size": "...", "owner": "...", "address": "...", "phone": "...", "email": "...", "recentNews": "...", "summary": "..."}. Use "Not available" if data missing. Do not include any text before or after the JSON object.'
           },
           {
             role: 'user',
@@ -96,20 +96,28 @@ serve(async (req) => {
       );
     }
 
-    // Extract JSON from response (it might be wrapped in markdown code blocks)
+    // Extract JSON from response (it might be wrapped in markdown code blocks or have text around it)
     let research;
     try {
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      // First, try to remove markdown code blocks
+      let cleanContent = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+      
+      // Try to find JSON object in the content
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         research = JSON.parse(jsonMatch[0]);
       } else {
-        research = JSON.parse(content);
+        research = JSON.parse(cleanContent);
       }
       console.log('Research data parsed:', research);
     } catch (parseError) {
       console.error('Failed to parse JSON:', parseError, 'Content:', content);
+      // Return a structured error with more details
       return new Response(
-        JSON.stringify({ error: 'Failed to parse research data' }),
+        JSON.stringify({ 
+          error: 'Failed to parse research data from AI response',
+          details: 'The AI returned an invalid format. Please try again.'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
