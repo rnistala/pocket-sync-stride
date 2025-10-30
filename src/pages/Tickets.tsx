@@ -145,35 +145,29 @@ export default function Tickets() {
   return (
     <div className="min-h-screen bg-textured">
       <div className="sticky top-0 z-10 bg-textured backdrop-blur-sm border-b border-border">
-        <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+        <div className="max-w-5xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/")}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Action Items</h1>
-                <p className="text-sm text-muted-foreground">
-                  {filteredTickets.length} {filteredTickets.length === 1 ? 'ticket' : 'tickets'}
-                </p>
-              </div>
+              <h1 className="text-lg font-semibold text-foreground">Action Items</h1>
             </div>
             <div className="flex items-center gap-2">
-              <SyncButton lastSync={lastSync} isOnline={isOnline} onSync={handleSync} />
               <ThemeToggle />
               <AddTicketForm />
             </div>
           </div>
 
-          {/* Search and Filters */}
-          <div className="relative">
+          {/* Search */}
+          <div className="relative mb-3">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search tickets..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-12"
+              className="pl-9 pr-12 h-9"
             />
             {searchQuery && (
               <Button
@@ -196,6 +190,31 @@ export default function Tickets() {
               contacts={contacts}
               mounted={mounted}
             />
+          </div>
+
+          {/* Count and Sync */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm text-foreground">
+              <span className="font-medium">
+                {filteredTickets.length} {filteredTickets.length === 1 ? 'Ticket' : 'Tickets'}
+              </span>
+              {lastSync && (
+                <>
+                  <span className="text-muted-foreground">
+                    {format(lastSync, "h:mm a")}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={handleSync}
+                    disabled={!isOnline}
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5 rotate-90" />
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
