@@ -110,10 +110,17 @@ export default function Tickets() {
       });
     }
 
-    // Sort by reported date (newest first)
-    return filtered.sort((a, b) => 
-      new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime()
-    );
+    // Sort by status (open/in progress first, then closed), then by date (newest first)
+    return filtered.sort((a, b) => {
+      const aIsClosed = a.status === "CLOSED" ? 1 : 0;
+      const bIsClosed = b.status === "CLOSED" ? 1 : 0;
+      
+      if (aIsClosed !== bIsClosed) {
+        return aIsClosed - bIsClosed;
+      }
+      
+      return new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime();
+    });
   }, [tickets, contactMap, deferredSearchQuery, statusFilter, issueTypeFilter, contactFilter]);
 
   const getStatusBadge = (status: string) => {
