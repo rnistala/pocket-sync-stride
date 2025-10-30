@@ -21,9 +21,9 @@ serve(async (req) => {
       );
     }
 
-    const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
-    if (!PERPLEXITY_API_KEY) {
-      console.error('PERPLEXITY_API_KEY is not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY is not configured');
       return new Response(
         JSON.stringify({ error: 'AI service not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -32,31 +32,50 @@ serve(async (req) => {
 
     console.log(`Researching company: ${companyName}${city ? ` in ${city}` : ''}`);
     
-    // Simple, focused query for faster results
     const searchQuery = city 
-      ? `${companyName} in ${city} - industry, owner, address, phone, email`
-      : `${companyName} - industry, owner, address, phone, email`;
+      ? `Research ${companyName} in ${city}. Find: industry, products/services, company size, owner/key people, full address, phone number, email address, recent news, and a brief summary.`
+      : `Research ${companyName}. Find: industry, products/services, company size, owner/key people, full address, phone number, email address, recent news, and a brief summary.`;
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'sonar',
+        model: 'google/gemini-2.5-flash',
         messages: [
-          {
-            role: 'system',
-            content: 'You must return ONLY valid JSON with no markdown formatting, no code blocks, no explanations. Return this exact structure: {"industry": "...", "products": "...", "size": "...", "owner": "...", "address": "...", "phone": "...", "email": "...", "recentNews": "...", "summary": "..."}. Use "Not available" if data missing. Do not include any text before or after the JSON object.'
-          },
           {
             role: 'user',
             content: searchQuery
           }
         ],
-        temperature: 0.2,
-        max_tokens: 400
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'return_company_research',
+              description: 'Return structured company research data',
+              parameters: {
+                type: 'object',
+                properties: {
+                  industry: { type: 'string', description: 'Industry or sector the company operates in' },
+                  products: { type: 'string', description: 'Main products or services offered' },
+                  size: { type: 'string', description: 'Company size (employees, revenue, or description)' },
+                  owner: { type: 'string', description: 'Owner or key executives' },
+                  address: { type: 'string', description: 'Full business address' },
+                  phone: { type: 'string', description: 'Contact phone number' },
+                  email: { type: 'string', description: 'Contact email address' },
+                  recentNews: { type: 'string', description: 'Recent news or developments' },
+                  summary: { type: 'string', description: 'Brief company summary' }
+                },
+                required: ['industry', 'products', 'size', 'owner', 'address', 'phone', 'email', 'recentNews', 'summary'],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: 'function', function: { name: 'return_company_research' } }
       }),
     });
 
@@ -87,32 +106,21 @@ serve(async (req) => {
     const data = await response.json();
     console.log('AI response received:', JSON.stringify(data));
 
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) {
-      console.error('No content in response:', data);
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall || toolCall.function?.name !== 'return_company_research') {
+      console.error('No tool call in response:', data);
       return new Response(
         JSON.stringify({ error: 'Invalid AI response format' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Extract JSON from response (it might be wrapped in markdown code blocks or have text around it)
     let research;
     try {
-      // First, try to remove markdown code blocks
-      let cleanContent = content.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-      
-      // Try to find JSON object in the content
-      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        research = JSON.parse(jsonMatch[0]);
-      } else {
-        research = JSON.parse(cleanContent);
-      }
+      research = JSON.parse(toolCall.function.arguments);
       console.log('Research data parsed:', research);
     } catch (parseError) {
-      console.error('Failed to parse JSON:', parseError, 'Content:', content);
-      // Return a structured error with more details
+      console.error('Failed to parse tool call arguments:', parseError);
       return new Response(
         JSON.stringify({ 
           error: 'Failed to parse research data from AI response',
