@@ -24,6 +24,7 @@ export interface Ticket {
   remarks?: string;
   rootCause?: string;
   screenshots: string[]; // Array of base64 encoded images
+  photo?: any[]; // Array of photo metadata from server
   syncStatus: "synced" | "pending" | "local";
 }
 
@@ -809,6 +810,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             remarks: apiTicket.remarks || "",
             rootCause: apiTicket.root_cause || "",
             screenshots: [],
+            photo: apiTicket.photo || [],
             syncStatus: "synced" as const
           }));
           
@@ -860,6 +862,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       for (const ticket of unsyncedTickets) {
         console.log(`\n--- [SYNC TICKETS] Processing ticket: ${ticket.id} ---`);
         
+        // Upload screenshots first if any
+        const photoMetadata = await uploadScreenshots(ticket.screenshots || [], userId);
+        console.log("[SYNC TICKETS] Uploaded photos:", photoMetadata);
+
+        // Merge with existing photos
+        const existingPhotos = ticket.photo || [];
+        const allPhotos = photoMetadata.length > 0 ? [...existingPhotos, ...photoMetadata] : existingPhotos;
+
         // For tickets without ID - create new
         if (!ticket.id || ticket.id.includes('-')) {
           console.log("[SYNC TICKETS] Creating NEW ticket (no server ID)");
@@ -879,6 +889,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           
           if (ticket.status === "CLOSED" && ticket.closedDate) {
             bodyData.close_date = ticket.closedDate;
+          }
+
+          // Add photo metadata if available
+          if (allPhotos.length > 0) {
+            bodyData.photo = allPhotos;
           }
 
           const createPayload = {
@@ -930,6 +945,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               ...ticket, 
               id: serverId,
               ticketId: serverTicketId,
+              photo: allPhotos,
               syncStatus: "synced" as const 
             };
             await dbManager.updateTicket(updatedTicket);
@@ -958,6 +974,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           
           if (ticket.status === "CLOSED" && ticket.closedDate) {
             bodyData.close_date = ticket.closedDate;
+          }
+
+          // Add photo metadata if available
+          if (allPhotos.length > 0) {
+            bodyData.photo = allPhotos;
           }
 
           const updatePayload = {
@@ -993,7 +1014,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             console.log("[SYNC TICKETS] Update SUCCESS");
             
             // Update ticket with synced status
-            const updatedTicket = { ...ticket, syncStatus: "synced" as const };
+            const updatedTicket = { ...ticket, photo: allPhotos, syncStatus: "synced" as const };
             await dbManager.updateTicket(updatedTicket);
             console.log("[SYNC TICKETS] Updated ticket in IndexedDB with synced status");
           } else {
@@ -1052,6 +1073,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             remarks: apiTicket.remarks || "",
             rootCause: apiTicket.root_cause || "",
             screenshots: [],
+            photo: apiTicket.photo || [],
             syncStatus: "synced" as const
           }));
           
@@ -1119,6 +1141,42 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [tickets]);
 
+  const uploadScreenshots = async (screenshots: string[], userId: string): Promise<any[]> => {
+    if (!screenshots || screenshots.length === 0) {
+      return [];
+    }
+
+    try {
+      const apiRoot = await getApiRoot();
+      const photoData = screenshots.map((screenshot, index) => ({
+        name: `screenshot_${Date.now()}_${index}.png`,
+        title: "photo",
+        table: "document",
+        photo: screenshot.startsWith('data:image') ? screenshot : `data:image/png;base64,${screenshot}`
+      }));
+
+      console.log("[UPLOAD] Uploading screenshots:", photoData.length);
+      
+      const response = await fetch(`${apiRoot}/api/public/image/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(photoData)
+      });
+
+      if (!response.ok) {
+        console.error("[UPLOAD] Failed to upload screenshots:", response.status);
+        return [];
+      }
+
+      const result = await response.json();
+      console.log("[UPLOAD] Upload successful:", result);
+      return Array.isArray(result) ? result : [result];
+    } catch (error) {
+      console.error("[UPLOAD] Error uploading screenshots:", error);
+      return [];
+    }
+  };
+
   const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">): Promise<Ticket | undefined> => {
     const userId = localStorage.getItem("userId");
     
@@ -1128,6 +1186,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
+      // Upload screenshots first
+      const photoMetadata = await uploadScreenshots(ticket.screenshots || [], userId);
+      console.log("[TICKET] Uploaded photos:", photoMetadata);
+
       // Prepare API payload
       // Build API payload, skipping null id and ticket_id for first submission
       const bodyData: any = {
@@ -1139,6 +1201,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         createdby: userId,
         remarks: ticket.remarks || ""
       };
+
+      // Add photo metadata if available
+      if (photoMetadata.length > 0) {
+        bodyData.photo = photoMetadata;
+      }
 
       const apiPayload = {
         meta: {
@@ -1186,6 +1253,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         ...ticket,
         id: serverId,
         ticketId: serverTicketId,
+        photo: photoMetadata,
         syncStatus: "synced",
       };
       
@@ -1221,6 +1289,30 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("[TICKET] Updating ticket:", ticket.id);
       
+      // Upload new screenshots if any
+      const photoMetadata = await uploadScreenshots(ticket.screenshots || [], userId);
+      console.log("[TICKET] Uploaded photos for update:", photoMetadata);
+
+      // Merge with existing photos
+      const existingPhotos = ticket.photo || [];
+      const allPhotos = photoMetadata.length > 0 ? [...existingPhotos, ...photoMetadata] : existingPhotos;
+
+      const bodyData: any = {
+        id: ticket.id,
+        status: ticket.status,
+        target_date: ticket.targetDate,
+        remarks: ticket.remarks || "",
+        root_cause: ticket.rootCause || "",
+        ...(ticket.status === "CLOSED" && { close_date: new Date().toISOString() }),
+        updated: new Date().toISOString(),
+        updatedby: userId
+      };
+
+      // Add photo metadata if available
+      if (allPhotos.length > 0) {
+        bodyData.photo = allPhotos;
+      }
+      
       const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
         method: "POST",
         headers: {
@@ -1236,16 +1328,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           },
           data: [{
             head: [],
-            body: [{
-              id: ticket.id,
-              status: ticket.status,
-              target_date: ticket.targetDate,
-              remarks: ticket.remarks || "",
-              root_cause: ticket.rootCause || "",
-              ...(ticket.status === "CLOSED" && { close_date: new Date().toISOString() }),
-              updated: new Date().toISOString(),
-              updatedby: userId
-            }],
+            body: [bodyData],
             dirty: "true"
           }]
         })
@@ -1258,9 +1341,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       const result = await response.json();
       console.log("[TICKET] Update response:", result);
 
+      // Update ticket with photo metadata
+      const updatedTicket = { ...ticket, photo: allPhotos };
+
       // Update local storage
-      await dbManager.updateTicket(ticket);
-      setTickets(prev => prev.map(t => t.id === ticket.id ? ticket : t));
+      await dbManager.updateTicket(updatedTicket);
+      setTickets(prev => prev.map(t => t.id === ticket.id ? updatedTicket : t));
       
       console.log("[TICKET] Ticket updated successfully");
     } catch (error) {
