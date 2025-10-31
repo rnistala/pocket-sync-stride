@@ -885,7 +885,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             target_date: ticket.targetDate,
             status: ticket.status,
             remarks: ticket.remarks || "",
-            root_cause: ticket.rootCause || ""
+            root_cause: ticket.rootCause || "",
+            priority: ticket.priority ? "High" : "Regular"
           };
           
           if (ticket.status === "CLOSED" && ticket.closedDate) {
@@ -970,7 +971,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             target_date: ticket.targetDate,
             status: ticket.status,
             remarks: ticket.remarks || "",
-            root_cause: ticket.rootCause || ""
+            root_cause: ticket.rootCause || "",
+            priority: ticket.priority ? "High" : "Regular"
           };
           
           if (ticket.status === "CLOSED" && ticket.closedDate) {
@@ -1200,7 +1202,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         report_date: ticket.reportedDate,
         created: new Date().toISOString(),
         createdby: userId,
-        remarks: ticket.remarks || ""
+        remarks: ticket.remarks || "",
+        priority: ticket.priority ? "High" : "Regular"
       };
 
       // Add photo metadata if available
@@ -1304,6 +1307,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         target_date: ticket.targetDate,
         remarks: ticket.remarks || "",
         root_cause: ticket.rootCause || "",
+        priority: ticket.priority ? "High" : "Regular",
         ...(ticket.status === "CLOSED" && { close_date: new Date().toISOString() }),
         updated: new Date().toISOString(),
         updatedby: userId
