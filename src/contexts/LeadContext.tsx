@@ -3,6 +3,28 @@ import { Contact, Interaction } from "@/hooks/useLeadStorage";
 import { getApiRoot } from "@/lib/config";
 import { toast } from "sonner";
 
+// Issue type mapping: Display name -> API code
+const ISSUE_TYPE_MAP: Record<string, string> = {
+  "Bug": "BR",
+  "Feature Request": "FR",
+  "Support": "SR"
+};
+
+// Reverse mapping: API code -> Display name
+const ISSUE_TYPE_REVERSE_MAP: Record<string, string> = {
+  "BR": "Bug",
+  "FR": "Feature Request",
+  "SR": "Support"
+};
+
+const mapIssueTypeToCode = (displayName: string): string => {
+  return ISSUE_TYPE_MAP[displayName] || displayName;
+};
+
+const mapIssueTypeToDisplay = (code: string): string => {
+  return ISSUE_TYPE_REVERSE_MAP[code] || code;
+};
+
 const DB_NAME = "LeadManagerDB";
 const DB_VERSION = 4;
 const CONTACTS_STORE = "contacts";
@@ -805,13 +827,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             reportedDate: apiTicket.report_date || new Date().toISOString(),
             targetDate: apiTicket.target_date || new Date().toISOString(),
             closedDate: apiTicket.close_date,
-            issueType: apiTicket.issue_type || "",
+            issueType: mapIssueTypeToDisplay(apiTicket.issue_type || ""),
             status: apiTicket.status || "OPEN",
             description: apiTicket.description || "",
             remarks: apiTicket.remarks || "",
             rootCause: apiTicket.root_cause || "",
             screenshots: [],
             photo: apiTicket.photo || [],
+            priority: apiTicket.priority === "High",
             syncStatus: "synced" as const
           }));
           
@@ -879,7 +902,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           
           const bodyData: any = {
             contact: ticket.contactId,
-            issue_type: ticket.issueType,
+            issue_type: mapIssueTypeToCode(ticket.issueType),
             description: ticket.description,
             report_date: ticket.reportedDate,
             target_date: ticket.targetDate,
@@ -965,7 +988,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             id: ticket.id,
             ticket_id: ticket.ticketId,
             contact: ticket.contactId,
-            issue_type: ticket.issueType,
+            issue_type: mapIssueTypeToCode(ticket.issueType),
             description: ticket.description,
             report_date: ticket.reportedDate,
             target_date: ticket.targetDate,
@@ -1197,7 +1220,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       // Build API payload, skipping null id and ticket_id for first submission
       const bodyData: any = {
         contact: ticket.contactId,
-        issue_type: ticket.issueType,
+        issue_type: mapIssueTypeToCode(ticket.issueType),
         description: ticket.description,
         report_date: ticket.reportedDate,
         created: new Date().toISOString(),
