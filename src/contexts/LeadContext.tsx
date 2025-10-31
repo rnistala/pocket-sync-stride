@@ -918,7 +918,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
           // Add photo metadata if available
           if (allPhotos.length > 0) {
-            bodyData.photo = allPhotos;
+            bodyData.photo = JSON.stringify(allPhotos);
           }
 
           const createPayload = {
@@ -1231,7 +1231,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
       // Add photo metadata if available
       if (photoMetadata.length > 0) {
-        bodyData.photo = photoMetadata;
+        bodyData.photo = JSON.stringify(photoMetadata);
       }
 
       const apiPayload = {
