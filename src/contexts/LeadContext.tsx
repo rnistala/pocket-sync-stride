@@ -1117,22 +1117,38 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         if (result.data && result.data[0] && result.data[0].body) {
           console.log("[SYNC TICKETS] Server tickets found:", result.data[0].body.length);
 
-          const serverTickets = result.data[0].body.map((apiTicket: any) => ({
-            id: apiTicket.id || crypto.randomUUID(),
-            ticketId: apiTicket.ticket_id,
-            contactId: apiTicket.contact || "",
-            reportedDate: apiTicket.report_date || new Date().toISOString(),
-            targetDate: apiTicket.target_date || new Date().toISOString(),
-            closedDate: apiTicket.close_date,
-            issueType: apiTicket.issue_type || "",
-            status: apiTicket.status || "OPEN",
-            description: apiTicket.description || "",
-            remarks: apiTicket.remarks || "",
-            rootCause: apiTicket.root_cause || "",
-            screenshots: [],
-            photo: apiTicket.photo || [],
-            syncStatus: "synced" as const,
-          }));
+          const serverTickets = result.data[0].body.map((apiTicket: any) => {
+            // Parse photo field if it's a JSON string
+            let photoData = [];
+            if (apiTicket.photo) {
+              try {
+                photoData = typeof apiTicket.photo === 'string' 
+                  ? JSON.parse(apiTicket.photo) 
+                  : apiTicket.photo;
+              } catch (e) {
+                console.error("[SYNC TICKETS] Failed to parse photo data:", e);
+                photoData = [];
+              }
+            }
+            
+            return {
+              id: apiTicket.id || crypto.randomUUID(),
+              ticketId: apiTicket.ticket_id,
+              contactId: apiTicket.contact || "",
+              reportedDate: apiTicket.report_date || new Date().toISOString(),
+              targetDate: apiTicket.target_date || new Date().toISOString(),
+              closedDate: apiTicket.close_date,
+              issueType: mapIssueTypeToDisplay(apiTicket.issue_type || ""),
+              status: apiTicket.status || "OPEN",
+              description: apiTicket.description || "",
+              remarks: apiTicket.remarks || "",
+              rootCause: apiTicket.root_cause || "",
+              screenshots: [],
+              photo: photoData,
+              priority: apiTicket.priority === "High",
+              syncStatus: "synced" as const,
+            };
+          });
 
           console.log("[SYNC TICKETS] Mapped server tickets:", serverTickets.length);
           console.log("[SYNC TICKETS] First server ticket sample:", serverTickets[0]);
@@ -1371,7 +1387,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
       // Add photo metadata if available
       if (allPhotos.length > 0) {
-        bodyData.photo = allPhotos;
+        bodyData.photo = JSON.stringify(allPhotos);
       }
 
       const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
