@@ -5,16 +5,16 @@ import { toast } from "sonner";
 
 // Issue type mapping: Display name -> API code
 const ISSUE_TYPE_MAP: Record<string, string> = {
-  "Bug": "BR",
+  Bug: "BR",
   "Feature Request": "FR",
-  "Support": "SR"
+  Support: "SR",
 };
 
 // Reverse mapping: API code -> Display name
 const ISSUE_TYPE_REVERSE_MAP: Record<string, string> = {
-  "BR": "Bug",
-  "FR": "Feature Request",
-  "SR": "Support"
+  BR: "Bug",
+  FR: "Feature Request",
+  SR: "Support",
 };
 
 const mapIssueTypeToCode = (displayName: string): string => {
@@ -121,7 +121,7 @@ class IndexedDBManager {
       const clearRequest = store.clear();
       clearRequest.onsuccess = () => {
         // Add all contacts
-        contacts.forEach(contact => {
+        contacts.forEach((contact) => {
           store.add(contact);
         });
       };
@@ -162,7 +162,7 @@ class IndexedDBManager {
       const store = transaction.objectStore(INTERACTIONS_STORE);
 
       store.clear();
-      interactions.forEach(interaction => store.add(interaction));
+      interactions.forEach((interaction) => store.add(interaction));
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -224,7 +224,7 @@ class IndexedDBManager {
       const store = transaction.objectStore(ORDERS_STORE);
 
       store.clear();
-      orders.forEach(order => {
+      orders.forEach((order) => {
         if (order.id) {
           store.add(order);
         }
@@ -257,7 +257,7 @@ class IndexedDBManager {
       const store = transaction.objectStore(TICKETS_STORE);
 
       store.clear();
-      tickets.forEach(ticket => store.add(ticket));
+      tickets.forEach((ticket) => store.add(ticket));
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -315,7 +315,13 @@ interface LeadContextType {
   setSearchQuery: (query: string) => void;
   setShowStarredOnly: (show: boolean) => void;
   setAdvancedFilters: (filters: AdvancedFilters) => void;
-  addInteraction: (contactId: string, type: Interaction["type"], notes: string, date?: string, followup_on?: string) => Promise<void>;
+  addInteraction: (
+    contactId: string,
+    type: Interaction["type"],
+    notes: string,
+    date?: string,
+    followup_on?: string,
+  ) => Promise<void>;
   getContactInteractions: (contactId: string) => Interaction[];
   syncData: () => Promise<void>;
   markInteractionsAsSynced: (contactId: string) => Promise<void>;
@@ -348,7 +354,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     statuses: [],
     city: "",
     dateFrom: undefined,
-    dateTo: undefined
+    dateTo: undefined,
   });
 
   // Load data once on mount
@@ -356,11 +362,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     const loadData = async () => {
       try {
         await dbManager.init();
-        
+
         // Check if API root has changed
         const currentApiRoot = await getApiRoot();
         const storedApiRoot = await dbManager.getMetadata("apiRoot");
-        
+
         if (storedApiRoot && storedApiRoot !== currentApiRoot) {
           console.log("API root changed, clearing local data");
           // Clear all local data
@@ -369,7 +375,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           await dbManager.saveOrders([]);
           await dbManager.setMetadata("lastSync", null);
           await dbManager.setMetadata("apiRoot", currentApiRoot);
-          
+
           setContacts([]);
           setInteractions([]);
           setOrders([]);
@@ -391,7 +397,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           if (syncTime) {
             setLastSync(new Date(syncTime));
           }
-          
+
           // Store current API root if not set
           if (!storedApiRoot) {
             await dbManager.setMetadata("apiRoot", currentApiRoot);
@@ -417,134 +423,148 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     setInteractions(newInteractions);
   }, []);
 
-  const addInteraction = useCallback(async (contactId: string, type: Interaction["type"], notes: string, date?: string, followup_on?: string) => {
-    const newInteraction: Interaction = {
-      id: crypto.randomUUID(),
-      contactId,
-      date: date || new Date().toISOString(),
-      type,
-      notes,
-      syncStatus: "local",
-      followup_on,
-      dirty: true,
-    };
-    
-    await dbManager.addInteraction(newInteraction);
-    setInteractions(prev => {
-      const updated = [...prev, newInteraction];
-      console.log("[ADD] Added interaction, total interactions now:", updated.length);
-      console.log("[ADD] New interaction dirty status:", newInteraction.dirty);
-      return updated;
-    });
-    
-    // Update contact's followup_on if provided
-    if (followup_on) {
-      const updatedContacts = contacts.map(c => 
-        c.id === contactId ? { ...c, followup_on } : c
-      );
-      await dbManager.saveContacts(updatedContacts);
-      setContacts(updatedContacts);
-    }
-  }, [contacts]);
+  const addInteraction = useCallback(
+    async (contactId: string, type: Interaction["type"], notes: string, date?: string, followup_on?: string) => {
+      const newInteraction: Interaction = {
+        id: crypto.randomUUID(),
+        contactId,
+        date: date || new Date().toISOString(),
+        type,
+        notes,
+        syncStatus: "local",
+        followup_on,
+        dirty: true,
+      };
+
+      await dbManager.addInteraction(newInteraction);
+      setInteractions((prev) => {
+        const updated = [...prev, newInteraction];
+        console.log("[ADD] Added interaction, total interactions now:", updated.length);
+        console.log("[ADD] New interaction dirty status:", newInteraction.dirty);
+        return updated;
+      });
+
+      // Update contact's followup_on if provided
+      if (followup_on) {
+        const updatedContacts = contacts.map((c) => (c.id === contactId ? { ...c, followup_on } : c));
+        await dbManager.saveContacts(updatedContacts);
+        setContacts(updatedContacts);
+      }
+    },
+    [contacts],
+  );
 
   // Memoize interactions by contact ID for faster lookups
   const interactionsByContact = useMemo(() => {
     const map = new Map<string, Interaction[]>();
-    interactions.forEach(interaction => {
+    interactions.forEach((interaction) => {
       const existing = map.get(interaction.contactId) || [];
       existing.push(interaction);
       map.set(interaction.contactId, existing);
     });
     // Sort each contact's interactions
     map.forEach((interactions, contactId) => {
-      map.set(contactId, interactions.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
-      ));
+      map.set(
+        contactId,
+        interactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+      );
     });
     return map;
   }, [interactions]);
 
-  const getContactInteractions = useCallback((contactId: string) => {
-    return interactionsByContact.get(contactId) || [];
-  }, [interactionsByContact]);
+  const getContactInteractions = useCallback(
+    (contactId: string) => {
+      return interactionsByContact.get(contactId) || [];
+    },
+    [interactionsByContact],
+  );
 
-  const markInteractionsAsSynced = useCallback(async (contactId: string) => {
-    const updatedInteractions = interactions.map(i => 
-      (i.contactId === contactId && i.dirty) 
-        ? { ...i, dirty: false, syncStatus: "synced" as const } 
-        : i
-    );
-    await saveInteractions(updatedInteractions);
-    setInteractions(updatedInteractions);
-  }, [interactions, saveInteractions]);
+  const markInteractionsAsSynced = useCallback(
+    async (contactId: string) => {
+      const updatedInteractions = interactions.map((i) =>
+        i.contactId === contactId && i.dirty ? { ...i, dirty: false, syncStatus: "synced" as const } : i,
+      );
+      await saveInteractions(updatedInteractions);
+      setInteractions(updatedInteractions);
+    },
+    [interactions, saveInteractions],
+  );
 
-  const mergeInteractionsFromAPI = useCallback(async (apiInteractions: any[], contactId: string) => {
-    // Transform API interactions to our format
-    const transformedInteractions: Interaction[] = apiInteractions.map((item: any) => ({
-      id: item.id || crypto.randomUUID(),
-      contactId: contactId,
-      date: item.created || new Date().toISOString(),
-      type: "call" as const, // Default type, can be enhanced based on API data
-      notes: item.notes || "",
-      syncStatus: "synced" as const,
-      followup_on: item.next_meeting || undefined,
-      dirty: false,
-    }));
+  const mergeInteractionsFromAPI = useCallback(
+    async (apiInteractions: any[], contactId: string) => {
+      // Transform API interactions to our format
+      const transformedInteractions: Interaction[] = apiInteractions.map((item: any) => ({
+        id: item.id || crypto.randomUUID(),
+        contactId: contactId,
+        date: item.created || new Date().toISOString(),
+        type: "call" as const, // Default type, can be enhanced based on API data
+        notes: item.notes || "",
+        syncStatus: "synced" as const,
+        followup_on: item.next_meeting || undefined,
+        dirty: false,
+      }));
 
-    // Merge with existing interactions, avoiding duplicates
-    const existingIds = new Set(interactions.map(i => i.id));
-    const newInteractions = transformedInteractions.filter(i => !existingIds.has(i.id));
-    
-    if (newInteractions.length > 0) {
-      const mergedInteractions = [...interactions, ...newInteractions];
-      await saveInteractions(mergedInteractions);
-    }
-  }, [interactions, saveInteractions]);
+      // Merge with existing interactions, avoiding duplicates
+      const existingIds = new Set(interactions.map((i) => i.id));
+      const newInteractions = transformedInteractions.filter((i) => !existingIds.has(i.id));
 
-  const toggleStarred = useCallback(async (contactId: string) => {
-    const updatedContacts = contacts.map(c => 
-      c.id === contactId ? { ...c, starred: !c.starred } : c
-    );
-    
-    // Update the changed contact in IndexedDB first
-    const updatedContact = updatedContacts.find(c => c.id === contactId);
-    if (updatedContact) {
-      await dbManager.updateContact(updatedContact);
-    }
-    
-    // Then update state
-    setContacts(updatedContacts);
-  }, [contacts]);
+      if (newInteractions.length > 0) {
+        const mergedInteractions = [...interactions, ...newInteractions];
+        await saveInteractions(mergedInteractions);
+      }
+    },
+    [interactions, saveInteractions],
+  );
 
-  const updateContactFollowUp = useCallback(async (contactId: string, followUpDate: string, status?: string) => {
-    const updatedContacts = contacts.map(c => 
-      c.id === contactId ? { ...c, followup_on: followUpDate, ...(status && { status }) } : c
-    );
-    
-    // Update the changed contact in IndexedDB first
-    const updatedContact = updatedContacts.find(c => c.id === contactId);
-    if (updatedContact) {
-      await dbManager.updateContact(updatedContact);
-    }
-    
-    // Then update state
-    setContacts(updatedContacts);
-  }, [contacts]);
+  const toggleStarred = useCallback(
+    async (contactId: string) => {
+      const updatedContacts = contacts.map((c) => (c.id === contactId ? { ...c, starred: !c.starred } : c));
 
-  const updateContactStatus = useCallback(async (contactId: string, status: string) => {
-    const updatedContacts = contacts.map(c => 
-      c.id === contactId ? { ...c, status } : c
-    );
-    
-    // Update the changed contact in IndexedDB first
-    const updatedContact = updatedContacts.find(c => c.id === contactId);
-    if (updatedContact) {
-      await dbManager.updateContact(updatedContact);
-    }
-    
-    // Then update state
-    setContacts(updatedContacts);
-  }, [contacts]);
+      // Update the changed contact in IndexedDB first
+      const updatedContact = updatedContacts.find((c) => c.id === contactId);
+      if (updatedContact) {
+        await dbManager.updateContact(updatedContact);
+      }
+
+      // Then update state
+      setContacts(updatedContacts);
+    },
+    [contacts],
+  );
+
+  const updateContactFollowUp = useCallback(
+    async (contactId: string, followUpDate: string, status?: string) => {
+      const updatedContacts = contacts.map((c) =>
+        c.id === contactId ? { ...c, followup_on: followUpDate, ...(status && { status }) } : c,
+      );
+
+      // Update the changed contact in IndexedDB first
+      const updatedContact = updatedContacts.find((c) => c.id === contactId);
+      if (updatedContact) {
+        await dbManager.updateContact(updatedContact);
+      }
+
+      // Then update state
+      setContacts(updatedContacts);
+    },
+    [contacts],
+  );
+
+  const updateContactStatus = useCallback(
+    async (contactId: string, status: string) => {
+      const updatedContacts = contacts.map((c) => (c.id === contactId ? { ...c, status } : c));
+
+      // Update the changed contact in IndexedDB first
+      const updatedContact = updatedContacts.find((c) => c.id === contactId);
+      if (updatedContact) {
+        await dbManager.updateContact(updatedContact);
+      }
+
+      // Then update state
+      setContacts(updatedContacts);
+    },
+    [contacts],
+  );
 
   const syncData = useCallback(async () => {
     const userId = localStorage.getItem("userId");
@@ -554,17 +574,17 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     console.log("[SYNC] Total interactions:", interactions.length);
 
     // Step 1: Upload local changes to server
-    const dirtyInteractions = interactions.filter(i => i.dirty);
-    
+    const dirtyInteractions = interactions.filter((i) => i.dirty);
+
     console.log("[SYNC] Dirty interactions found:", dirtyInteractions.length);
     console.log("[SYNC] Dirty interactions:", dirtyInteractions);
-    
+
     if (dirtyInteractions.length > 0) {
       try {
         // Get latitude and longitude (using geolocation if available)
         let latitude = "";
         let longitude = "";
-        
+
         if (navigator.geolocation) {
           try {
             const position = await new Promise<GeolocationPosition>((resolve, reject) => {
@@ -578,17 +598,20 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Group interactions by contact
-        const interactionsByContact = dirtyInteractions.reduce((acc, interaction) => {
-          if (!acc[interaction.contactId]) {
-            acc[interaction.contactId] = [];
-          }
-          acc[interaction.contactId].push(interaction);
-          return acc;
-        }, {} as Record<string, Interaction[]>);
+        const interactionsByContact = dirtyInteractions.reduce(
+          (acc, interaction) => {
+            if (!acc[interaction.contactId]) {
+              acc[interaction.contactId] = [];
+            }
+            acc[interaction.contactId].push(interaction);
+            return acc;
+          },
+          {} as Record<string, Interaction[]>,
+        );
 
         // Upload each contact's interactions
         for (const [contactId, contactInteractions] of Object.entries(interactionsByContact)) {
-          const contact = contacts.find(c => c.id === contactId);
+          const contact = contacts.find((c) => c.id === contactId);
           if (!contact) continue;
 
           console.log("[SYNC] Uploading interactions for contact:", contact.name, contactId);
@@ -601,19 +624,23 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
                 htable: "",
                 parentkey: "",
                 preapi: "updatecontact",
-                draftid: ""
+                draftid: "",
               },
-              data: [{
-                body: [{
-                  contact: contact.id, // Using contact.id (not contact_id)
-                  contact_status: "",
-                  notes: interaction.notes,
-                  next_meeting: interaction.followup_on || "",
-                  latitude: latitude,
-                  longitude: longitude
-                }],
-                dirty: "true"
-              }]
+              data: [
+                {
+                  body: [
+                    {
+                      contact: contact.id, // Using contact.id (not contact_id)
+                      contact_status: "",
+                      notes: interaction.notes,
+                      next_meeting: interaction.followup_on || "",
+                      latitude: latitude,
+                      longitude: longitude,
+                    },
+                  ],
+                  dirty: "true",
+                },
+              ],
             };
 
             console.log("[SYNC] Uploading payload:", JSON.stringify(payload, null, 2));
@@ -632,8 +659,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         }
 
         // Mark uploaded interactions as synced
-        const updatedInteractions = interactions.map(i => 
-          i.dirty ? { ...i, dirty: false, syncStatus: "synced" as const } : i
+        const updatedInteractions = interactions.map((i) =>
+          i.dirty ? { ...i, dirty: false, syncStatus: "synced" as const } : i,
         );
         await saveInteractions(updatedInteractions);
         setInteractions(updatedInteractions);
@@ -653,21 +680,18 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
     while (hasMore) {
       const apiRoot = await getApiRoot();
-      const response = await fetch(
-        `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: 3, offset, limit: BATCH_SIZE }),
-        }
-      );
+      const response = await fetch(`${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: 3, offset, limit: BATCH_SIZE }),
+      });
 
       if (response.ok) {
         const apiResponse = await response.json();
         const apiContacts = apiResponse.data?.[0]?.body || [];
-        
+
         console.log(`[SYNC] Fetched ${apiContacts.length} contacts at offset ${offset}`);
-        
+
         if (apiContacts.length === 0) {
           hasMore = false;
           break;
@@ -687,7 +711,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           profile: contact.profile || "",
           score: parseInt(contact.score) || 0,
         }));
-        
+
         fetchedContacts = [...fetchedContacts, ...transformedContacts];
         offset += BATCH_SIZE;
 
@@ -706,13 +730,13 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     if (fetchedContacts.length > 0) {
       // Load fresh data from IndexedDB to ensure we have the latest local changes
       const localContactsFromDB = await dbManager.getAllContacts();
-      const existingContactsMap = new Map(localContactsFromDB.map(c => [c.id, c]));
-      
+      const existingContactsMap = new Map(localContactsFromDB.map((c) => [c.id, c]));
+
       console.log(`[SYNC] Merging with ${localContactsFromDB.length} local contacts from DB`);
-      
-      const mergedContacts = fetchedContacts.map(serverContact => {
+
+      const mergedContacts = fetchedContacts.map((serverContact) => {
         const localContact = existingContactsMap.get(serverContact.id);
-        
+
         if (localContact) {
           // Merge: prefer server followup_on, but keep local starred status
           return {
@@ -720,11 +744,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             starred: localContact.starred || false,
           };
         }
-        
+
         return serverContact;
       });
 
-      console.log(`[SYNC] Merged contacts - starred count: ${mergedContacts.filter(c => c.starred).length}`);
+      console.log(`[SYNC] Merged contacts - starred count: ${mergedContacts.filter((c) => c.starred).length}`);
       await saveContacts(mergedContacts);
     }
 
@@ -736,11 +760,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const fetchOrders = useCallback(async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("userToken");
-    
+
     console.log("[ORDERS] Starting fetchOrders");
     console.log("[ORDERS] userId:", userId);
     console.log("[ORDERS] token exists:", !!token);
-    
+
     if (!userId || !token) {
       console.error("[ORDERS] Missing userId or token");
       return;
@@ -750,14 +774,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       const apiRoot = await getApiRoot();
       const url = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
       const payload = { id: 78, offset: 0, limit: 0 };
-      
+
       console.log("[ORDERS] Fetching from:", url);
       console.log("[ORDERS] Payload:", payload);
-      
+
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       console.log("[ORDERS] Response status:", response.status);
@@ -766,12 +790,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       if (response.ok) {
         const result = await response.json();
         console.log("[ORDERS] Response data:", result);
-        
+
         if (result.data && result.data[0] && result.data[0].body) {
           const fetchedOrders = result.data[0].body;
           console.log("[ORDERS] Fetched orders count:", fetchedOrders.length);
           console.log("[ORDERS] Sample order:", fetchedOrders[0]);
-          
+
           await dbManager.saveOrders(fetchedOrders);
           setOrders(fetchedOrders);
           console.log("[ORDERS] Orders saved to IndexedDB and state updated");
@@ -792,7 +816,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const fetchTickets = useCallback(async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("userToken");
-    
+
     if (!userId || !token) {
       console.error("[TICKETS] Missing userId or token");
       return;
@@ -802,14 +826,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       const apiRoot = await getApiRoot();
       const url = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
       const payload = { id: 555, offset: 0, limit: 100 };
-      
+
       console.log("[TICKETS] Fetching from:", url);
       console.log("[TICKETS] Payload:", payload);
-      
+
       const response = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       console.log("[TICKETS] Response status:", response.status);
@@ -818,7 +842,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       if (response.ok) {
         const result = await response.json();
         console.log("[TICKETS] Response data:", result);
-        
+
         if (result.data && result.data[0] && result.data[0].body) {
           const fetchedTickets = result.data[0].body.map((apiTicket: any) => ({
             id: apiTicket.id || crypto.randomUUID(),
@@ -835,12 +859,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             screenshots: [],
             photo: apiTicket.photo || [],
             priority: apiTicket.priority === "High",
-            syncStatus: "synced" as const
+            syncStatus: "synced" as const,
           }));
-          
+
           console.log("[TICKETS] Fetched tickets count:", fetchedTickets.length);
           console.log("[TICKETS] Sample ticket:", fetchedTickets[0]);
-          
+
           await dbManager.saveTickets(fetchedTickets);
           setTickets(fetchedTickets);
           console.log("[TICKETS] Tickets saved to IndexedDB and state updated");
@@ -861,12 +885,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const syncTickets = useCallback(async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("userToken");
-    
+
     console.log("=== [SYNC TICKETS] STARTING SYNC ===");
     console.log("[SYNC TICKETS] userId:", userId);
     console.log("[SYNC TICKETS] token:", token ? "present" : "missing");
     console.log("[SYNC TICKETS] All localStorage keys:", Object.keys(localStorage));
-    
+
     if (!userId || !token) {
       console.error("[SYNC TICKETS] Missing userId or token - ABORTING");
       toast.error("Unable to sync: User not authenticated");
@@ -876,16 +900,19 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     try {
       const apiRoot = await getApiRoot();
       console.log("[SYNC TICKETS] API Root:", apiRoot);
-      
+
       // Step 1: Upload unsynced local tickets
-      const unsyncedTickets = tickets.filter(t => t.syncStatus !== "synced");
+      const unsyncedTickets = tickets.filter((t) => t.syncStatus !== "synced");
       console.log("[SYNC TICKETS] Total tickets:", tickets.length);
       console.log("[SYNC TICKETS] Unsynced tickets:", unsyncedTickets.length);
-      console.log("[SYNC TICKETS] Unsynced ticket IDs:", unsyncedTickets.map(t => ({ id: t.id, ticketId: t.ticketId, status: t.syncStatus })));
+      console.log(
+        "[SYNC TICKETS] Unsynced ticket IDs:",
+        unsyncedTickets.map((t) => ({ id: t.id, ticketId: t.ticketId, status: t.syncStatus })),
+      );
 
       for (const ticket of unsyncedTickets) {
         console.log(`\n--- [SYNC TICKETS] Processing ticket: ${ticket.id} ---`);
-        
+
         // Upload screenshots first if any
         const photoMetadata = await uploadScreenshots(ticket.screenshots || [], userId);
         console.log("[SYNC TICKETS] Uploaded photos:", photoMetadata);
@@ -895,11 +922,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         const allPhotos = photoMetadata.length > 0 ? [...existingPhotos, ...photoMetadata] : existingPhotos;
 
         // For tickets without ID - create new
-        if (!ticket.id || ticket.id.includes('-')) {
+        if (!ticket.id || ticket.id.includes("-")) {
           console.log("[SYNC TICKETS] Creating NEW ticket (no server ID)");
           const createUrl = `${apiRoot}/api/public/tdata/${userId}`;
           console.log("[SYNC TICKETS] Create URL:", createUrl);
-          
+
           const bodyData: any = {
             contact: ticket.contactId,
             issue_type: mapIssueTypeToCode(ticket.issueType),
@@ -909,9 +936,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             status: ticket.status,
             remarks: ticket.remarks || "",
             root_cause: ticket.rootCause || "",
-            priority: ticket.priority ? "High" : "Regular"
+            priority: ticket.priority ? "High" : "Regular",
           };
-          
+
           if (ticket.status === "CLOSED" && ticket.closedDate) {
             bodyData.close_date = ticket.closedDate;
           }
@@ -927,21 +954,23 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               htable: "",
               parentkey: "",
               preapi: "",
-              draftid: ""
+              draftid: "",
             },
-            data: [{
-              head: [],
-              body: [bodyData],
-              dirty: "true"
-            }]
+            data: [
+              {
+                head: [],
+                body: [bodyData],
+                dirty: "true",
+              },
+            ],
           };
 
           console.log("[SYNC TICKETS] Create payload:", JSON.stringify(createPayload, null, 2));
-          
+
           const createResponse = await fetch(createUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(createPayload)
+            body: JSON.stringify(createPayload),
           });
 
           console.log("[SYNC TICKETS] Create response status:", createResponse.status);
@@ -953,25 +982,25 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           if (createResponse.ok) {
             const result = JSON.parse(responseText);
             console.log("[SYNC TICKETS] Create SUCCESS - parsed result:", result);
-            
+
             // Extract server IDs from response
             let serverId = ticket.id;
             let serverTicketId = ticket.ticketId;
-            
+
             if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
               const responseBody = result.Detail[0].body[0];
               serverId = responseBody.id || serverId;
               serverTicketId = responseBody.ticket_id || serverTicketId;
               console.log("[SYNC TICKETS] Extracted server IDs - id:", serverId, "ticket_id:", serverTicketId);
             }
-            
+
             // Update ticket with synced status and server IDs
-            const updatedTicket = { 
-              ...ticket, 
+            const updatedTicket = {
+              ...ticket,
               id: serverId,
               ticketId: serverTicketId,
               photo: allPhotos,
-              syncStatus: "synced" as const 
+              syncStatus: "synced" as const,
             };
             await dbManager.updateTicket(updatedTicket);
             console.log("[SYNC TICKETS] Updated ticket in IndexedDB with synced status");
@@ -983,7 +1012,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           console.log("[SYNC TICKETS] Updating EXISTING ticket (has server ID)");
           const updateUrl = `${apiRoot}/api/public/tdata/${userId}`;
           console.log("[SYNC TICKETS] Update URL:", updateUrl);
-          
+
           const bodyData: any = {
             id: ticket.id,
             ticket_id: ticket.ticketId,
@@ -995,9 +1024,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             status: ticket.status,
             remarks: ticket.remarks || "",
             root_cause: ticket.rootCause || "",
-            priority: ticket.priority ? "High" : "Regular"
+            priority: ticket.priority ? "High" : "Regular",
           };
-          
+
           if (ticket.status === "CLOSED" && ticket.closedDate) {
             bodyData.close_date = ticket.closedDate;
           }
@@ -1013,21 +1042,23 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               htable: "",
               parentkey: "",
               preapi: "",
-              draftid: ""
+              draftid: "",
             },
-            data: [{
-              head: [],
-              body: [bodyData],
-              dirty: "true"
-            }]
+            data: [
+              {
+                head: [],
+                body: [bodyData],
+                dirty: "true",
+              },
+            ],
           };
 
           console.log("[SYNC TICKETS] Update payload:", JSON.stringify(updatePayload, null, 2));
-          
+
           const updateResponse = await fetch(updateUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(updatePayload)
+            body: JSON.stringify(updatePayload),
           });
 
           console.log("[SYNC TICKETS] Update response status:", updateResponse.status);
@@ -1038,7 +1069,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
           if (updateResponse.ok) {
             console.log("[SYNC TICKETS] Update SUCCESS");
-            
+
             // Update ticket with synced status
             const updatedTicket = { ...ticket, photo: allPhotos, syncStatus: "synced" as const };
             await dbManager.updateTicket(updatedTicket);
@@ -1054,23 +1085,23 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       // Step 2: Fetch tickets changed on server since last sync
       const lastSyncStr = localStorage.getItem("lastTicketSync");
       const lastSyncDate = lastSyncStr || new Date(0).toISOString();
-      
+
       console.log("[SYNC TICKETS] Last sync date:", lastSyncDate);
-      
+
       const fetchUrl = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
       console.log("[SYNC TICKETS] Fetch URL:", fetchUrl);
       const fetchPayload = {
         id: 555,
         offset: 0,
-        limit: 100
+        limit: 100,
       };
-      
+
       console.log("[SYNC TICKETS] Fetch payload:", JSON.stringify(fetchPayload, null, 2));
-      
+
       const fetchResponse = await fetch(fetchUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fetchPayload)
+        body: JSON.stringify(fetchPayload),
       });
 
       console.log("[SYNC TICKETS] Fetch response status:", fetchResponse.status);
@@ -1082,10 +1113,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       if (fetchResponse.ok) {
         const result = JSON.parse(fetchResponseText);
         console.log("[SYNC TICKETS] Fetch SUCCESS - parsed result:", result);
-        
+
         if (result.data && result.data[0] && result.data[0].body) {
           console.log("[SYNC TICKETS] Server tickets found:", result.data[0].body.length);
-          
+
           const serverTickets = result.data[0].body.map((apiTicket: any) => ({
             id: apiTicket.id || crypto.randomUUID(),
             ticketId: apiTicket.ticket_id,
@@ -1100,21 +1131,21 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             rootCause: apiTicket.root_cause || "",
             screenshots: [],
             photo: apiTicket.photo || [],
-            syncStatus: "synced" as const
+            syncStatus: "synced" as const,
           }));
-          
+
           console.log("[SYNC TICKETS] Mapped server tickets:", serverTickets.length);
           console.log("[SYNC TICKETS] First server ticket sample:", serverTickets[0]);
-          
+
           // Step 3: Merge with local data
           const localTickets = await dbManager.getAllTickets();
           console.log("[SYNC TICKETS] Local tickets before merge:", localTickets.length);
-          
+
           const mergedTickets = [...localTickets];
-          
+
           // Update or add server tickets
           for (const serverTicket of serverTickets) {
-            const existingIndex = mergedTickets.findIndex(t => t.ticketId === serverTicket.ticketId);
+            const existingIndex = mergedTickets.findIndex((t) => t.ticketId === serverTicket.ticketId);
             if (existingIndex >= 0) {
               // Update existing ticket - merge with local ID
               mergedTickets[existingIndex] = { ...serverTicket, id: mergedTickets[existingIndex].id };
@@ -1125,10 +1156,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               console.log("[SYNC TICKETS] Added new ticket:", serverTicket.ticketId);
             }
           }
-          
+
           // Remove synced tickets that are no longer on server
-          const serverTicketIds = new Set(serverTickets.map(t => t.ticketId));
-          const filteredTickets = mergedTickets.filter(ticket => {
+          const serverTicketIds = new Set(serverTickets.map((t) => t.ticketId));
+          const filteredTickets = mergedTickets.filter((ticket) => {
             // Keep locally created tickets (pending sync)
             if (ticket.syncStatus === "pending") {
               console.log("[SYNC TICKETS] Keeping locally created ticket:", ticket.id);
@@ -1142,7 +1173,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             console.log("[SYNC TICKETS] Removing deleted ticket:", ticket.ticketId);
             return false;
           });
-          
+
           // Save merged tickets
           await dbManager.saveTickets(filteredTickets);
           setTickets(filteredTickets);
@@ -1155,7 +1186,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         console.error("[SYNC TICKETS] Fetch FAILED with status:", fetchResponse.status);
         console.error("[SYNC TICKETS] Error response:", fetchResponseText);
       }
-      
+
       localStorage.setItem("lastTicketSync", new Date().toISOString());
       console.log("=== [SYNC TICKETS] SYNC COMPLETED SUCCESSFULLY ===");
       toast.success("Tickets synced successfully");
@@ -1177,16 +1208,16 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       const photoData = screenshots.map((screenshot, index) => ({
         name: `screenshot_${Date.now()}_${index}.png`,
         title: "photo",
-        table: "document",
-        photo: screenshot.startsWith('data:image') ? screenshot : `data:image/png;base64,${screenshot}`
+        table: "ticket",
+        photo: screenshot.startsWith("data:image") ? screenshot : `data:image/png;base64,${screenshot}`,
       }));
 
       console.log("[UPLOAD] Uploading screenshots:", photoData.length);
-      
+
       const response = await fetch(`${apiRoot}/api/public/image/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(photoData)
+        body: JSON.stringify(photoData),
       });
 
       if (!response.ok) {
@@ -1205,7 +1236,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
   const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">): Promise<Ticket | undefined> => {
     const userId = localStorage.getItem("userId");
-    
+
     if (!userId) {
       console.error("[TICKET] Missing userId");
       return undefined;
@@ -1226,7 +1257,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         created: new Date().toISOString(),
         createdby: userId,
         remarks: ticket.remarks || "",
-        priority: ticket.priority ? "High" : "Regular"
+        priority: ticket.priority ? "High" : "Regular",
       };
 
       // Add photo metadata if available
@@ -1240,13 +1271,15 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           htable: "",
           parentkey: "",
           preapi: "",
-          draftid: ""
+          draftid: "",
         },
-        data: [{
-          head: [],
-          body: [bodyData],
-          dirty: "true"
-        }]
+        data: [
+          {
+            head: [],
+            body: [bodyData],
+            dirty: "true",
+          },
+        ],
       };
 
       console.log("[TICKET] Submitting ticket to API:", apiPayload);
@@ -1255,7 +1288,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(apiPayload)
+        body: JSON.stringify(apiPayload),
       });
 
       if (!response.ok) {
@@ -1268,7 +1301,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       // Extract id and ticket_id from response (API returns in Detail array)
       let serverId = crypto.randomUUID();
       let serverTicketId = undefined;
-      
+
       if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
         const responseBody = result.Detail[0].body[0];
         serverId = responseBody.id || serverId;
@@ -1283,31 +1316,31 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         photo: photoMetadata,
         syncStatus: "synced",
       };
-      
+
       await dbManager.addTicket(newTicket);
-      setTickets(prev => [...prev, newTicket]);
-      
+      setTickets((prev) => [...prev, newTicket]);
+
       console.log("[TICKET] Ticket created successfully. ID:", serverId, "Ticket ID:", serverTicketId);
       return newTicket;
     } catch (error) {
       console.error("[TICKET] Failed to create ticket:", error);
-      
+
       // Fallback: create ticket locally if API fails
       const newTicket: Ticket = {
         ...ticket,
         id: crypto.randomUUID(),
         syncStatus: "local",
       };
-      
+
       await dbManager.addTicket(newTicket);
-      setTickets(prev => [...prev, newTicket]);
+      setTickets((prev) => [...prev, newTicket]);
       return newTicket;
     }
   }, []);
 
   const updateTicket = useCallback(async (ticket: Ticket) => {
     const userId = localStorage.getItem("userId");
-    
+
     if (!userId) {
       console.error("[TICKET] Missing userId for update");
       return;
@@ -1315,7 +1348,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       console.log("[TICKET] Updating ticket:", ticket.id);
-      
+
       // Upload new screenshots if any
       const photoMetadata = await uploadScreenshots(ticket.screenshots || [], userId);
       console.log("[TICKET] Uploaded photos for update:", photoMetadata);
@@ -1333,14 +1366,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         priority: ticket.priority ? "High" : "Regular",
         ...(ticket.status === "CLOSED" && { close_date: new Date().toISOString() }),
         updated: new Date().toISOString(),
-        updatedby: userId
+        updatedby: userId,
       };
 
       // Add photo metadata if available
       if (allPhotos.length > 0) {
         bodyData.photo = allPhotos;
       }
-      
+
       const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
         method: "POST",
         headers: {
@@ -1352,14 +1385,16 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             htable: "",
             parentkey: "",
             preapi: "",
-            draftid: ""
+            draftid: "",
           },
-          data: [{
-            head: [],
-            body: [bodyData],
-            dirty: "true"
-          }]
-        })
+          data: [
+            {
+              head: [],
+              body: [bodyData],
+              dirty: "true",
+            },
+          ],
+        }),
       });
 
       if (!response.ok) {
@@ -1374,62 +1409,76 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
       // Update local storage
       await dbManager.updateTicket(updatedTicket);
-      setTickets(prev => prev.map(t => t.id === ticket.id ? updatedTicket : t));
-      
+      setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updatedTicket : t)));
+
       console.log("[TICKET] Ticket updated successfully");
     } catch (error) {
       console.error("[TICKET] Failed to update ticket:", error);
-      
+
       // Still update locally even if API fails
       await dbManager.updateTicket(ticket);
-      setTickets(prev => prev.map(t => t.id === ticket.id ? ticket : t));
+      setTickets((prev) => prev.map((t) => (t.id === ticket.id ? ticket : t)));
     }
   }, []);
 
-  const getContactTickets = useCallback((contactId: string) => {
-    return tickets
-      .filter(t => t.contactId === contactId)
-      .sort((a, b) => new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime());
-  }, [tickets]);
-
-  const value = useMemo(() => ({
-    contacts,
-    interactions,
-    orders,
-    tickets,
-    lastSync,
-    isLoading,
-    scrollPosition,
-    displayCount,
-    searchQuery,
-    showStarredOnly,
-    advancedFilters,
-    setScrollPosition,
-    setDisplayCount,
-    setSearchQuery,
-    setShowStarredOnly,
-    setAdvancedFilters,
-    addInteraction,
-    getContactInteractions,
-    syncData,
-    markInteractionsAsSynced,
-    mergeInteractionsFromAPI,
-    toggleStarred,
-    updateContactFollowUp,
-    updateContactStatus,
-    fetchOrders,
-    fetchTickets,
-    syncTickets,
-    addTicket,
-    updateTicket,
-    getContactTickets,
-  }), [contacts, interactions, orders, tickets, lastSync, isLoading, scrollPosition, displayCount, searchQuery, showStarredOnly, advancedFilters]);
-
-  return (
-    <LeadContext.Provider value={value}>
-      {children}
-    </LeadContext.Provider>
+  const getContactTickets = useCallback(
+    (contactId: string) => {
+      return tickets
+        .filter((t) => t.contactId === contactId)
+        .sort((a, b) => new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime());
+    },
+    [tickets],
   );
+
+  const value = useMemo(
+    () => ({
+      contacts,
+      interactions,
+      orders,
+      tickets,
+      lastSync,
+      isLoading,
+      scrollPosition,
+      displayCount,
+      searchQuery,
+      showStarredOnly,
+      advancedFilters,
+      setScrollPosition,
+      setDisplayCount,
+      setSearchQuery,
+      setShowStarredOnly,
+      setAdvancedFilters,
+      addInteraction,
+      getContactInteractions,
+      syncData,
+      markInteractionsAsSynced,
+      mergeInteractionsFromAPI,
+      toggleStarred,
+      updateContactFollowUp,
+      updateContactStatus,
+      fetchOrders,
+      fetchTickets,
+      syncTickets,
+      addTicket,
+      updateTicket,
+      getContactTickets,
+    }),
+    [
+      contacts,
+      interactions,
+      orders,
+      tickets,
+      lastSync,
+      isLoading,
+      scrollPosition,
+      displayCount,
+      searchQuery,
+      showStarredOnly,
+      advancedFilters,
+    ],
+  );
+
+  return <LeadContext.Provider value={value}>{children}</LeadContext.Provider>;
 };
 
 export const useLeadContext = () => {
