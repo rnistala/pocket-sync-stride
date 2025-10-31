@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Search, Plus, X, Calendar, Edit } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Calendar, Edit, Star } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { UpdateTicketForm } from "@/components/UpdateTicketForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -110,8 +110,12 @@ export default function Tickets() {
       });
     }
 
-    // Sort by status (open/in progress first, then closed), then by date (newest first)
+    // Sort by priority first, then status (open/in progress first, then closed), then by date (newest first)
     return filtered.sort((a, b) => {
+      // Priority tickets come first
+      if (a.priority && !b.priority) return -1;
+      if (!a.priority && b.priority) return 1;
+      
       const aIsClosed = a.status === "CLOSED" ? 1 : 0;
       const bIsClosed = b.status === "CLOSED" ? 1 : 0;
       
@@ -144,6 +148,19 @@ export default function Tickets() {
       ...ticket,
       status: newStatus,
       closedDate: newStatus === "CLOSED" ? new Date().toISOString() : ticket.closedDate,
+    };
+
+    await updateTicket(updatedTicket);
+  };
+
+  const handleTogglePriority = async (ticketId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const ticket = tickets.find(t => t.id === ticketId);
+    if (!ticket) return;
+
+    const updatedTicket = {
+      ...ticket,
+      priority: !ticket.priority,
     };
 
     await updateTicket(updatedTicket);
@@ -230,6 +247,16 @@ export default function Tickets() {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => handleTogglePriority(ticket.id, e)}
+                          >
+                            <Star 
+                              className={`h-4 w-4 ${ticket.priority ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`}
+                            />
+                          </Button>
                           {getStatusBadge(ticket.status)}
                           <Badge variant="outline">{ticket.issueType}</Badge>
                         </div>

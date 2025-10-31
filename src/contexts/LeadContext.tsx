@@ -25,6 +25,7 @@ export interface Ticket {
   rootCause?: string;
   screenshots: string[]; // Array of base64 encoded images
   photo?: any[]; // Array of photo metadata from server
+  priority?: boolean; // Star mark for priority tickets
   syncStatus: "synced" | "pending" | "local";
 }
 

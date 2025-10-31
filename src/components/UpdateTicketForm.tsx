@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { Star } from "lucide-react";
 
 interface UpdateTicketFormProps {
   ticket: Ticket;
@@ -20,6 +21,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   const [remarks, setRemarks] = useState("");
   const [rootCause, setRootCause] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [priority, setPriority] = useState(false);
 
   useEffect(() => {
     if (ticket) {
@@ -27,6 +29,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
       setRemarks(ticket.remarks || "");
       setRootCause(ticket.rootCause || "");
       setScreenshots(ticket.screenshots || []);
+      setPriority(ticket.priority || false);
     }
   }, [ticket]);
 
@@ -86,6 +89,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
       remarks: remarks.trim(),
       rootCause: rootCause.trim(),
       screenshots,
+      priority,
     };
 
     await updateTicket(updatedTicket);
@@ -128,6 +132,19 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
               placeholder="Add your analysis or remarks about this ticket..."
               className="min-h-[120px]"
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPriority(!priority)}
+              className={priority ? "bg-accent" : ""}
+            >
+              <Star className={`h-4 w-4 mr-2 ${priority ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+              {priority ? 'Priority Ticket' : 'Mark as Priority'}
+            </Button>
           </div>
 
           <div className="space-y-2">

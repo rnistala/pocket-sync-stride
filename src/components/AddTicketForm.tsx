@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Upload, X, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Upload, X, Check, ChevronsUpDown, Star } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,7 @@ export const AddTicketForm = () => {
   const [issueType, setIssueType] = useState("");
   const [description, setDescription] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [priority, setPriority] = useState(false);
 
   // Get selected contact display name
   const selectedContact = useMemo(() => 
@@ -62,6 +63,7 @@ export const AddTicketForm = () => {
       status: "OPEN",
       description,
       screenshots,
+      priority,
     });
 
     toast({
@@ -77,6 +79,7 @@ export const AddTicketForm = () => {
     setIssueType("");
     setDescription("");
     setScreenshots([]);
+    setPriority(false);
     setOpen(false);
   };
 
@@ -229,6 +232,19 @@ export const AddTicketForm = () => {
               className="min-h-[120px]"
               required
             />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPriority(!priority)}
+              className={priority ? "bg-accent" : ""}
+            >
+              <Star className={`h-4 w-4 mr-2 ${priority ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+              {priority ? 'Priority Ticket' : 'Mark as Priority'}
+            </Button>
           </div>
 
           <div className="space-y-2">
