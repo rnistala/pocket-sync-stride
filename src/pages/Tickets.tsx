@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Search, Plus, X, Calendar, Edit, Star } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Calendar, Edit, Star, LogOut } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { UpdateTicketForm } from "@/components/UpdateTicketForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -65,6 +65,14 @@ export default function Tickets() {
   const handleSync = async () => {
     await syncTickets();
     setLastSync(new Date());
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("userCompany");
+    navigate("/login");
   };
 
   // Create contact lookup map for O(1) access
@@ -182,6 +190,12 @@ export default function Tickets() {
             </div>
             <div className="flex items-center gap-2">
               <ThemeToggle />
+              {userCompany && (
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              )}
               <AddTicketForm />
             </div>
           </div>
