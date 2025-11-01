@@ -683,10 +683,16 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     let fetchedContacts: Contact[] = [];
     let hasMore = true;
 
+    console.log("[SYNC CONTACTS] Starting contact fetch, userId:", userId);
+
     while (hasMore) {
       const apiRoot = await getApiRoot();
       const userCompany = getUserCompany();
       const token = localStorage.getItem("userToken");
+      
+      console.log("[SYNC CONTACTS] Fetching batch at offset:", offset);
+      console.log("[SYNC CONTACTS] UserCompany:", userCompany);
+      console.log("[SYNC CONTACTS] Token exists:", !!token);
       
       const payload: any = {
         id: 3,
@@ -700,6 +706,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         const userData = JSON.parse(token);
         const userName = userData.companyforeign || userData.name || "";
         
+        console.log("[SYNC CONTACTS] Customer login detected, adding extra filter");
+        console.log("[SYNC CONTACTS] Company:", userCompany, "UserName:", userName);
+        
         payload.extra = [{
           operator: "in",
           value: userCompany,
@@ -712,6 +721,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           extracolumn: "company"
         }];
       }
+
+      console.log("[SYNC CONTACTS] Payload:", JSON.stringify(payload));
+      console.log("[SYNC CONTACTS] URL:", `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`);
 
       const response = await fetch(`${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`, {
         method: "POST",
