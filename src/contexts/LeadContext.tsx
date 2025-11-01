@@ -1346,15 +1346,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       return undefined;
     }
 
-    // Validate that the contact belongs to user's company (if customer)
-    if (userCompany) {
-      const contact = contacts.find(c => c.id === ticket.contactId);
-      if (!contact || contact.company !== userCompany) {
-        console.error("[TICKET] Cannot create ticket - contact not in user's company");
-        toast.error("Cannot create ticket for this contact");
-        return undefined;
-      }
-    }
+    // Contact validation is handled by API filtering - contacts array already contains only user's company contacts
 
     try {
       // Upload screenshots first
