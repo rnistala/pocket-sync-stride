@@ -56,12 +56,15 @@ const Login = () => {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-3">
-          <img src={logoFull} alt="OpteriX" className="h-24 mx-auto [filter:invert(1)_hue-rotate(180deg)] dark:filter-none" />
-          <h1 className="text-4xl font-bold text-foreground">
-            Leads
-          </h1>
-          <p className="text-muted-foreground">Sign in to manage your leads</p>
+        <div className="text-center space-y-2">
+          <img src={logoFull} alt="OpteriX" className="h-20 mx-auto [filter:invert(1)_hue-rotate(180deg)] dark:filter-none" />
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground uppercase tracking-wide">Opterix</p>
+            <h1 className="text-4xl font-bold text-foreground">
+              Leads
+            </h1>
+          </div>
+          <p className="text-muted-foreground mt-2">Sign in to manage your leads</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6 bg-card p-8 rounded-lg border border-border">
