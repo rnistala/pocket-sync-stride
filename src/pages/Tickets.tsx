@@ -206,9 +206,8 @@ export default function Tickets() {
             <div className="flex items-center gap-2">
               <ThemeToggle />
               {userCompany && (
-                <Button variant="outline" size="sm" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                <Button variant="outline" size="icon" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
                 </Button>
               )}
               <AddTicketForm />
