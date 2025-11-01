@@ -14,17 +14,6 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Detect the base path from the current URL
-const getBasePath = () => {
-  const path = window.location.pathname;
-  // If we're at root or the path ends with .html, return '/'
-  if (path === '/' || path.endsWith('.html') || path.endsWith('index.html')) {
-    return '/';
-  }
-  // Otherwise, return the directory path
-  return path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -32,7 +21,7 @@ const App = () => (
         <LeadProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter basename={getBasePath()}>
+          <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
