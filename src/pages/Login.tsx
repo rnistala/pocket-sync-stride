@@ -57,9 +57,8 @@ const Login = () => {
       </div>
       <div className="w-full max-w-md space-y-8">
         <div className="text-left space-y-0">
-          <img src={logoFull} alt="OpteriX" className="h-10 [filter:invert(1)_hue-rotate(180deg)] dark:filter-none" />
           <h1 className="text-6xl font-bold text-foreground">
-            Leads
+            Opterix Leads
           </h1>
           <p className="text-muted-foreground mt-2">Sign in to manage your leads</p>
         </div>
