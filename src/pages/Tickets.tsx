@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useDeferredValue } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +17,11 @@ import { TicketFiltersDialog } from "@/components/TicketFiltersDialog";
 import { format } from "date-fns";
 
 export default function Tickets() {
-  const { tickets, contacts, updateTicket, syncTickets } = useLeadContext();
+  const { tickets, contacts, updateTicket, syncTickets, syncData } = useLeadContext();
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("filter") || "all";
   const userCompany = localStorage.getItem("userCompany"); // Check if customer
@@ -62,8 +63,19 @@ export default function Tickets() {
     };
   }, []);
 
+  // Sync data on mount if coming from login
+  useEffect(() => {
+    if (location.state?.shouldSync && navigator.onLine) {
+      console.log("[TICKETS PAGE] Should sync detected, fetching contacts and tickets");
+      syncData(); // Fetch contacts
+      syncTickets(); // Fetch tickets
+      // Clear the state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, syncData, syncTickets]);
+
   const handleSync = async () => {
-    await syncTickets();
+    await Promise.all([syncData(), syncTickets()]);
     setLastSync(new Date());
   };
 
