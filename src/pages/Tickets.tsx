@@ -23,6 +23,7 @@ export default function Tickets() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialFilter = searchParams.get("filter") || "all";
+  const userCompany = localStorage.getItem("userCompany"); // Check if customer
   
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>(initialFilter);
@@ -172,9 +173,11 @@ export default function Tickets() {
         <div className="max-w-5xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/")}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
+              {!userCompany && (
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/")}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
               <h1 className="text-lg font-semibold text-foreground">Tickets</h1>
             </div>
             <div className="flex items-center gap-2">
