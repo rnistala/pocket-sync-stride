@@ -38,10 +38,16 @@ const Login = () => {
       localStorage.setItem("userId", data.id);
       localStorage.setItem("userToken", JSON.stringify(data));
       
+      // Store company if provided (customer identifier)
+      if (data.company) {
+        localStorage.setItem("userCompany", data.company);
+      }
+      
       toast.success("Login successful!");
       
-      // Navigate and trigger initial sync
-      navigate("/", { state: { shouldSync: true } });
+      // Customers (with company) go to Tickets page, internal users to main page
+      const destination = data.company ? "/tickets" : "/";
+      navigate(destination, { state: { shouldSync: true } });
     } catch (error) {
       setDebugInfo(`Error: ${error instanceof Error ? error.message : String(error)}`);
       toast.error("Invalid credentials");

@@ -291,6 +291,11 @@ class IndexedDBManager {
 
 const dbManager = new IndexedDBManager();
 
+// Helper to get user's company (for customers)
+const getUserCompany = (): string | null => {
+  return localStorage.getItem("userCompany");
+};
+
 export interface AdvancedFilters {
   statuses: string[];
   city: string;
@@ -816,6 +821,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const fetchTickets = useCallback(async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("userToken");
+    const userCompany = getUserCompany();
 
     if (!userId || !token) {
       console.error("[TICKETS] Missing userId or token");
@@ -844,7 +850,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         console.log("[TICKETS] Response data:", result);
 
         if (result.data && result.data[0] && result.data[0].body) {
-          const fetchedTickets = result.data[0].body.map((apiTicket: any) => ({
+          let fetchedTickets = result.data[0].body.map((apiTicket: any) => ({
             id: apiTicket.id || crypto.randomUUID(),
             ticketId: apiTicket.ticket_id,
             contactId: apiTicket.contact || "",
@@ -861,6 +867,15 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             priority: apiTicket.priority === "High",
             syncStatus: "synced" as const,
           }));
+
+          // Filter by company if user is a customer
+          if (userCompany) {
+            fetchedTickets = fetchedTickets.filter((ticket: Ticket) => {
+              const contact = contacts.find(c => c.id === ticket.contactId);
+              return contact && contact.company === userCompany;
+            });
+            console.log(`[TICKETS] Filtered to ${fetchedTickets.length} tickets for company: ${userCompany}`);
+          }
 
           console.log("[TICKETS] Fetched tickets count:", fetchedTickets.length);
           console.log("[TICKETS] Sample ticket:", fetchedTickets[0]);
@@ -880,7 +895,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       console.error("[TICKETS] Failed to fetch tickets:", error);
       console.error("[TICKETS] Error details:", error instanceof Error ? error.message : String(error));
     }
-  }, []);
+  }, [contacts]);
 
   const syncTickets = useCallback(async () => {
     const userId = localStorage.getItem("userId");
@@ -1150,8 +1165,20 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             };
           });
 
-          console.log("[SYNC TICKETS] Mapped server tickets:", serverTickets.length);
-          console.log("[SYNC TICKETS] First server ticket sample:", serverTickets[0]);
+          // Filter by company if user is a customer
+          const userCompany = getUserCompany();
+          let filteredServerTickets = serverTickets;
+          
+          if (userCompany) {
+            filteredServerTickets = serverTickets.filter((ticket: Ticket) => {
+              const contact = contacts.find(c => c.id === ticket.contactId);
+              return contact && contact.company === userCompany;
+            });
+            console.log(`[SYNC TICKETS] Filtered to ${filteredServerTickets.length} tickets for company: ${userCompany}`);
+          }
+
+          console.log("[SYNC TICKETS] Mapped server tickets:", filteredServerTickets.length);
+          console.log("[SYNC TICKETS] First server ticket sample:", filteredServerTickets[0]);
 
           // Step 3: Merge with local data
           const localTickets = await dbManager.getAllTickets();
@@ -1160,7 +1187,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           const mergedTickets = [...localTickets];
 
           // Update or add server tickets
-          for (const serverTicket of serverTickets) {
+          for (const serverTicket of filteredServerTickets) {
             const existingIndex = mergedTickets.findIndex((t) => t.ticketId === serverTicket.ticketId);
             if (existingIndex >= 0) {
               // Update existing ticket - merge with local ID
@@ -1174,7 +1201,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           }
 
           // Remove synced tickets that are no longer on server
-          const serverTicketIds = new Set(serverTickets.map((t) => t.ticketId));
+          const serverTicketIds = new Set(filteredServerTickets.map((t) => t.ticketId));
           const filteredTickets = mergedTickets.filter((ticket) => {
             // Keep locally created tickets (pending sync)
             if (ticket.syncStatus === "pending") {
@@ -1212,7 +1239,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       console.error("[SYNC TICKETS] Error stack:", error instanceof Error ? error.stack : "No stack trace");
       toast.error("Failed to sync tickets. Please try again.");
     }
-  }, [tickets]);
+  }, [tickets, contacts]);
 
   const uploadScreenshots = async (screenshots: string[], userId: string): Promise<any[]> => {
     if (!screenshots || screenshots.length === 0) {
@@ -1252,10 +1279,21 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
   const addTicket = useCallback(async (ticket: Omit<Ticket, "id" | "syncStatus">): Promise<Ticket | undefined> => {
     const userId = localStorage.getItem("userId");
+    const userCompany = getUserCompany();
 
     if (!userId) {
       console.error("[TICKET] Missing userId");
       return undefined;
+    }
+
+    // Validate that the contact belongs to user's company (if customer)
+    if (userCompany) {
+      const contact = contacts.find(c => c.id === ticket.contactId);
+      if (!contact || contact.company !== userCompany) {
+        console.error("[TICKET] Cannot create ticket - contact not in user's company");
+        toast.error("Cannot create ticket for this contact");
+        return undefined;
+      }
     }
 
     try {
@@ -1352,7 +1390,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       setTickets((prev) => [...prev, newTicket]);
       return newTicket;
     }
-  }, []);
+  }, [contacts]);
 
   const updateTicket = useCallback(async (ticket: Ticket) => {
     const userId = localStorage.getItem("userId");

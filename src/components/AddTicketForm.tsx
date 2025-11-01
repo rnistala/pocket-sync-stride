@@ -29,19 +29,30 @@ export const AddTicketForm = () => {
     [contacts, contactId]
   );
 
-  // Filter contacts based on search
+  // Get user's company (for customers)
+  const userCompany = useMemo(() => localStorage.getItem("userCompany"), []);
+
+  // Filter contacts by company first (if customer), then by search
   const filteredContacts = useMemo(() => {
-    if (!contactSearch.trim()) return contacts.slice(0, 50);
+    let availableContacts = contacts;
+
+    // If user has a company, only show contacts from that company
+    if (userCompany) {
+      availableContacts = contacts.filter(contact => contact.company === userCompany);
+    }
+
+    // Then apply search filter
+    if (!contactSearch.trim()) return availableContacts.slice(0, 50);
     
     const query = contactSearch.toLowerCase();
-    return contacts
+    return availableContacts
       .filter(contact => 
         contact.name.toLowerCase().includes(query) ||
         contact.company.toLowerCase().includes(query) ||
         (contact.phone && contact.phone.includes(query))
       )
       .slice(0, 50);
-  }, [contacts, contactSearch]);
+  }, [contacts, contactSearch, userCompany]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
