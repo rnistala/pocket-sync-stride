@@ -57,7 +57,7 @@ const Login = () => {
       </div>
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <img src={logoFull} alt="OpteriX" className="h-12 mx-auto" />
+          <img src={logoFull} alt="OpteriX" className="h-12 mx-auto dark:filter-none" style={{ filter: 'invert(1) hue-rotate(180deg)' }} />
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               Opterix Leads
