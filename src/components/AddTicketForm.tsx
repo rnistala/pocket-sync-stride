@@ -141,7 +141,7 @@ export const AddTicketForm = () => {
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Action Item</DialogTitle>
+          <DialogTitle>New Ticket</DialogTitle>
           <DialogDescription>
             Add a new ticket with contact details and issue information
           </DialogDescription>
