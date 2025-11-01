@@ -132,6 +132,13 @@ export const AddTicketForm = () => {
     }
   }, [open]);
 
+  // Auto-select contact if only one is available (customer case)
+  useEffect(() => {
+    if (open && contacts.length === 1 && !contactId) {
+      setContactId(contacts[0].id);
+    }
+  }, [open, contacts, contactId]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
