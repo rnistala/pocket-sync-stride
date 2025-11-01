@@ -686,6 +686,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     while (hasMore) {
       const apiRoot = await getApiRoot();
       const userCompany = getUserCompany();
+      const token = localStorage.getItem("userToken");
       
       const payload: any = {
         id: 3,
@@ -694,7 +695,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       };
 
       // If customer (has company), filter contacts by company
-      if (userCompany) {
+      if (userCompany && token) {
+        // Parse user token to get user details
+        const userData = JSON.parse(token);
+        const userName = userData.companyforeign || userData.name || "";
+        
         payload.extra = [{
           operator: "in",
           value: userCompany,
@@ -703,7 +708,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           function: "",
           datatype: "Selection",
           enable: "true",
-          show: "contact name",
+          show: userName,
           extracolumn: "company"
         }];
       }
