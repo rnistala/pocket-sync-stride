@@ -711,7 +711,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         
         payload.extra = [{
           operator: "in",
-          value: userCompany,
+          value: parseInt(userCompany),
           tablename: "contact",
           columnname: "company",
           function: "",
