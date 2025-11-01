@@ -893,7 +893,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         console.log("[TICKETS] Response data:", result);
 
         if (result.data && result.data[0] && result.data[0].body) {
-          let fetchedTickets = result.data[0].body.map((apiTicket: any) => ({
+          const fetchedTickets = result.data[0].body.map((apiTicket: any) => ({
             id: apiTicket.id || crypto.randomUUID(),
             ticketId: apiTicket.ticket_id,
             contactId: apiTicket.contact || "",
@@ -910,15 +910,6 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             priority: apiTicket.priority === "High",
             syncStatus: "synced" as const,
           }));
-
-          // Filter by company if user is a customer
-          if (userCompany) {
-            fetchedTickets = fetchedTickets.filter((ticket: Ticket) => {
-              const contact = contacts.find(c => c.id === ticket.contactId);
-              return contact && contact.company === userCompany;
-            });
-            console.log(`[TICKETS] Filtered to ${fetchedTickets.length} tickets for company: ${userCompany}`);
-          }
 
           console.log("[TICKETS] Fetched tickets count:", fetchedTickets.length);
           console.log("[TICKETS] Sample ticket:", fetchedTickets[0]);
@@ -1229,20 +1220,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             };
           });
 
-          // Filter by company if user is a customer
-          const userCompany = getUserCompany();
-          let filteredServerTickets = serverTickets;
-          
-          if (userCompany) {
-            filteredServerTickets = serverTickets.filter((ticket: Ticket) => {
-              const contact = contacts.find(c => c.id === ticket.contactId);
-              return contact && contact.company === userCompany;
-            });
-            console.log(`[SYNC TICKETS] Filtered to ${filteredServerTickets.length} tickets for company: ${userCompany}`);
-          }
-
-          console.log("[SYNC TICKETS] Mapped server tickets:", filteredServerTickets.length);
-          console.log("[SYNC TICKETS] First server ticket sample:", filteredServerTickets[0]);
+          console.log("[SYNC TICKETS] Mapped server tickets:", serverTickets.length);
+          console.log("[SYNC TICKETS] First server ticket sample:", serverTickets[0]);
 
           // Step 3: Merge with local data
           const localTickets = await dbManager.getAllTickets();
@@ -1251,7 +1230,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           const mergedTickets = [...localTickets];
 
           // Update or add server tickets
-          for (const serverTicket of filteredServerTickets) {
+          for (const serverTicket of serverTickets) {
             const existingIndex = mergedTickets.findIndex((t) => t.ticketId === serverTicket.ticketId);
             if (existingIndex >= 0) {
               // Update existing ticket - merge with local ID
@@ -1265,7 +1244,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           }
 
           // Remove synced tickets that are no longer on server
-          const serverTicketIds = new Set(filteredServerTickets.map((t) => t.ticketId));
+          const serverTicketIds = new Set(serverTickets.map((t) => t.ticketId));
           const filteredTickets = mergedTickets.filter((ticket) => {
             // Keep locally created tickets (pending sync)
             if (ticket.syncStatus === "pending") {
