@@ -713,7 +713,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           operator: "in",
           value: parseInt(userCompany),
           tablename: "contact",
-          columnname: "company",
+          columnname: "id",
           function: "",
           datatype: "Selection",
           enable: "true",
