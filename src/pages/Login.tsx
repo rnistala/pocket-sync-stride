@@ -57,10 +57,10 @@ const Login = () => {
       </div>
       <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-4">
-          <img src={logoFull} alt="OpteriX" className="h-12 mx-auto" />
+          <img src={logoFull} alt="OpteriX" className="h-12 mx-auto dark:invert-0 invert" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Lead Manager
+              Opterix Leads
             </h1>
             <p className="text-muted-foreground mt-2">Sign in to manage your leads</p>
           </div>
