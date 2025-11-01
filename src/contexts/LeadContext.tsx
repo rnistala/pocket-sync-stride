@@ -1362,7 +1362,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       console.log("[TICKET] Submitting ticket to API:", apiPayload);
 
       // Submit to API
-      const response = await fetch(`https://demo.opterix.in/api/public/tdata/${userId}`, {
+      const apiRoot = await getApiRoot();
+      const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(apiPayload),
