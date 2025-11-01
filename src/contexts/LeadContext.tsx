@@ -854,7 +854,27 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     try {
       const apiRoot = await getApiRoot();
       const url = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
-      const payload = { id: 555, offset: 0, limit: 100 };
+      
+      // Build payload - add extra filter for customer logins
+      const payload: any = { id: 555, offset: 0, limit: 100 };
+      
+      if (userCompany) {
+        // Parse user token to get user details
+        const userData = JSON.parse(token);
+        const userName = userData.companyforeign || userData.name || "";
+        
+        payload.extra = [{
+          operator: "in",
+          value: userCompany,
+          tablename: "ticket",
+          columnname: "contact",
+          function: "",
+          datatype: "Selection",
+          enable: "true",
+          show: userName,
+          extracolumn: "contact"
+        }];
+      }
 
       console.log("[TICKETS] Fetching from:", url);
       console.log("[TICKETS] Payload:", payload);
@@ -1128,11 +1148,32 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
       const fetchUrl = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
       console.log("[SYNC TICKETS] Fetch URL:", fetchUrl);
-      const fetchPayload = {
+      
+      // Build payload - add extra filter for customer logins
+      const fetchPayload: any = {
         id: 555,
         offset: 0,
         limit: 100,
       };
+      
+      const userCompany = getUserCompany();
+      if (userCompany) {
+        // Parse user token to get user details
+        const userData = JSON.parse(token);
+        const userName = userData.companyforeign || userData.name || "";
+        
+        fetchPayload.extra = [{
+          operator: "in",
+          value: userCompany,
+          tablename: "ticket",
+          columnname: "contact",
+          function: "",
+          datatype: "Selection",
+          enable: "true",
+          show: userName,
+          extracolumn: "contact"
+        }];
+      }
 
       console.log("[SYNC TICKETS] Fetch payload:", JSON.stringify(fetchPayload, null, 2));
 
