@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useDeferredValue } from "react";
+import { useState, useMemo, useEffect, useDeferredValue, useRef } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ export default function Tickets() {
   const [editingTicket, setEditingTicket] = useState<typeof tickets[0] | null>(null);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const hasSynced = useRef(false);
 
   // Defer search query for non-blocking updates
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -65,14 +66,16 @@ export default function Tickets() {
 
   // Sync data on mount if coming from login
   useEffect(() => {
-    if (location.state?.shouldSync && navigator.onLine) {
+    if (location.state?.shouldSync && navigator.onLine && !hasSynced.current) {
       console.log("[TICKETS PAGE] Should sync detected, fetching contacts and tickets");
+      hasSynced.current = true;
       syncData(); // Fetch contacts
       syncTickets(); // Fetch tickets
       // Clear the state
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, syncData, syncTickets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
 
   const handleSync = async () => {
     await Promise.all([syncData(), syncTickets()]);
