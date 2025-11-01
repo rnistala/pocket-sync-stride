@@ -30,6 +30,8 @@ export default function Tickets() {
   const [statusFilter, setStatusFilter] = useState<string>(initialFilter);
   const [issueTypeFilter, setIssueTypeFilter] = useState<string>("all");
   const [contactFilter, setContactFilter] = useState<string>("all");
+  const [priorityFilter, setPriorityFilter] = useState<boolean | null>(null);
+  const [ageFilter, setAgeFilter] = useState<"all" | "older-than-10-days">("all");
   const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
   const [editingTicket, setEditingTicket] = useState<typeof tickets[0] | null>(null);
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
@@ -102,6 +104,17 @@ export default function Tickets() {
     return Array.from(new Set(tickets.map(t => t.issueType))).filter(Boolean);
   }, [tickets]);
 
+  // Calculate metrics
+  const priorityTicketsCount = useMemo(() => 
+    tickets.filter(t => t.priority).length
+  , [tickets]);
+
+  const ticketsOlderThan10Days = useMemo(() => {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    return tickets.filter(t => new Date(t.reportedDate) < tenDaysAgo).length;
+  }, [tickets]);
+
   const filteredTickets = useMemo(() => {
     let filtered = tickets;
 
@@ -118,6 +131,18 @@ export default function Tickets() {
     // Contact filter
     if (contactFilter !== "all") {
       filtered = filtered.filter(t => t.contactId === contactFilter);
+    }
+
+    // Priority filter
+    if (priorityFilter !== null) {
+      filtered = filtered.filter(t => t.priority === priorityFilter);
+    }
+
+    // Age filter
+    if (ageFilter === "older-than-10-days") {
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      filtered = filtered.filter(t => new Date(t.reportedDate) < tenDaysAgo);
     }
 
     // Search filter - use contactMap for O(1) lookup and deferred query
@@ -149,7 +174,7 @@ export default function Tickets() {
       
       return new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime();
     });
-  }, [tickets, contactMap, deferredSearchQuery, statusFilter, issueTypeFilter, contactFilter]);
+  }, [tickets, contactMap, deferredSearchQuery, statusFilter, issueTypeFilter, contactFilter, priorityFilter, ageFilter]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -245,6 +270,34 @@ export default function Tickets() {
               contacts={contacts}
               mounted={mounted}
             />
+          </div>
+
+          {/* Metrics */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <Card 
+              className="cursor-pointer hover:bg-accent transition-colors"
+              onClick={() => {
+                setPriorityFilter(priorityFilter === true ? null : true);
+                setAgeFilter("all");
+              }}
+            >
+              <CardContent className="p-4 flex flex-col">
+                <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Priority Tickets</p>
+                <p className="text-2xl font-bold text-foreground">{priorityTicketsCount}</p>
+              </CardContent>
+            </Card>
+            <Card 
+              className="cursor-pointer hover:bg-accent transition-colors"
+              onClick={() => {
+                setAgeFilter(ageFilter === "older-than-10-days" ? "all" : "older-than-10-days");
+                setPriorityFilter(null);
+              }}
+            >
+              <CardContent className="p-4 flex flex-col">
+                <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Tickets &gt;10 Days</p>
+                <p className="text-2xl font-bold text-foreground">{ticketsOlderThan10Days}</p>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Count and Sync */}
