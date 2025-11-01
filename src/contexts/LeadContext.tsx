@@ -685,10 +685,33 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
     while (hasMore) {
       const apiRoot = await getApiRoot();
+      const userCompany = getUserCompany();
+      
+      const payload: any = {
+        id: 3,
+        offset,
+        limit: BATCH_SIZE,
+      };
+
+      // If customer (has company), filter contacts by company
+      if (userCompany) {
+        payload.extra = [{
+          operator: "in",
+          value: userCompany,
+          tablename: "contact",
+          columnname: "company",
+          function: "",
+          datatype: "Selection",
+          enable: "true",
+          show: "contact name",
+          extracolumn: "company"
+        }];
+      }
+
       const response = await fetch(`${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: 3, offset, limit: BATCH_SIZE }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
