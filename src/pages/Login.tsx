@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
-import logoFull from "@/assets/logo-full.png";
+import logo360 from "@/assets/360sq.png";
 import { getApiRoot } from "@/lib/config";
 
 const Login = () => {
@@ -62,11 +62,9 @@ const Login = () => {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-md space-y-8">
-        <div className="text-left space-y-0">
-          <h1 className="text-6xl font-bold text-foreground">
-            Opterix 360
-          </h1>
-          <p className="text-muted-foreground mt-3">Sign-in to get started</p>
+        <div className="flex flex-col items-center space-y-3">
+          <img src={logo360} alt="Opterix 360" className="w-48 h-auto" />
+          <p className="text-muted-foreground text-center">Sign-in to get started</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6 bg-card p-8 rounded-lg border border-border">
