@@ -371,6 +371,26 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         // Check if API root has changed
         const currentApiRoot = await getApiRoot();
         const storedApiRoot = await dbManager.getMetadata("apiRoot");
+        const currentUserId = localStorage.getItem("userId");
+        const storedUserId = await dbManager.getMetadata("lastUserId");
+
+        // Check if user has changed
+        if (storedUserId && storedUserId !== currentUserId) {
+          console.log("[USER SWITCH] User changed, clearing all data");
+          await dbManager.saveContacts([]);
+          await dbManager.saveInteractions([]);
+          await dbManager.saveOrders([]);
+          await dbManager.saveTickets([]);
+          await dbManager.setMetadata("lastSync", null);
+          await dbManager.setMetadata("lastUserId", currentUserId);
+
+          setContacts([]);
+          setInteractions([]);
+          setOrders([]);
+          setTickets([]);
+          setLastSync(null);
+          return;
+        }
 
         if (storedApiRoot && storedApiRoot !== currentApiRoot) {
           console.log("API root changed, clearing local data");
@@ -403,9 +423,18 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             setLastSync(new Date(syncTime));
           }
 
-          // Store current API root if not set
+          // Store current API root and userId if not set
           if (!storedApiRoot) {
             await dbManager.setMetadata("apiRoot", currentApiRoot);
+          }
+          if (!storedUserId && currentUserId) {
+            await dbManager.setMetadata("lastUserId", currentUserId);
+          }
+
+          // Initial fetch: Only fetch if no contacts present
+          if (loadedContacts.length === 0 && currentUserId) {
+            console.log("[INITIAL LOAD] No contacts found, fetching from server");
+            setTimeout(() => syncData(), 100);
           }
         }
       } catch (error) {
@@ -519,6 +548,76 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     [interactions, saveInteractions],
+  );
+
+  // Sync a single contact from server
+  const syncSingleContact = useCallback(
+    async (contactId: string) => {
+      const userId = localStorage.getItem("userId");
+      if (!userId) return;
+
+      try {
+        const apiRoot = await getApiRoot();
+        const userCompany = getUserCompany();
+
+        const payload: any = {
+          id: 3,
+          offset: 0,
+          limit: 1,
+          extra: [{
+            operator: "=",
+            value: contactId,
+            tablename: "contact",
+            columnname: "id",
+            function: "",
+            datatype: "Selection",
+            enable: "true",
+            show: contactId,
+            extracolumn: "id"
+          }]
+        };
+
+        const response = await fetch(`${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          const apiResponse = await response.json();
+          const apiContacts = apiResponse.data?.[0]?.body || [];
+          
+          if (apiContacts.length > 0) {
+            const contact = apiContacts[0];
+            const updatedContact: Contact = {
+              id: contact.id,
+              contact_id: contact.contact_id,
+              name: contact.name || "",
+              status: contact.status || "Fresh",
+              company: contact.company || "",
+              city: contact.city || "",
+              followup_on: contact.followup_on || "",
+              lastNotes: contact.message || "",
+              phone: contact.mobile || "",
+              email: contact.email || "",
+              profile: contact.profile || "",
+              score: parseInt(contact.score) || 0,
+              starred: contact.star === "Yes",
+            };
+
+            // Update in state
+            const updatedContacts = contacts.map((c) => 
+              c.id === contactId ? updatedContact : c
+            );
+            await saveContacts(updatedContacts);
+            console.log("[SINGLE SYNC] Contact synced:", contactId);
+          }
+        }
+      } catch (error) {
+        console.error("[SINGLE SYNC] Error syncing contact:", error);
+      }
+    },
+    [contacts, saveContacts]
   );
 
   const toggleStarred = useCallback(

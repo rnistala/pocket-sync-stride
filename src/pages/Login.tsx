@@ -34,6 +34,10 @@ const Login = () => {
 
       if (!response.ok) throw new Error("Login failed");
       
+      // Check if user has changed
+      const previousUserId = localStorage.getItem("userId");
+      const userChanged = previousUserId && previousUserId !== data.id;
+      
       // Store user data
       localStorage.setItem("userId", data.id);
       localStorage.setItem("userToken", JSON.stringify(data));
@@ -47,7 +51,8 @@ const Login = () => {
       
       // Customers (with company) go to Tickets page, internal users to main page
       const destination = data.company ? "/tickets" : "/";
-      navigate(destination, { state: { shouldSync: true } });
+      // Only sync if user has changed or it's customer login
+      navigate(destination, { state: { shouldSync: userChanged || !!data.company } });
     } catch (error) {
       setDebugInfo(`Error: ${error instanceof Error ? error.message : String(error)}`);
       toast.error("Invalid credentials");

@@ -66,12 +66,12 @@ export default function Tickets() {
     };
   }, []);
 
-  // Sync data on mount if coming from login
+  // Sync data on mount if coming from login (only for customer login)
   useEffect(() => {
-    if (location.state?.shouldSync && navigator.onLine && !hasSynced.current) {
-      console.log("[TICKETS PAGE] Should sync detected, fetching contacts and tickets");
+    if (location.state?.shouldSync && navigator.onLine && !hasSynced.current && userCompany) {
+      console.log("[TICKETS PAGE] Customer login detected, fetching contacts and tickets");
       hasSynced.current = true;
-      syncData(); // Fetch contacts
+      syncData(); // Fetch contacts only for customer login
       syncTickets(); // Fetch tickets
       // Clear the state
       window.history.replaceState({}, document.title);

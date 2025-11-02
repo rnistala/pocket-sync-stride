@@ -105,26 +105,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     loadStatuses();
   }, []);
 
-  // useEffect hooks
-  useEffect(() => {
-    const autoSync = async () => {
-      if (!navigator.onLine || isSyncing) return;
-      
-      const dirtyInteractions = interactions.filter(i => i.dirty);
-      if (dirtyInteractions.length === 0) return;
-
-      console.log("[AUTO-SYNC] Found", dirtyInteractions.length, "dirty interactions");
-      await handleSyncInteractions();
-    };
-
-    // Check for dirty interactions periodically
-    const syncInterval = setInterval(autoSync, 2000);
-    
-    // Also check immediately when interactions change
-    autoSync();
-
-    return () => clearInterval(syncInterval);
-  }, [interactions, isSyncing]);
+  // Removed periodic sync - interactions will be synced manually via sync button only
 
   // Fetch interactions only once when contact is first loaded
   useEffect(() => {
