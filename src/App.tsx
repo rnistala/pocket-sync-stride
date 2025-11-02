@@ -21,7 +21,7 @@ const App = () => (
         <LeadProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter basename="/opterix">
+          <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
