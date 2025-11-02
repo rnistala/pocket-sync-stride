@@ -18,8 +18,8 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'robots.txt'],
       manifest: {
-        name: 'OpteriX Lead Manager',
-        short_name: 'OpteriX',
+        name: 'Opterix 360',
+        short_name: 'Opterix 360',
         description: 'A modern contact and task manager that works completely offline',
         theme_color: '#FF0000',
         background_color: '#ffffff',

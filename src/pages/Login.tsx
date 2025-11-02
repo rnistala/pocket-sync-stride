@@ -64,9 +64,9 @@ const Login = () => {
       <div className="w-full max-w-md space-y-8">
         <div className="text-left space-y-0">
           <h1 className="text-6xl font-bold text-foreground">
-            Opterix Leads
+            Opterix 360
           </h1>
-          <p className="text-muted-foreground mt-3">Sign in to manage your leads</p>
+          <p className="text-muted-foreground mt-3">Sign-in to get started</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6 bg-card p-8 rounded-lg border border-border">
