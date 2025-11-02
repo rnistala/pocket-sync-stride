@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import logo360 from "@/assets/360sq.png";
+import logo360White from "@/assets/360sq-white.png";
 import { getApiRoot } from "@/lib/config";
+import { useTheme } from "next-themes";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -14,6 +16,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string>("");
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +71,11 @@ const Login = () => {
       </div>
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center space-y-3">
-          <img src={logo360} alt="Opterix 360" className="w-48 h-auto" />
+          <img 
+            src={theme === "dark" ? logo360White : logo360} 
+            alt="Opterix 360" 
+            className="w-48 h-auto" 
+          />
           <p className="text-muted-foreground text-center">Sign-in to get started</p>
         </div>
 
