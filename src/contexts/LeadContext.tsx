@@ -523,12 +523,49 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
   const toggleStarred = useCallback(
     async (contactId: string) => {
+      const userId = localStorage.getItem("userId");
+      
       const updatedContacts = contacts.map((c) => (c.id === contactId ? { ...c, starred: !c.starred } : c));
 
       // Update the changed contact in IndexedDB first
       const updatedContact = updatedContacts.find((c) => c.id === contactId);
       if (updatedContact) {
         await dbManager.updateContact(updatedContact);
+        
+        // Update server with new star status
+        if (userId) {
+          try {
+            const apiRoot = await getApiRoot();
+            const payload = {
+              meta: {
+                btable: "contact",
+                htable: "",
+                parentkey: "",
+                preapi: "",
+                draftid: "",
+              },
+              data: [
+                {
+                  body: [
+                    {
+                      id: contactId,
+                      star: updatedContact.starred ? "Yes" : "No",
+                    },
+                  ],
+                  dirty: "true",
+                },
+              ],
+            };
+
+            await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+          } catch (error) {
+            console.error("Error updating star status on server:", error);
+          }
+        }
       }
 
       // Then update state
@@ -755,6 +792,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           email: contact.email || "",
           profile: contact.profile || "",
           score: parseInt(contact.score) || 0,
+          starred: contact.star === "Yes",
         }));
 
         fetchedContacts = [...fetchedContacts, ...transformedContacts];
@@ -783,11 +821,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         const localContact = existingContactsMap.get(serverContact.id);
 
         if (localContact) {
-          // Merge: prefer server followup_on, but keep local starred status
-          return {
-            ...serverContact,
-            starred: localContact.starred || false,
-          };
+          // Merge: prefer server data including starred status
+          return serverContact;
         }
 
         return serverContact;
