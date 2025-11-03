@@ -457,6 +457,95 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     setInteractions(newInteractions);
   }, []);
 
+  // Automatic sync of dirty interactions when network becomes available
+  useEffect(() => {
+    const syncDirtyInteractions = async () => {
+      const userId = localStorage.getItem("userId");
+      if (!userId || !navigator.onLine) return;
+
+      const dirtyInteractions = interactions.filter((i) => i.dirty);
+      if (dirtyInteractions.length === 0) return;
+
+      console.log("[AUTO SYNC] Network available, syncing", dirtyInteractions.length, "dirty interactions");
+
+      try {
+        // Get geolocation if available
+        let latitude = "";
+        let longitude = "";
+        if (navigator.geolocation) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+            });
+            latitude = position.coords.latitude.toString();
+            longitude = position.coords.longitude.toString();
+          } catch (error) {
+            console.log("[AUTO SYNC] Geolocation not available", error);
+          }
+        }
+
+        // Upload each dirty interaction
+        for (const interaction of dirtyInteractions) {
+          const contact = contacts.find((c) => c.id === interaction.contactId);
+          if (!contact) continue;
+
+          const apiRoot = await getApiRoot();
+          const payload = {
+            meta: {
+              btable: "followup",
+              htable: "",
+              parentkey: "",
+              preapi: "updatecontact",
+              draftid: "",
+            },
+            data: [
+              {
+                body: [
+                  {
+                    contact: contact.id,
+                    contact_status: "",
+                    notes: interaction.notes,
+                    next_meeting: interaction.followup_on || "",
+                    latitude: latitude,
+                    longitude: longitude,
+                  },
+                ],
+                dirty: "true",
+              },
+            ],
+          };
+
+          await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+        }
+
+        // Mark all interactions as synced
+        const updatedInteractions = interactions.map((i) =>
+          i.dirty ? { ...i, dirty: false, syncStatus: "synced" as const } : i,
+        );
+        await saveInteractions(updatedInteractions);
+        console.log("[AUTO SYNC] Successfully synced all dirty interactions");
+      } catch (error) {
+        console.error("[AUTO SYNC] Error syncing interactions:", error);
+      }
+    };
+
+    // Listen for online event
+    const handleOnline = () => {
+      console.log("[AUTO SYNC] Network connection detected");
+      syncDirtyInteractions();
+    };
+
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [interactions, contacts, saveInteractions]);
+
   const addInteraction = useCallback(
     async (contactId: string, type: Interaction["type"], notes: string, date?: string, followup_on?: string) => {
       const newInteraction: Interaction = {
