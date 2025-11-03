@@ -18,6 +18,7 @@ interface UpdateTicketFormProps {
 export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFormProps) => {
   const { updateTicket } = useLeadContext();
   const [targetDate, setTargetDate] = useState("");
+  const [status, setStatus] = useState<"OPEN" | "IN PROGRESS" | "CLOSED">("OPEN");
   const [remarks, setRemarks] = useState("");
   const [rootCause, setRootCause] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
@@ -26,6 +27,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   useEffect(() => {
     if (ticket) {
       setTargetDate(ticket.targetDate.split('T')[0]);
+      setStatus(ticket.status);
       setRemarks(ticket.remarks || "");
       setRootCause(ticket.rootCause || "");
       setScreenshots(ticket.screenshots || []);
@@ -86,6 +88,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
     const updatedTicket: Ticket = {
       ...ticket,
       targetDate: new Date(targetDate).toISOString(),
+      status,
       remarks: remarks.trim(),
       rootCause: rootCause.trim(),
       screenshots,
@@ -112,15 +115,31 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="targetDate">Target Date *</Label>
-            <Input
-              id="targetDate"
-              type="date"
-              value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="targetDate">Target Date *</Label>
+              <Input
+                id="targetDate"
+                type="date"
+                value={targetDate}
+                onChange={(e) => setTargetDate(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status">Status *</Label>
+              <Select value={status} onValueChange={(value) => setStatus(value as "OPEN" | "IN PROGRESS" | "CLOSED")}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="OPEN">Open</SelectItem>
+                  <SelectItem value="IN PROGRESS">In Progress</SelectItem>
+                  <SelectItem value="CLOSED">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -181,7 +200,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
             )}
           </div>
 
-          {ticket.status === "CLOSED" && (
+          {status === "CLOSED" && (
             <div className="space-y-2">
               <Label htmlFor="rootCause">Root Cause</Label>
               <Select value={rootCause} onValueChange={setRootCause}>
