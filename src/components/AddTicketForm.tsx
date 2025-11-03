@@ -147,7 +147,7 @@ export const AddTicketForm = () => {
           New Ticket
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle>New Ticket</DialogTitle>
           <DialogDescription>
@@ -174,7 +174,7 @@ export const AddTicketForm = () => {
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-0" align="start">
+              <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[400px] p-0" align="start">
                 <Command shouldFilter={false}>
                   <CommandInput 
                     placeholder="Search by name, company, or phone..." 
