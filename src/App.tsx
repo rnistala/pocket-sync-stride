@@ -23,7 +23,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <PWAUpdatePrompt />
-          <BrowserRouter>
+          <BrowserRouter basename="/opterix">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
