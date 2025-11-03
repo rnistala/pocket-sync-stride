@@ -431,11 +431,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             await dbManager.setMetadata("lastUserId", currentUserId);
           }
 
-          // Initial fetch: Only fetch if no contacts present
-          if (loadedContacts.length === 0 && currentUserId) {
-            console.log("[INITIAL LOAD] No contacts found, fetching from server");
-            setTimeout(() => syncData(), 100);
-          }
+          // Log contacts loaded from IndexedDB
+          console.log("[INITIAL LOAD] Loaded", loadedContacts.length, "contacts from IndexedDB");
+          console.log("[INITIAL LOAD] Last sync:", syncTime || "never");
         }
       } catch (error) {
         console.error("Error loading data from IndexedDB:", error);

@@ -54,8 +54,8 @@ const Login = () => {
       
       // Customers (with company) go to Tickets page, internal users to main page
       const destination = data.company ? "/tickets" : "/";
-      // Only sync if user has changed or it's customer login
-      navigate(destination, { state: { shouldSync: userChanged || !!data.company } });
+      // Always sync on login to ensure fresh data
+      navigate(destination, { state: { shouldSync: true } });
     } catch (error) {
       setDebugInfo(`Error: ${error instanceof Error ? error.message : String(error)}`);
       toast.error("Invalid credentials");
