@@ -558,12 +558,82 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       };
 
       await dbManager.addInteraction(newInteraction);
-      setInteractions((prev) => {
-        const updated = [...prev, newInteraction];
-        console.log("[ADD] Added interaction, total interactions now:", updated.length);
-        console.log("[ADD] New interaction dirty status:", newInteraction.dirty);
-        return updated;
-      });
+      const updatedInteractions = [...interactions, newInteraction];
+      setInteractions(updatedInteractions);
+
+      // Immediately sync if online
+      if (navigator.onLine) {
+        const userId = localStorage.getItem("userId");
+        if (userId) {
+          try {
+            const contact = contacts.find((c) => c.id === contactId);
+            if (!contact) return;
+
+            console.log("[IMMEDIATE SYNC] Syncing new interaction for:", contact.name);
+
+            // Get geolocation if available
+            let latitude = "";
+            let longitude = "";
+            if (navigator.geolocation) {
+              try {
+                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                  navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                });
+                latitude = position.coords.latitude.toString();
+                longitude = position.coords.longitude.toString();
+              } catch (error) {
+                console.log("[IMMEDIATE SYNC] Geolocation not available", error);
+              }
+            }
+
+            const apiRoot = await getApiRoot();
+            const payload = {
+              meta: {
+                btable: "followup",
+                htable: "",
+                parentkey: "",
+                preapi: "updatecontact",
+                draftid: "",
+              },
+              data: [
+                {
+                  body: [
+                    {
+                      contact: contact.id,
+                      contact_status: "",
+                      notes: newInteraction.notes,
+                      next_meeting: newInteraction.followup_on || "",
+                      latitude: latitude,
+                      longitude: longitude,
+                    },
+                  ],
+                  dirty: "true",
+                },
+              ],
+            };
+
+            const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+              console.log("[IMMEDIATE SYNC] Successfully synced interaction");
+              // Mark as synced
+              const syncedInteractions = updatedInteractions.map((i) =>
+                i.id === newInteraction.id ? { ...i, dirty: false, syncStatus: "synced" as const } : i
+              );
+              await saveInteractions(syncedInteractions);
+            } else {
+              console.error("[IMMEDIATE SYNC] Failed to sync:", response.status);
+            }
+          } catch (error) {
+            console.error("[IMMEDIATE SYNC] Error syncing interaction:", error);
+            // Keep it as dirty so auto-sync can retry later
+          }
+        }
+      }
 
       // Update contact's followup_on if provided
       if (followup_on) {
@@ -572,7 +642,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         setContacts(updatedContacts);
       }
     },
-    [contacts],
+    [interactions, contacts, saveInteractions],
   );
 
   // Memoize interactions by contact ID for faster lookups
