@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LeadProvider } from "@/contexts/LeadContext";
 import { ThemeProvider } from "next-themes";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ContactInteractions from "./pages/ContactInteractions";
@@ -21,6 +22,7 @@ const App = () => (
         <LeadProvider>
           <Toaster />
           <Sonner />
+          <PWAUpdatePrompt />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
