@@ -216,7 +216,7 @@ export default function Tickets() {
   };
 
   return (
-    <div className="min-h-screen bg-textured">
+    <div className="min-h-screen bg-textured overflow-x-hidden">
       <div className="sticky top-0 z-10 bg-textured backdrop-blur-sm border-b border-border">
         <div className="max-w-5xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
@@ -312,29 +312,29 @@ export default function Tickets() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 w-full">
         {filteredTickets.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             {tickets.length === 0 ? "No tickets yet" : "No tickets match your filters"}
           </div>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-4 w-full">
             {filteredTickets.map(ticket => {
               const contact = contactMap.get(ticket.contactId);
               return (
                 <Card
                   key={`${ticket.id}-${ticket.ticketId || ''}`}
-                  className="cursor-pointer hover:bg-accent/50 transition-colors"
+                  className="cursor-pointer hover:bg-accent/50 transition-colors w-full"
                   onClick={() => setSelectedTicket(ticket)}
                 >
-                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
+                   <CardHeader className="pb-3 px-3 sm:px-6">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 p-0"
+                            className="h-6 w-6 p-0 shrink-0"
                             onClick={(e) => handleTogglePriority(ticket.id, e)}
                           >
                             <Star 
@@ -342,7 +342,7 @@ export default function Tickets() {
                             />
                           </Button>
                           {getStatusBadge(ticket.status)}
-                          <Badge variant="outline">{ticket.issueType}</Badge>
+                          <Badge variant="outline" className="truncate">{ticket.issueType}</Badge>
                         </div>
                         <h3 className="font-semibold text-foreground truncate">
                           {contact?.name || "Unknown Contact"}
@@ -351,12 +351,12 @@ export default function Tickets() {
                           <p className="text-sm text-muted-foreground">{contact.company}</p>
                         )}
                       </div>
-                       <div onClick={(e) => e.stopPropagation()}>
+                       <div onClick={(e) => e.stopPropagation()} className="shrink-0">
                         <Select
                           value={ticket.status}
                           onValueChange={(value) => handleStatusChange(ticket.id, value as any)}
                         >
-                          <SelectTrigger className="w-24 sm:w-32 text-xs sm:text-sm">
+                          <SelectTrigger className="w-20 sm:w-28 text-[10px] sm:text-xs">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -367,9 +367,9 @@ export default function Tickets() {
                         </Select>
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-foreground line-clamp-2 mb-3">
+                   </CardHeader>
+                  <CardContent className="px-3 sm:px-6">
+                    <p className="text-sm text-foreground line-clamp-2 mb-3 break-words">
                       {ticket.description}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
@@ -397,7 +397,7 @@ export default function Tickets() {
 
       {/* Ticket Details Dialog */}
       <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
-        <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[85vh] p-4 sm:p-6">
+        <DialogContent className="max-w-[92vw] sm:max-w-3xl max-h-[85vh] p-4 sm:p-6">
           {selectedTicket && (
             <>
               <DialogHeader>
