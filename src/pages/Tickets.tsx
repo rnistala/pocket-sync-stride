@@ -327,8 +327,8 @@ export default function Tickets() {
                   className="cursor-pointer hover:bg-accent/50 transition-colors"
                   onClick={() => setSelectedTicket(ticket)}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-4">
+                   <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between gap-2 sm:gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <Button
@@ -351,12 +351,12 @@ export default function Tickets() {
                           <p className="text-sm text-muted-foreground">{contact.company}</p>
                         )}
                       </div>
-                      <div onClick={(e) => e.stopPropagation()}>
+                       <div onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={ticket.status}
                           onValueChange={(value) => handleStatusChange(ticket.id, value as any)}
                         >
-                          <SelectTrigger className="w-32">
+                          <SelectTrigger className="w-24 sm:w-32 text-xs sm:text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -372,7 +372,7 @@ export default function Tickets() {
                     <p className="text-sm text-foreground line-clamp-2 mb-3">
                       {ticket.description}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         <span>Reported: {format(new Date(ticket.reportedDate), "MMM d, yyyy")}</span>
@@ -397,7 +397,7 @@ export default function Tickets() {
 
       {/* Ticket Details Dialog */}
       <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
-        <DialogContent className="max-w-3xl max-h-[85vh]">
+        <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[85vh] p-4 sm:p-6">
           {selectedTicket && (
             <>
               <DialogHeader>
@@ -457,10 +457,10 @@ export default function Tickets() {
                     </div>
                   )}
 
-                  {selectedTicket.screenshots.length > 0 && (
+                   {selectedTicket.screenshots.length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium text-foreground mb-3">Screenshots</h4>
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                         {selectedTicket.screenshots.map((screenshot, idx) => (
                           <div
                             key={idx}

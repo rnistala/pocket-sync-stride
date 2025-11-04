@@ -118,7 +118,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="targetDate">Target Date *</Label>
               <Input
@@ -193,7 +193,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
               onChange={handleImageUpload}
             />
             {screenshots.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                 {screenshots.map((screenshot, index) => (
                   <div key={index} className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center">
                     <img

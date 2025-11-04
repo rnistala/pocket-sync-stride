@@ -284,7 +284,7 @@ export const AddTicketForm = () => {
               </div>
 
               {screenshots.length > 0 && (
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                   {screenshots.map((screenshot, idx) => (
                     <div key={idx} className="relative group">
                       <img
