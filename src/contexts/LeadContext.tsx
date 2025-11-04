@@ -1217,6 +1217,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             screenshots: [],
             photo: apiTicket.photo || [],
             priority: apiTicket.priority === "High",
+            effort_in_hours: apiTicket.effort_in_hours,
             syncStatus: "synced" as const,
           }));
 
@@ -1525,6 +1526,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               screenshots: [],
               photo: photoData,
               priority: apiTicket.priority === "High",
+              effort_in_hours: apiTicket.effort_in_hours,
               syncStatus: "synced" as const,
             };
           });
