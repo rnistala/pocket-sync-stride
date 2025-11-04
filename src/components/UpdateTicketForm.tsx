@@ -23,6 +23,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   const [rootCause, setRootCause] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
   const [priority, setPriority] = useState(false);
+  const [effortInHours, setEffortInHours] = useState("");
 
   useEffect(() => {
     if (ticket) {
@@ -32,6 +33,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
       setRootCause(ticket.rootCause || "");
       setScreenshots(ticket.screenshots || []);
       setPriority(ticket.priority || false);
+      setEffortInHours(ticket.effort_in_hours?.toString() || "");
     }
   }, [ticket]);
 
@@ -93,6 +95,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
       rootCause: rootCause.trim(),
       screenshots,
       priority,
+      effort_in_hours: effortInHours ? parseFloat(effortInHours) : undefined,
     };
 
     await updateTicket(updatedTicket);
@@ -115,7 +118,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="targetDate">Target Date *</Label>
               <Input
@@ -139,6 +142,19 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
                   <SelectItem value="CLOSED">Closed</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="effortInHours">Effort (hours)</Label>
+              <Input
+                id="effortInHours"
+                type="number"
+                step="0.5"
+                min="0"
+                value={effortInHours}
+                onChange={(e) => setEffortInHours(e.target.value)}
+                placeholder="0.0"
+              />
             </div>
           </div>
 
