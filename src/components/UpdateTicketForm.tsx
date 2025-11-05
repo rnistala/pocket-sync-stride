@@ -118,7 +118,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="targetDate">Target Date *</Label>
               <Input
@@ -142,19 +142,6 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
                   <SelectItem value="CLOSED">Closed</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="effortInHours">Effort (hours)</Label>
-              <Input
-                id="effortInHours"
-                type="number"
-                step="0.5"
-                min="0"
-                value={effortInHours}
-                onChange={(e) => setEffortInHours(e.target.value)}
-                placeholder="0.0"
-              />
             </div>
           </div>
 
@@ -217,18 +204,33 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
           </div>
 
           {status === "CLOSED" && (
-            <div className="space-y-2">
-              <Label htmlFor="rootCause">Root Cause</Label>
-              <Select value={rootCause} onValueChange={setRootCause}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select root cause" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Software">Software</SelectItem>
-                  <SelectItem value="Data">Data</SelectItem>
-                  <SelectItem value="Usage">Usage</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="rootCause">Root Cause</Label>
+                <Select value={rootCause} onValueChange={setRootCause}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select root cause" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Software">Software</SelectItem>
+                    <SelectItem value="Data">Data</SelectItem>
+                    <SelectItem value="Usage">Usage</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="effortInHours">Effort (hours)</Label>
+                <Input
+                  id="effortInHours"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  value={effortInHours}
+                  onChange={(e) => setEffortInHours(e.target.value)}
+                  placeholder="0.0"
+                />
+              </div>
             </div>
           )}
 
