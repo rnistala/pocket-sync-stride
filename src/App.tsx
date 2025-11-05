@@ -15,6 +15,17 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Use different base paths for preview vs production
+const getBasename = () => {
+  const hostname = window.location.hostname;
+  // If we're in Lovable preview or localhost, use root path
+  if (hostname.includes('lovable') || hostname === 'localhost') {
+    return '/';
+  }
+  // Otherwise use the configured base path for production
+  return '/opterix/';
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -23,7 +34,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <PWAUpdatePrompt />
-          <BrowserRouter basename={import.meta.env.BASE_URL}>
+          <BrowserRouter basename={getBasename()}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
