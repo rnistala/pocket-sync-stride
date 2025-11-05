@@ -6,9 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft, Search, Plus, X, Calendar, Edit, Star, LogOut } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { UpdateTicketForm } from "@/components/UpdateTicketForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -32,9 +30,7 @@ export default function Tickets() {
   const [contactFilter, setContactFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<boolean | null>(null);
   const [ageFilter, setAgeFilter] = useState<"all" | "older-than-10-days">("all");
-  const [selectedTicket, setSelectedTicket] = useState<typeof tickets[0] | null>(null);
   const [editingTicket, setEditingTicket] = useState<typeof tickets[0] | null>(null);
-  const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const hasSynced = useRef(false);
 
@@ -325,7 +321,7 @@ export default function Tickets() {
                 <Card
                   key={`${ticket.id}-${ticket.ticketId || ''}`}
                   className="cursor-pointer hover:bg-accent/50 transition-colors w-full"
-                  onClick={() => setSelectedTicket(ticket)}
+                  onClick={() => setEditingTicket(ticket)}
                 >
                    <CardHeader className="pb-3 px-3 sm:px-6">
                     <div className="flex items-start justify-between gap-2">
@@ -395,117 +391,6 @@ export default function Tickets() {
         )}
       </div>
 
-      {/* Ticket Details Dialog */}
-      <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
-        <DialogContent className="max-w-[92vw] sm:max-w-3xl max-h-[85vh] p-4 sm:p-6">
-          {selectedTicket && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Ticket Details</DialogTitle>
-              </DialogHeader>
-              <ScrollArea className="max-h-[70vh] pr-4">
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      {getStatusBadge(selectedTicket.status)}
-                      <Badge variant="outline">{selectedTicket.issueType}</Badge>
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-1">
-                      {contactMap.get(selectedTicket.contactId)?.name || "Unknown Contact"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {contactMap.get(selectedTicket.contactId)?.company}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Reported:</span>
-                      <span className="text-foreground">
-                        {format(new Date(selectedTicket.reportedDate), "PPP")}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Target Date:</span>
-                      <span className="text-foreground">
-                        {format(new Date(selectedTicket.targetDate), "PPP")}
-                      </span>
-                    </div>
-                    {selectedTicket.closedDate && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Closed:</span>
-                        <span className="text-foreground">
-                          {format(new Date(selectedTicket.closedDate), "PPP")}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <h4 className="text-sm font-medium text-foreground mb-2">Description</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {selectedTicket.description}
-                    </p>
-                  </div>
-
-                  {selectedTicket.remarks && (
-                    <div>
-                      <h4 className="text-sm font-medium text-foreground mb-2">Remarks / Analysis</h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {selectedTicket.remarks}
-                      </p>
-                    </div>
-                  )}
-
-                   {selectedTicket.screenshots.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-foreground mb-3">Screenshots</h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                        {selectedTicket.screenshots.map((screenshot, idx) => (
-                          <div
-                            key={idx}
-                            className="relative w-full aspect-[4/3] rounded-lg border border-border overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-muted flex items-center justify-center"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setFullScreenImage(screenshot);
-                            }}
-                          >
-                            <img
-                              src={screenshot}
-                              alt={`Screenshot ${idx + 1}`}
-                              className="max-w-full max-h-full object-contain"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {selectedTicket.rootCause && (
-                  <div>
-                    <h4 className="text-sm font-medium text-foreground mb-2">Root Cause</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {selectedTicket.rootCause}
-                    </p>
-                  </div>
-                )}
-              </ScrollArea>
-              <Button 
-                className="w-full mt-4"
-                onClick={() => {
-                  setEditingTicket(selectedTicket);
-                  setSelectedTicket(null);
-                }}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Update Ticket
-              </Button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Update Ticket Dialog */}
       {editingTicket && (
         <UpdateTicketForm
@@ -514,19 +399,6 @@ export default function Tickets() {
           onOpenChange={(open) => !open && setEditingTicket(null)}
         />
       )}
-
-      {/* Full Screen Image Dialog */}
-      <Dialog open={!!fullScreenImage} onOpenChange={(open) => !open && setFullScreenImage(null)}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] w-auto p-4 overflow-auto">
-          <div className="flex items-center justify-center">
-            <img
-              src={fullScreenImage || ""}
-              alt="Full screen screenshot"
-              className="max-w-full max-h-[85vh] w-auto h-auto object-contain"
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
