@@ -12,6 +12,7 @@ import ContactInteractions from "./pages/ContactInteractions";
 import Tickets from "./pages/Tickets";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+import Marketing from "./pages/Marketing";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
           <BrowserRouter basename={getBasename()}>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/marketing" element={<Marketing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/contact/:id/details" element={<ContactInteractions />} />
               <Route path="/tickets" element={<Tickets />} />
