@@ -150,17 +150,20 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
               <ThemeToggle />
             </div>
 
-            <Button
-              variant="ghost"
-              className="w-full justify-start"
-              onClick={() => {
-                setIsOpen(false);
-                onLogout();
-              }}
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground">Logout</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setIsOpen(false);
+                  onLogout();
+                }}
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </PopoverContent>
