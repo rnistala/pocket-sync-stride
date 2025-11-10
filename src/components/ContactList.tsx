@@ -47,6 +47,11 @@ const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { cont
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground truncate">{contact.company} • {contact.city}</p>
+          {contact.lastNotes && (
+            <p className="text-xs text-foreground/80 line-clamp-2 italic">
+              "{contact.lastNotes}"
+            </p>
+          )}
           <p className="text-xs text-muted-foreground">
             <span className="opacity-70">Follow-up:</span> {formattedDate}
           </p>
