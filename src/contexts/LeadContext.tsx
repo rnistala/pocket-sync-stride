@@ -690,7 +690,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         id: item.id || crypto.randomUUID(),
         contactId: contactId,
         date: item.created || new Date().toISOString(),
-        type: (item.type as Interaction["type"]) || "call",
+        type: (item.type as Interaction["type"]) || "Call",
         notes: item.notes || "",
         syncStatus: "synced" as const,
         followup_on: item.next_meeting || undefined,

@@ -47,7 +47,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
-  const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting" | "Ticket">("call");
+  const [interactionType, setInteractionType] = useState<"Call" | "WhatsApp" | "Email" | "Meeting" | "Ticket">("Call");
   const [notes, setNotes] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
   const [ticketIssueType, setTicketIssueType] = useState<string>("BR");
@@ -1318,10 +1318,10 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="call">Call</SelectItem>
-                      <SelectItem value="whatsapp">WhatsApp</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="Call">Call</SelectItem>
+                      <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                      <SelectItem value="Email">Email</SelectItem>
+                      <SelectItem value="Meeting">Meeting</SelectItem>
                       <SelectItem value="Ticket">Ticket</SelectItem>
                     </SelectContent>
                   </Select>
