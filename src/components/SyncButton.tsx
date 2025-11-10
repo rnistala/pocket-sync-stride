@@ -40,26 +40,23 @@ export const SyncButton = ({ lastSync, isOnline, onSync }: SyncButtonProps) => {
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">{getLastSyncText()}</span>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSync}
-              disabled={!isOnline || isSyncing}
-              className="h-6 px-2 text-xs"
-            >
-              <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Sync data</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleSync}
+            disabled={!isOnline || isSyncing}
+            className="h-6 px-2 text-xs"
+          >
+            <RefreshCw className={`h-3 w-3 ${isSyncing ? 'animate-spin' : ''}`} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Sync data</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
