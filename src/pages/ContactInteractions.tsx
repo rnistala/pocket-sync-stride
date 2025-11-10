@@ -431,6 +431,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       if (!response.ok) {
         toast.error("Failed to fetch interaction history");
       } else {
+        const apiResponse = await response.json();
+        const apiInteractions = apiResponse.data?.[0]?.body || [];
+        await mergeInteractionsFromAPI(apiInteractions, contact.id);
         setLastSync(new Date());
         toast.success("Interactions synced successfully!");
       }
