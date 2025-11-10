@@ -40,11 +40,14 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
           let photoPath = "";
 
           console.log("Raw photo data:", data.photo);
+          console.log("Is array?", Array.isArray(data.photo));
 
           // Handle both single photo object and array of photos
-          if (Array.isArray(data.photo) && data.photo.length > 0) {
-            photoPath = data.photo[0]?.path || "";
-          } else if (typeof data.photo === "object" && "path" in data.photo) {
+          if (Array.isArray(data.photo)) {
+            if (data.photo.length > 0 && data.photo[0] && data.photo[0].path) {
+              photoPath = data.photo[0].path;
+            }
+          } else if (data.photo && typeof data.photo === "object" && "path" in data.photo) {
             photoPath = data.photo.path || "";
           }
 
