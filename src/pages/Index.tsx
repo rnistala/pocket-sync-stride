@@ -9,12 +9,13 @@ import { TicketsWidget } from "@/components/TicketsWidget";
 import { AdvancedSearchDialog, AdvancedFilters } from "@/components/AdvancedSearchDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { FeatureTour } from "@/components/FeatureTour";
+import { UserProfile } from "@/components/UserProfile";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut, Search, X, Star, HelpCircle } from "lucide-react";
+import { Search, X, Star, HelpCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -283,7 +284,6 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <NetworkStatus />
               <FollowUpReminder />
-              <ThemeToggle />
               <Button
                 variant="ghost"
                 size="icon"
@@ -292,9 +292,7 @@ const Index = () => {
               >
                 <HelpCircle className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-              </Button>
+              <UserProfile onLogout={handleLogout} />
             </div>
           </div>
 
