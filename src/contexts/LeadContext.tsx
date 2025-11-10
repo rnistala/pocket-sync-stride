@@ -697,13 +697,22 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         dirty: false,
       }));
 
-      // Merge with existing interactions, avoiding duplicates
-      const existingIds = new Set(interactions.map((i) => i.id));
-      const newInteractions = transformedInteractions.filter((i) => !existingIds.has(i.id));
+      // Get existing interactions for this contact only
+      const existingForContact = interactions.filter(i => i.contactId === contactId);
+      
+      // Create a key for deduplication based on content
+      const createKey = (i: Interaction) => 
+        `${i.contactId}_${i.date}_${i.type}_${i.notes}`;
+      
+      const existingKeys = new Set(existingForContact.map(createKey));
+      
+      // Only add interactions that don't match existing content
+      const newInteractions = transformedInteractions.filter((i) => !existingKeys.has(createKey(i)));
 
       if (newInteractions.length > 0) {
         const mergedInteractions = [...interactions, ...newInteractions];
         await saveInteractions(mergedInteractions);
+        setInteractions(mergedInteractions);
       }
     },
     [interactions, saveInteractions],
