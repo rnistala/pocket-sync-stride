@@ -648,12 +648,19 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Update contact's followup_on if provided
-      if (followup_on) {
-        const updatedContacts = contacts.map((c) => (c.id === contactId ? { ...c, followup_on } : c));
-        await dbManager.saveContacts(updatedContacts);
-        setContacts(updatedContacts);
-      }
+      // Update contact's followup_on and increment score
+      const updatedContacts = contacts.map((c) => {
+        if (c.id === contactId) {
+          return {
+            ...c,
+            followup_on: followup_on || c.followup_on,
+            score: (c.score || 0) + 1
+          };
+        }
+        return c;
+      });
+      await dbManager.saveContacts(updatedContacts);
+      setContacts(updatedContacts);
     },
     [interactions, contacts, saveInteractions],
   );
@@ -724,14 +731,24 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         (i) => i.serverId && !existingServerIds.has(i.serverId)
       );
 
+      let finalInteractions = interactions;
+      
       if (newInteractions.length > 0) {
         console.log(`[MERGE] Adding ${newInteractions.length} new interactions from server`);
-        const mergedInteractions = [...interactions, ...newInteractions];
-        await saveInteractions(mergedInteractions);
-        setInteractions(mergedInteractions);
+        finalInteractions = [...interactions, ...newInteractions];
+        await saveInteractions(finalInteractions);
+        setInteractions(finalInteractions);
       }
+      
+      // Always update contact score to match total interaction count
+      const totalInteractionsForContact = finalInteractions.filter(i => i.contactId === contactId).length;
+      const updatedContacts = contacts.map((c) => 
+        c.id === contactId ? { ...c, score: totalInteractionsForContact } : c
+      );
+      await dbManager.saveContacts(updatedContacts);
+      setContacts(updatedContacts);
     },
-    [interactions, saveInteractions],
+    [interactions, contacts, saveInteractions],
   );
 
   // Sync a single contact from server
