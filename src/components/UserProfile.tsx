@@ -39,6 +39,8 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
           const apiRoot = await getApiRoot();
           let photoPath = "";
 
+          console.log("Raw photo data:", data.photo);
+
           // Handle both single photo object and array of photos
           if (Array.isArray(data.photo) && data.photo.length > 0) {
             photoPath = data.photo[0]?.path || "";
@@ -46,10 +48,14 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
             photoPath = data.photo.path || "";
           }
 
+          console.log("Extracted photo path:", photoPath);
+
           if (photoPath) {
             // Construct full photo URL with /photos prefix
             const cleanPath = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
-            setPhotoUrl(`${apiRoot}/photos${cleanPath}`);
+            const fullPhotoUrl = `${apiRoot}/photos${cleanPath}`;
+            console.log("Full photo URL:", fullPhotoUrl);
+            setPhotoUrl(fullPhotoUrl);
           }
         }
       } catch (error) {
@@ -79,7 +85,13 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
           aria-label="User profile"
         >
           <Avatar className="h-8 w-8">
-            <AvatarImage src={photoUrl} alt={userData?.name || "User"} />
+            <AvatarImage 
+              src={photoUrl} 
+              alt={userData?.name || "User"}
+              onError={(e) => {
+                console.error("Failed to load avatar image:", photoUrl);
+              }}
+            />
             <AvatarFallback className="bg-primary text-primary-foreground text-xs">
               {getInitials(userData?.name)}
             </AvatarFallback>
@@ -91,7 +103,13 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
           {/* User Info */}
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={photoUrl} alt={userData?.name || "User"} />
+              <AvatarImage 
+                src={photoUrl} 
+                alt={userData?.name || "User"}
+                onError={(e) => {
+                  console.error("Failed to load avatar image in dropdown:", photoUrl);
+                }}
+              />
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {getInitials(userData?.name)}
               </AvatarFallback>
