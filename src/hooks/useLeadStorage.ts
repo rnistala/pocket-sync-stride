@@ -22,7 +22,7 @@ export interface Interaction {
   id: string;
   contactId: string;
   date: string;
-  type: "call" | "whatsapp" | "email" | "meeting" | "ticket";
+  type: "call" | "whatsapp" | "email" | "meeting" | "Ticket";
   notes: string;
   syncStatus: "synced" | "pending" | "local";
   followup_on?: string;

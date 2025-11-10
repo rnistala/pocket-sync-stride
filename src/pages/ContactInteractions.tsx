@@ -47,7 +47,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
-  const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting" | "ticket">("call");
+  const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting" | "Ticket">("call");
   const [notes, setNotes] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
   const [ticketIssueType, setTicketIssueType] = useState<string>("BR");
@@ -180,8 +180,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       return;
     }
     
-    // If type is ticket, also create a ticket
-    if (interactionType === "ticket") {
+    // If type is Ticket, also create a ticket
+    if (interactionType === "Ticket") {
       const ticket = await addTicket({
         contactId: contact.id,
         reportedDate: new Date().toISOString(),
@@ -212,7 +212,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     setNextFollowUpDateText("");
     setIsDialogOpen(false);
     
-    if (interactionType !== "ticket") {
+    if (interactionType !== "Ticket") {
       toast.success("Interaction logged");
     }
   };
@@ -1322,11 +1322,11 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                       <SelectItem value="whatsapp">WhatsApp</SelectItem>
                       <SelectItem value="email">Email</SelectItem>
                       <SelectItem value="meeting">Meeting</SelectItem>
-                      <SelectItem value="ticket">Ticket</SelectItem>
+                      <SelectItem value="Ticket">Ticket</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {interactionType === "ticket" && (
+                {interactionType === "Ticket" && (
                   <div>
                     <Label className="text-sm">Issue Type</Label>
                     <Select value={ticketIssueType} onValueChange={setTicketIssueType}>
@@ -1342,11 +1342,11 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                   </div>
                 )}
                 <div>
-                  <Label className="text-sm">{interactionType === "ticket" ? "Description" : "Notes"}</Label>
+                  <Label className="text-sm">{interactionType === "Ticket" ? "Description" : "Notes"}</Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder={interactionType === "ticket" ? "Describe the issue..." : "What was discussed?"}
+                    placeholder={interactionType === "Ticket" ? "Describe the issue..." : "What was discussed?"}
                     rows={3}
                     className="text-sm"
                   />
