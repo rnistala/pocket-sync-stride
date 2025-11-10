@@ -40,15 +40,27 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
           let photoPath = "";
 
           console.log("Raw photo data:", data.photo);
-          console.log("Is array?", Array.isArray(data.photo));
+          
+          // Parse photo if it's a string
+          let photoData = data.photo;
+          if (typeof data.photo === 'string') {
+            try {
+              photoData = JSON.parse(data.photo);
+            } catch (e) {
+              console.error("Failed to parse photo data:", e);
+            }
+          }
+
+          console.log("Parsed photo data:", photoData);
+          console.log("Is array?", Array.isArray(photoData));
 
           // Handle both single photo object and array of photos
-          if (Array.isArray(data.photo)) {
-            if (data.photo.length > 0 && data.photo[0] && data.photo[0].path) {
-              photoPath = data.photo[0].path;
+          if (Array.isArray(photoData)) {
+            if (photoData.length > 0 && photoData[0] && photoData[0].path) {
+              photoPath = photoData[0].path;
             }
-          } else if (data.photo && typeof data.photo === "object" && "path" in data.photo) {
-            photoPath = data.photo.path || "";
+          } else if (photoData && typeof photoData === "object" && "path" in photoData) {
+            photoPath = photoData.path || "";
           }
 
           console.log("Extracted photo path:", photoPath);
