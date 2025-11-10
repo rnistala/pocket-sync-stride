@@ -223,9 +223,9 @@ export const AddTicketForm = () => {
                 <SelectValue placeholder="Select issue type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Bug">Bug</SelectItem>
-                <SelectItem value="Feature Request">Feature Request</SelectItem>
-                <SelectItem value="Support">Support</SelectItem>
+                <SelectItem value="BR">Problem</SelectItem>
+                <SelectItem value="FR">New Work</SelectItem>
+                <SelectItem value="SR">Support</SelectItem>
               </SelectContent>
             </Select>
           </div>

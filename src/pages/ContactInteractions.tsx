@@ -50,7 +50,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting" | "ticket">("call");
   const [notes, setNotes] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
-  const [ticketIssueType, setTicketIssueType] = useState<string>("Bug");
+  const [ticketIssueType, setTicketIssueType] = useState<string>("BR");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -208,7 +208,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     
     setNotes("");
     setNextFollowUpDate(undefined);
-    setTicketIssueType("Bug");
+    setTicketIssueType("BR");
     setNextFollowUpDateText("");
     setIsDialogOpen(false);
     
@@ -1333,9 +1333,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Bug">Bug</SelectItem>
-                        <SelectItem value="Feature Request">Feature Request</SelectItem>
-                        <SelectItem value="Support">Support</SelectItem>
+                        <SelectItem value="BR">Problem</SelectItem>
+                        <SelectItem value="FR">New Work</SelectItem>
+                        <SelectItem value="SR">Support</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

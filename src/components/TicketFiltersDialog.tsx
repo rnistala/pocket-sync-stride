@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
 
 interface TicketFiltersDialogProps {
   statusFilter: string;
@@ -108,7 +109,7 @@ export function TicketFiltersDialog({
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 {mounted && issueTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                  <SelectItem key={type} value={type}>{getIssueTypeLabel(type)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

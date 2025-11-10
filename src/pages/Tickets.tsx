@@ -13,6 +13,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncButton } from "@/components/SyncButton";
 import { TicketFiltersDialog } from "@/components/TicketFiltersDialog";
 import { format } from "date-fns";
+import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
 
 export default function Tickets() {
   const { tickets, contacts, updateTicket, syncTickets, syncData } = useLeadContext();
@@ -338,7 +339,7 @@ export default function Tickets() {
                             />
                           </Button>
                           {getStatusBadge(ticket.status)}
-                          <Badge variant="outline" className="truncate">{ticket.issueType}</Badge>
+                          <Badge variant="outline" className="truncate">{getIssueTypeLabel(ticket.issueType)}</Badge>
                         </div>
                         <h3 className="font-semibold text-foreground truncate">
                           {contact?.name || "Unknown Contact"}
