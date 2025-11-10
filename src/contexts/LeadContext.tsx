@@ -603,6 +603,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
                       contact: contact.id,
                       contact_status: "",
                       notes: newInteraction.notes,
+                      type: newInteraction.type,
                       next_meeting: newInteraction.followup_on || "",
                       latitude: latitude,
                       longitude: longitude,
@@ -932,6 +933,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
                       contact: contact.id, // Using contact.id (not contact_id)
                       contact_status: "",
                       notes: interaction.notes,
+                      type: interaction.type,
                       next_meeting: interaction.followup_on || "",
                       latitude: latitude,
                       longitude: longitude,
