@@ -360,6 +360,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                 contact: contact.id,
                 contact_status: "",
                 notes: interaction.notes,
+                type: interaction.type,
                 next_meeting: interaction.followup_on || "",
                 latitude: latitude,
                 longitude: longitude

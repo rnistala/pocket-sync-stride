@@ -689,7 +689,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         id: item.id || crypto.randomUUID(),
         contactId: contactId,
         date: item.created || new Date().toISOString(),
-        type: "call" as const, // Default type, can be enhanced based on API data
+        type: (item.type as Interaction["type"]) || "call",
         notes: item.notes || "",
         syncStatus: "synced" as const,
         followup_on: item.next_meeting || undefined,
