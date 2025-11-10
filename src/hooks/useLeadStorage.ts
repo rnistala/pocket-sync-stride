@@ -20,6 +20,7 @@ export interface Contact {
 
 export interface Interaction {
   id: string;
+  serverId?: string; // Server-assigned ID from API
   contactId: string;
   date: string;
   type: "Call" | "WhatsApp" | "Email" | "Meeting" | "Ticket";

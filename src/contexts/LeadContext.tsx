@@ -621,10 +621,21 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             });
 
             if (response.ok) {
-              console.log("[IMMEDIATE SYNC] Successfully synced interaction");
-              // Mark as synced
+              const result = await response.json();
+              console.log("[IMMEDIATE SYNC] Successfully synced interaction", result);
+              
+              // Extract server ID from response
+              let serverId = undefined;
+              if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
+                serverId = result.Detail[0].body[0].id;
+                console.log("[IMMEDIATE SYNC] Extracted server ID:", serverId);
+              }
+              
+              // Mark as synced and save server ID
               const syncedInteractions = updatedInteractions.map((i) =>
-                i.id === newInteraction.id ? { ...i, dirty: false, syncStatus: "synced" as const } : i
+                i.id === newInteraction.id 
+                  ? { ...i, serverId, dirty: false, syncStatus: "synced" as const } 
+                  : i
               );
               await saveInteractions(syncedInteractions);
             } else {
@@ -685,9 +696,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
   const mergeInteractionsFromAPI = useCallback(
     async (apiInteractions: any[], contactId: string) => {
-      // Transform API interactions to our format
+      // Transform API interactions to our format with server IDs
       const transformedInteractions: Interaction[] = apiInteractions.map((item: any) => ({
-        id: item.id || crypto.randomUUID(),
+        id: crypto.randomUUID(), // Generate new local ID
+        serverId: item.id, // Store server ID
         contactId: contactId,
         date: item.created || new Date().toISOString(),
         type: (item.type as Interaction["type"]) || "Call",
@@ -697,19 +709,23 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         dirty: false,
       }));
 
-      // Get existing interactions for this contact only
+      // Get existing interactions for this contact
       const existingForContact = interactions.filter(i => i.contactId === contactId);
       
-      // Create a key for deduplication based on content
-      const createKey = (i: Interaction) => 
-        `${i.contactId}_${i.date}_${i.type}_${i.notes}`;
+      // Create a set of existing server IDs
+      const existingServerIds = new Set(
+        existingForContact
+          .filter(i => i.serverId)
+          .map(i => i.serverId)
+      );
       
-      const existingKeys = new Set(existingForContact.map(createKey));
-      
-      // Only add interactions that don't match existing content
-      const newInteractions = transformedInteractions.filter((i) => !existingKeys.has(createKey(i)));
+      // Only add interactions with server IDs we don't have
+      const newInteractions = transformedInteractions.filter(
+        (i) => i.serverId && !existingServerIds.has(i.serverId)
+      );
 
       if (newInteractions.length > 0) {
+        console.log(`[MERGE] Adding ${newInteractions.length} new interactions from server`);
         const mergedInteractions = [...interactions, ...newInteractions];
         await saveInteractions(mergedInteractions);
         setInteractions(mergedInteractions);
