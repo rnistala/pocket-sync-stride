@@ -47,8 +47,9 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
           }
 
           if (photoPath) {
-            // Construct full photo URL by appending apiRoot to path
-            setPhotoUrl(`${apiRoot}${photoPath}`);
+            // Construct full photo URL with /photos prefix
+            const cleanPath = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
+            setPhotoUrl(`${apiRoot}/photos${cleanPath}`);
           }
         }
       } catch (error) {
