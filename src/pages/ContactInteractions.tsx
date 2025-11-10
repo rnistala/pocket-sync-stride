@@ -36,7 +36,7 @@ const ContactInteractions = () => {
 };
 
 const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string; navigate: any }) => {
-  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp, updateContactStatus, fetchOrders } = useLeadContext();
+  const { contacts, getContactInteractions, addInteraction, markInteractionsAsSynced, mergeInteractionsFromAPI, syncData, toggleStarred, updateContactFollowUp, updateContactStatus, fetchOrders, addTicket } = useLeadContext();
   
   // Get fresh contact from context every render
   const contact = contacts.find((c) => c.id === contactId);
@@ -47,9 +47,10 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isOrderDialogOpen, setIsOrderDialogOpen] = useState(false);
-  const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting">("call");
+  const [interactionType, setInteractionType] = useState<"call" | "whatsapp" | "email" | "meeting" | "ticket">("call");
   const [notes, setNotes] = useState("");
   const [nextFollowUpDate, setNextFollowUpDate] = useState<Date>();
+  const [ticketIssueType, setTicketIssueType] = useState<string>("Bug");
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -179,6 +180,24 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       return;
     }
     
+    // If type is ticket, also create a ticket
+    if (interactionType === "ticket") {
+      const ticket = await addTicket({
+        contactId: contact.id,
+        reportedDate: new Date().toISOString(),
+        targetDate: nextFollowUpDate.toISOString(),
+        issueType: ticketIssueType,
+        status: "OPEN",
+        description: notes,
+        screenshots: [],
+        priority: false,
+      });
+      
+      if (ticket) {
+        toast.success("Ticket created and interaction logged");
+      }
+    }
+    
     await addInteraction(
       contact.id, 
       interactionType, 
@@ -189,8 +208,13 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     
     setNotes("");
     setNextFollowUpDate(undefined);
+    setTicketIssueType("Bug");
+    setNextFollowUpDateText("");
     setIsDialogOpen(false);
-    toast.success("Interaction logged");
+    
+    if (interactionType !== "ticket") {
+      toast.success("Interaction logged");
+    }
   };
 
   const handleCall = () => {
@@ -1297,15 +1321,31 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                       <SelectItem value="whatsapp">WhatsApp</SelectItem>
                       <SelectItem value="email">Email</SelectItem>
                       <SelectItem value="meeting">Meeting</SelectItem>
+                      <SelectItem value="ticket">Ticket</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+                {interactionType === "ticket" && (
+                  <div>
+                    <Label className="text-sm">Issue Type</Label>
+                    <Select value={ticketIssueType} onValueChange={setTicketIssueType}>
+                      <SelectTrigger className="text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Bug">Bug</SelectItem>
+                        <SelectItem value="Feature Request">Feature Request</SelectItem>
+                        <SelectItem value="Support">Support</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
-                  <Label className="text-sm">Notes</Label>
+                  <Label className="text-sm">{interactionType === "ticket" ? "Description" : "Notes"}</Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="What was discussed?"
+                    placeholder={interactionType === "ticket" ? "Describe the issue..." : "What was discussed?"}
                     rows={3}
                     className="text-sm"
                   />
