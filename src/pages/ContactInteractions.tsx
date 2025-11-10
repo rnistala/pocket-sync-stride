@@ -3,6 +3,7 @@ import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown, Info, HelpCircle } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SyncButton } from "@/components/SyncButton";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect, useRef } from "react";
@@ -58,6 +59,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [statuses, setStatuses] = useState<string[]>([]);
   const [showTour, setShowTour] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [lastSync, setLastSync] = useState<Date | null>(null);
   const [orderFormData, setOrderFormData] = useState({
     orderNumber: "",
     orderDate: new Date(),
@@ -96,6 +99,20 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   
   // Track which contacts have been fetched
   const fetchedContactsRef = useRef<Set<string>>(new Set());
+
+  // Track online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Load statuses from config
   useEffect(() => {
@@ -413,6 +430,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
       if (!response.ok) {
         toast.error("Failed to fetch interaction history");
+      } else {
+        setLastSync(new Date());
+        toast.success("Interactions synced successfully!");
       }
     } catch (error) {
       toast.error("Error syncing interactions");
@@ -1198,7 +1218,14 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
         </Card>
 
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-base font-semibold">Interaction History</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-base font-semibold">Interactions</h2>
+            <SyncButton 
+              lastSync={lastSync} 
+              isOnline={isOnline}
+              onSync={handleSyncInteractions}
+            />
+          </div>
           <div className="flex gap-2">
             <div data-tour="create-order">
               <Dialog open={isOrderDialogOpen} onOpenChange={setIsOrderDialogOpen}>
