@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Filter, X } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -86,26 +87,35 @@ export const AdvancedSearchDialog = ({ contacts, filters, onApplyFilters, onClea
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={cn(
-            "h-8 w-8 relative",
-            hasActiveFilters && "text-primary"
-          )}
-        >
-          <Filter className="h-3.5 w-3.5" />
-          {activeFilterCount > 0 && (
-            <Badge 
-              variant="default" 
-              className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] font-bold flex items-center justify-center rounded-full"
-            >
-              {activeFilterCount}
-            </Badge>
-          )}
-        </Button>
-      </DialogTrigger>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn(
+                  "h-8 w-8 relative",
+                  hasActiveFilters && "text-primary"
+                )}
+              >
+                <Filter className="h-3.5 w-3.5" />
+                {activeFilterCount > 0 && (
+                  <Badge 
+                    variant="default" 
+                    className="absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] font-bold flex items-center justify-center rounded-full"
+                  >
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Advanced filters</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Advanced Filters</DialogTitle>
@@ -150,14 +160,23 @@ export const AdvancedSearchDialog = ({ contacts, filters, onApplyFilters, onClea
                 </SelectContent>
               </Select>
               {localFilters.city && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setLocalFilters(prev => ({ ...prev, city: "" }))}
-                  className="shrink-0"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setLocalFilters(prev => ({ ...prev, city: "" }))}
+                        className="shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Clear city filter</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>

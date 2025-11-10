@@ -19,6 +19,7 @@ import { Search, X, Star, HelpCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -284,14 +285,23 @@ const Index = () => {
             <div className="flex items-center gap-2">
               <NetworkStatus />
               <FollowUpReminder />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowTour(true)}
-                className="h-8 w-8"
-              >
-                <HelpCircle className="h-4 w-4" />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowTour(true)}
+                      className="h-8 w-8"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Take tour</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <UserProfile onLogout={handleLogout} />
             </div>
           </div>
@@ -318,14 +328,23 @@ const Index = () => {
                 })}
               />
               {searchQuery && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setSearchQuery("")}
-                >
-                  <X className="h-3.5 w-3.5" />
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setSearchQuery("")}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Clear search</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </div>
@@ -346,15 +365,24 @@ const Index = () => {
             </div>
             <div className="flex items-center justify-between gap-2">
               <div data-tour="starred">
-                <Button
-                  variant={showStarredOnly ? "default" : "secondary"}
-                  size="sm"
-                  onClick={() => setShowStarredOnly(!showStarredOnly)}
-                  className="h-8 px-3"
-                >
-                  <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
-                  Starred
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={showStarredOnly ? "default" : "secondary"}
+                        size="sm"
+                        onClick={() => setShowStarredOnly(!showStarredOnly)}
+                        className="h-8 px-3"
+                      >
+                        <Star className={`h-3.5 w-3.5 mr-1.5 ${showStarredOnly ? 'fill-current' : ''}`} />
+                        Starred
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Show starred contacts only</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <div data-tour="add-contact">
                 <AddContactForm />

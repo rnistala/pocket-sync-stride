@@ -2,6 +2,7 @@ import { Contact } from "@/hooks/useLeadStorage";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 import { useRef, useEffect, useMemo, memo } from "react";
 import { useLeadContext } from "@/contexts/LeadContext";
@@ -51,24 +52,42 @@ const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { cont
           </p>
         </div>
         <div className="flex gap-1" data-tour="contact-actions">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0 -mt-1"
-            onClick={onToggleStar}
-          >
-            <Star 
-              className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
-            />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0 -mt-1"
-            onClick={onPushDown}
-          >
-            <ArrowDown className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 -mt-1"
+                  onClick={onToggleStar}
+                >
+                  <Star 
+                    className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{contact.starred ? 'Unstar contact' : 'Star contact'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 -mt-1"
+                  onClick={onPushDown}
+                >
+                  <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Push down contact</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </Card>
