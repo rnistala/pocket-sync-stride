@@ -22,7 +22,7 @@ export interface Interaction {
   id: string;
   contactId: string;
   date: string;
-  type: "call" | "whatsapp" | "email" | "meeting" | "Ticket";
+  type: "Call" | "WhatsApp" | "Email" | "Meeting" | "Ticket";
   notes: string;
   syncStatus: "synced" | "pending" | "local";
   followup_on?: string;
@@ -87,7 +87,7 @@ class IndexedDBManager {
 
       // Clear existing and add new
       store.clear();
-      contacts.forEach(contact => store.add(contact));
+      contacts.forEach((contact) => store.add(contact));
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -114,7 +114,7 @@ class IndexedDBManager {
 
       // Clear existing and add new
       store.clear();
-      interactions.forEach(interaction => store.add(interaction));
+      interactions.forEach((interaction) => store.add(interaction));
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
@@ -210,7 +210,7 @@ export const useLeadStorage = () => {
       notes,
       syncStatus: "local",
     };
-    
+
     await dbManager.addInteraction(newInteraction);
     setInteractions([...interactions, newInteraction]);
   };
@@ -233,19 +233,16 @@ export const useLeadStorage = () => {
     // Fetch contacts in batches
     while (hasMore) {
       const apiRoot = await getApiRoot();
-      const response = await fetch(
-        `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: 3, offset, limit: BATCH_SIZE }),
-        }
-      );
+      const response = await fetch(`${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: 3, offset, limit: BATCH_SIZE }),
+      });
 
       if (response.ok) {
         const apiResponse = await response.json();
         const apiContacts = apiResponse.data?.[0]?.body || [];
-        
+
         if (apiContacts.length === 0) {
           hasMore = false;
           break;
@@ -264,7 +261,7 @@ export const useLeadStorage = () => {
           email: contact.email || "",
           score: parseInt(contact.score) || 0,
         }));
-        
+
         allContacts = [...allContacts, ...transformedContacts];
         offset += BATCH_SIZE;
 
