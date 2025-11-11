@@ -708,8 +708,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               );
               await saveInteractions(syncedInteractions);
               
-              // Sync contact data to get latest status, score, and message
-              await syncSingleContact(contactId);
+              // Wait a moment for server to process, then sync contact data
+              setTimeout(() => syncSingleContact(contactId), 1000);
             } else {
               console.error("[IMMEDIATE SYNC] Failed to sync:", response.status);
             }
@@ -720,13 +720,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Update contact's followup_on and increment score
+      // Update contact's followup_on, score, and lastNotes
       const updatedContacts = contacts.map((c) => {
         if (c.id === contactId) {
           return {
             ...c,
             followup_on: followup_on || c.followup_on,
-            score: (c.score || 0) + 1
+            score: (c.score || 0) + 1,
+            lastNotes: notes  // Update with the new interaction notes
           };
         }
         return c;
