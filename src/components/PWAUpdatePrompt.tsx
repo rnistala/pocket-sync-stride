@@ -1,24 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { RefreshCw, X } from 'lucide-react';
+import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 
 export const PWAUpdatePrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
-
-  const {
-    offlineReady: [offlineReady, setOfflineReady],
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onRegistered(r) {
-      console.log('SW Registered: ' + r);
-    },
-    onRegisterError(error) {
-      console.log('SW registration error', error);
-    },
-  });
+  const { needRefresh, installUpdate, dismissUpdate } = usePWAUpdate();
 
   useEffect(() => {
     if (needRefresh) {
@@ -27,15 +15,12 @@ export const PWAUpdatePrompt = () => {
   }, [needRefresh]);
 
   const close = () => {
-    setOfflineReady(false);
-    setNeedRefresh(false);
+    dismissUpdate();
     setShowPrompt(false);
   };
 
   const handleUpdate = () => {
-    // This will update the service worker and reload the page
-    // IndexedDB data is preserved across reloads
-    updateServiceWorker(true);
+    installUpdate();
   };
 
   if (!showPrompt) return null;

@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Separator } from "@/components/ui/separator";
 import { getApiRoot } from "@/lib/config";
+import { usePWAUpdate } from "@/hooks/usePWAUpdate";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserData {
   id: string;
@@ -24,6 +26,9 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+  const { needRefresh, checkForUpdates, installUpdate } = usePWAUpdate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -91,6 +96,31 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
       .slice(0, 2);
   };
 
+  const handleCheckForUpdates = async () => {
+    setIsCheckingUpdates(true);
+    await checkForUpdates();
+    
+    setTimeout(() => {
+      setIsCheckingUpdates(false);
+      if (needRefresh) {
+        toast({
+          title: "Update Available",
+          description: "A new version is ready to install.",
+          action: (
+            <Button size="sm" onClick={installUpdate}>
+              Install Now
+            </Button>
+          ),
+        });
+      } else {
+        toast({
+          title: "No Updates",
+          description: "You're running the latest version.",
+        });
+      }
+    }, 1000);
+  };
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -148,6 +178,19 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Theme</span>
               <ThemeToggle />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground">Check for Updates</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={handleCheckForUpdates}
+                disabled={isCheckingUpdates}
+              >
+                <RefreshCw className={`h-4 w-4 ${isCheckingUpdates ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
 
             <div className="flex items-center justify-between">
