@@ -21,6 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
+import opterixLogoDark from "@/assets/opterix-logo-dark.png";
+import opterixLogoLight from "@/assets/opterix-logo-light.png";
 
 const Index = () => {
   const { contacts, interactions, orders, syncData, fetchOrders, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly, advancedFilters, setAdvancedFilters } = useLeadContext();
@@ -278,9 +280,16 @@ const Index = () => {
         <div className="max-w-3xl mx-auto px-3 py-2 md:px-8 md:py-4">
           <div className="flex items-center justify-between mb-3 md:mb-4">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-foreground">
-                Opterix 360
-              </h1>
+              <img 
+                src={opterixLogoDark} 
+                alt="Opterix 360" 
+                className="h-8 md:h-10 dark:hidden"
+              />
+              <img 
+                src={opterixLogoLight} 
+                alt="Opterix 360" 
+                className="h-8 md:h-10 hidden dark:block"
+              />
             </div>
             <div className="flex items-center gap-2">
               <NetworkStatus />
