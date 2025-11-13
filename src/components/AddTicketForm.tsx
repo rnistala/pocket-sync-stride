@@ -226,6 +226,7 @@ export const AddTicketForm = () => {
                 <SelectItem value="BR">Problem</SelectItem>
                 <SelectItem value="FR">New Work</SelectItem>
                 <SelectItem value="SR">Support</SelectItem>
+                <SelectItem value="MG">Meeting</SelectItem>
               </SelectContent>
             </Select>
           </div>

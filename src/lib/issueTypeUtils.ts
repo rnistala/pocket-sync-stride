@@ -6,10 +6,12 @@ export const getIssueTypeLabel = (apiCode: string): string => {
     'BR': 'Problem',
     'FR': 'New Work',
     'SR': 'Support',
+    'MG': 'Meeting',
     // Support legacy values
     'Bug': 'Problem',
     'Feature Request': 'New Work',
     'Support': 'Support',
+    'Meeting': 'Meeting',
   };
   return mapping[apiCode] || apiCode;
 };
@@ -20,6 +22,7 @@ export const getIssueTypeCode = (label: string): string => {
     'Problem': 'BR',
     'New Work': 'FR',
     'Support': 'SR',
+    'Meeting': 'MG',
   };
   return mapping[label] || label;
 };
