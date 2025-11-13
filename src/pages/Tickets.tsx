@@ -156,20 +156,17 @@ export default function Tickets() {
       });
     }
 
-    // Sort by priority first, then status (open/in progress first, then closed), then by date (newest first)
+    // Sort by reported date (most recent first), then status (open tickets first)
     return filtered.sort((a, b) => {
-      // Priority tickets come first
-      if (a.priority && !b.priority) return -1;
-      if (!a.priority && b.priority) return 1;
+      // First by date (newest first)
+      const dateComparison = new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime();
+      if (dateComparison !== 0) return dateComparison;
       
+      // Then by status (open first)
       const aIsClosed = a.status === "CLOSED" ? 1 : 0;
       const bIsClosed = b.status === "CLOSED" ? 1 : 0;
       
-      if (aIsClosed !== bIsClosed) {
-        return aIsClosed - bIsClosed;
-      }
-      
-      return new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime();
+      return aIsClosed - bIsClosed;
     });
   }, [tickets, contactMap, deferredSearchQuery, statusFilter, issueTypeFilter, contactFilter, priorityFilter, ageFilter]);
 
