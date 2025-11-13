@@ -79,7 +79,7 @@ serve(async (req) => {
             }
           }
         ],
-        tool_choice: { type: 'function', function: { name: 'return_company_research' } }
+        tool_choice: 'required'
       }),
     });
 
