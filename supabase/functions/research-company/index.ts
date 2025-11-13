@@ -33,38 +33,70 @@ serve(async (req) => {
     console.log(`Researching company: ${companyName}${city ? ` in ${city}` : ''}`);
     
     const searchQuery = city 
-      ? `Research the real company "${companyName}" located in ${city}. Search the web and provide ONLY verified, factual information.
+      ? `Research the real company "${companyName}" located in ${city}. Search the web thoroughly and provide ONLY verified, factual information.
+
+Find and return:
+1. Company industry and sector
+2. Main products or services
+3. Company size (employees, revenue)
+4. KEY MANAGEMENT CONTACTS - Find specific names, direct phone numbers, and email addresses of:
+   - CEO/Owner/Founder
+   - Managing Director
+   - Key executives or decision makers
+   - Sales/Business Development heads
+5. Company headquarters address
+6. Main company phone number
+7. General company email
+8. Recent news or developments
+9. Brief company description
 
 Return your response as a JSON object with these exact fields:
 {
   "industry": "Industry or sector",
   "products": "Main products or services",
   "size": "Company size",
-  "owner": "Owner or CEO name",
+  "owner": "CEO/Owner name with designation",
+  "managementContacts": "List of key management with their direct contacts: Name (Designation) - Phone: xxx, Email: xxx",
   "address": "Full business address",
-  "phone": "Contact phone",
-  "email": "Contact email",
+  "phone": "Main company phone",
+  "email": "General company email",
   "recentNews": "Recent news",
   "summary": "Brief company description"
 }
 
-For any field where you cannot find verified information, use "Not available". Do NOT fabricate or guess. Return ONLY the JSON object, no other text.`
-      : `Research the real company "${companyName}". Search the web and provide ONLY verified, factual information.
+For any field where you cannot find verified information, use "Not available". Do NOT fabricate or guess. Search LinkedIn, company websites, business directories, and professional databases. Return ONLY the JSON object, no other text.`
+      : `Research the real company "${companyName}". Search the web thoroughly and provide ONLY verified, factual information.
+
+Find and return:
+1. Company industry and sector
+2. Main products or services
+3. Company size (employees, revenue)
+4. KEY MANAGEMENT CONTACTS - Find specific names, direct phone numbers, and email addresses of:
+   - CEO/Owner/Founder
+   - Managing Director
+   - Key executives or decision makers
+   - Sales/Business Development heads
+5. Company headquarters address
+6. Main company phone number
+7. General company email
+8. Recent news or developments
+9. Brief company description
 
 Return your response as a JSON object with these exact fields:
 {
   "industry": "Industry or sector",
   "products": "Main products or services",
   "size": "Company size",
-  "owner": "Owner or CEO name",
+  "owner": "CEO/Owner name with designation",
+  "managementContacts": "List of key management with their direct contacts: Name (Designation) - Phone: xxx, Email: xxx",
   "address": "Full business address",
-  "phone": "Contact phone",
-  "email": "Contact email",
+  "phone": "Main company phone",
+  "email": "General company email",
   "recentNews": "Recent news",
   "summary": "Brief company description"
 }
 
-For any field where you cannot find verified information, use "Not available". Do NOT fabricate or guess. Return ONLY the JSON object, no other text.`;
+For any field where you cannot find verified information, use "Not available". Do NOT fabricate or guess. Search LinkedIn, company websites, business directories, and professional databases. Return ONLY the JSON object, no other text.`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -77,7 +109,7 @@ For any field where you cannot find verified information, use "Not available". D
         messages: [
           {
             role: 'system',
-            content: 'You are a business research assistant. Search the web and provide ONLY verified, factual information. Always return valid JSON only.'
+            content: 'You are a business research assistant specialized in finding verified contact information for company executives. Search LinkedIn, company websites, business directories (like ZoomInfo, Crunchbase), and professional databases to find direct contact details of key management personnel. Provide ONLY verified, factual information. Always return valid JSON only.'
           },
           {
             role: 'user',
