@@ -33,8 +33,38 @@ serve(async (req) => {
     console.log(`Researching company: ${companyName}${city ? ` in ${city}` : ''}`);
     
     const searchQuery = city 
-      ? `Research the real company "${companyName}" located in ${city}. Find ONLY verified, factual information about: 1) Industry sector, 2) Main products/services, 3) Company size (employees/revenue), 4) Owner or CEO name, 5) Full business address, 6) Contact phone number, 7) Contact email, 8) Recent news or developments, 9) Brief company description. If information is not available, say "Not available" - do NOT fabricate or guess.`
-      : `Research the real company "${companyName}". Find ONLY verified, factual information about: 1) Industry sector, 2) Main products/services, 3) Company size (employees/revenue), 4) Owner or CEO name, 5) Full business address, 6) Contact phone number, 7) Contact email, 8) Recent news or developments, 9) Brief company description. If information is not available, say "Not available" - do NOT fabricate or guess.`;
+      ? `Research the real company "${companyName}" located in ${city}. Search the web and provide ONLY verified, factual information.
+
+Return your response as a JSON object with these exact fields:
+{
+  "industry": "Industry or sector",
+  "products": "Main products or services",
+  "size": "Company size",
+  "owner": "Owner or CEO name",
+  "address": "Full business address",
+  "phone": "Contact phone",
+  "email": "Contact email",
+  "recentNews": "Recent news",
+  "summary": "Brief company description"
+}
+
+For any field where you cannot find verified information, use "Not available". Do NOT fabricate or guess. Return ONLY the JSON object, no other text.`
+      : `Research the real company "${companyName}". Search the web and provide ONLY verified, factual information.
+
+Return your response as a JSON object with these exact fields:
+{
+  "industry": "Industry or sector",
+  "products": "Main products or services",
+  "size": "Company size",
+  "owner": "Owner or CEO name",
+  "address": "Full business address",
+  "phone": "Contact phone",
+  "email": "Contact email",
+  "recentNews": "Recent news",
+  "summary": "Brief company description"
+}
+
+For any field where you cannot find verified information, use "Not available". Do NOT fabricate or guess. Return ONLY the JSON object, no other text.`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -47,39 +77,13 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a business research assistant. Search the web and provide ONLY verified, factual information about real companies. If you cannot find verified information, explicitly state "Not available" - never fabricate or guess information. Always cite your sources.'
+            content: 'You are a business research assistant. Search the web and provide ONLY verified, factual information. Always return valid JSON only.'
           },
           {
             role: 'user',
             content: searchQuery
           }
-        ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'return_company_research',
-              description: 'Return structured company research data with only verified information',
-              parameters: {
-                type: 'object',
-                properties: {
-                  industry: { type: 'string', description: 'Industry or sector the company operates in' },
-                  products: { type: 'string', description: 'Main products or services offered' },
-                  size: { type: 'string', description: 'Company size (employees, revenue, or description)' },
-                  owner: { type: 'string', description: 'Owner or key executives' },
-                  address: { type: 'string', description: 'Full business address' },
-                  phone: { type: 'string', description: 'Contact phone number' },
-                  email: { type: 'string', description: 'Contact email address' },
-                  recentNews: { type: 'string', description: 'Recent news or developments' },
-                  summary: { type: 'string', description: 'Brief company summary based on verified sources' }
-                },
-                required: ['industry', 'products', 'size', 'owner', 'address', 'phone', 'email', 'recentNews', 'summary'],
-                additionalProperties: false
-              }
-            }
-          }
-        ],
-        tool_choice: 'required'
+        ]
       }),
     });
 
@@ -108,26 +112,30 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    console.log('AI response received:', JSON.stringify(data));
+    console.log('Perplexity response received:', JSON.stringify(data));
 
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall || toolCall.function?.name !== 'return_company_research') {
-      console.error('No tool call in response:', data);
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      console.error('No content in response:', data);
       return new Response(
-        JSON.stringify({ error: 'Invalid AI response format' }),
+        JSON.stringify({ error: 'No research data returned from AI' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Try to parse JSON from the response
     let research;
     try {
-      research = JSON.parse(toolCall.function.arguments);
+      // Remove markdown code blocks if present
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      const jsonStr = jsonMatch ? jsonMatch[1] : content;
+      research = JSON.parse(jsonStr);
       console.log('Research data parsed:', research);
     } catch (parseError) {
-      console.error('Failed to parse tool call arguments:', parseError);
+      console.error('Failed to parse JSON from content:', content);
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to parse research data from AI response',
+          error: 'Failed to parse research data',
           details: 'The AI returned an invalid format. Please try again.'
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
