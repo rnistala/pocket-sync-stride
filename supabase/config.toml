@@ -2,3 +2,6 @@ project_id = "xitliskomnkgspqgmtud"
 
 [functions.research-company]
 verify_jwt = false
+
+[functions.fetch-company-details]
+verify_jwt = false

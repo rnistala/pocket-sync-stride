@@ -19,13 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLeadContext } from "@/contexts/LeadContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export const AddContactForm = () => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingAI, setIsFetchingAI] = useState(false);
   const [statuses, setStatuses] = useState<string[]>([]);
   const { toast } = useToast();
   const { syncData } = useLeadContext();
@@ -52,6 +54,61 @@ export const AddContactForm = () => {
     };
     loadStatuses();
   }, []);
+
+  const handleFillWithAI = async () => {
+    if (!formData.company.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a company name first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsFetchingAI(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-company-details', {
+        body: { companyName: formData.company }
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.data) {
+        const companyInfo = data.data;
+        setFormData(prev => ({
+          ...prev,
+          name: companyInfo.company || prev.name || prev.company,
+          city: companyInfo.city || prev.city,
+          mobile: companyInfo.mobile || prev.mobile,
+          email: companyInfo.email || prev.email,
+          contact_person: companyInfo.contactPerson || prev.contact_person,
+          address: companyInfo.address || prev.address,
+          industry: companyInfo.industry || prev.industry,
+          remarks: companyInfo.brief || prev.remarks,
+        }));
+
+        toast({
+          title: "Success",
+          description: "Company details filled successfully",
+        });
+      } else {
+        toast({
+          title: "Info",
+          description: "Could not find complete information for this company",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching company details:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch company details",
+        variant: "destructive",
+      });
+    } finally {
+      setIsFetchingAI(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +250,21 @@ export const AddContactForm = () => {
               />
             </div>
           </div>
+
+          {formData.company.trim() && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleFillWithAI}
+                disabled={isFetchingAI}
+                className="gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                {isFetchingAI ? "Fetching..." : "Fill with AI"}
+              </Button>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
