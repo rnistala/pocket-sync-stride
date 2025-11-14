@@ -373,6 +373,14 @@ export const AddContactForm = () => {
           </div>
         </form>
       </DialogContent>
+
+      <CompanyResearchDialog
+        isOpen={isResearchDialogOpen}
+        onOpenChange={setIsResearchDialogOpen}
+        companyName={formData.company}
+        city={formData.city}
+        onUpdate={handleResearchUpdate}
+      />
     </Dialog>
   );
 };
