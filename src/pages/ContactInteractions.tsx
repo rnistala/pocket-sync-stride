@@ -19,6 +19,7 @@ import { format, addYears } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { FeatureTour } from "@/components/FeatureTour";
+import { CompanyResearchDialog } from "@/components/CompanyResearchDialog";
 
 const ContactInteractions = () => {
   const { id } = useParams();
@@ -79,8 +80,6 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   );
   const [nextFollowUpDateText, setNextFollowUpDateText] = useState("");
   const [isResearchDialogOpen, setIsResearchDialogOpen] = useState(false);
-  const [isResearching, setIsResearching] = useState(false);
-  const [researchData, setResearchData] = useState<any>(null);
   const [editFormData, setEditFormData] = useState({
     name: contact.name || "",
     company: contact.company || "",
@@ -693,57 +692,17 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     }
   };
 
-  const handleResearchCompany = async () => {
+  const handleResearchCompany = () => {
     if (!contact.company) {
       toast.error("No company name available");
       return;
     }
-
-    setIsResearching(true);
-    setResearchData(null);
     setIsResearchDialogOpen(true);
+  };
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/research-company`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ 
-            companyName: contact.company,
-            city: contact.city 
-          }),
-        }
-      );
-
-      if (response.status === 429) {
-        toast.error("Rate limit exceeded. Please try again later.");
-        setIsResearchDialogOpen(false);
-        return;
-      }
-
-      if (response.status === 402) {
-        toast.error("AI credits depleted. Please add credits to your workspace.");
-        setIsResearchDialogOpen(false);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error("Failed to research company");
-      }
-
-      const data = await response.json();
-      setResearchData(data.research);
-    } catch (error) {
-      console.error("Error researching company:", error);
-      toast.error("Failed to research company");
-      setIsResearchDialogOpen(false);
-    } finally {
-      setIsResearching(false);
-    }
+  const handleResearchUpdate = () => {
+    // Refresh contact data after update
+    syncData();
   };
 
   const tourSteps = [
@@ -1139,85 +1098,14 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             </div>
           </div>
 
-          <Dialog open={isResearchDialogOpen} onOpenChange={setIsResearchDialogOpen}>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Company Research: {contact.company}</DialogTitle>
-              </DialogHeader>
-              
-              {isResearching ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-center space-y-3">
-                    <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Researching company information...</p>
-                  </div>
-                </div>
-              ) : researchData ? (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Summary</h3>
-                    <p className="text-sm text-muted-foreground">{researchData.summary}</p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Industry</h3>
-                    <Badge variant="secondary">{researchData.industry}</Badge>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">Products & Services</h3>
-                    <p className="text-sm text-muted-foreground">{researchData.products}</p>
-                  </div>
-
-                  {researchData.owner && researchData.owner !== "Not available" && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2">Owner / Management</h3>
-                      <p className="text-sm text-muted-foreground">{researchData.owner}</p>
-                    </div>
-                  )}
-
-                  {researchData.address && researchData.address !== "Not available" && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2">Address</h3>
-                      <p className="text-sm text-muted-foreground">{researchData.address}</p>
-                    </div>
-                  )}
-
-                  {researchData.phone && researchData.phone !== "Not available" && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2">Phone</h3>
-                      <p className="text-sm text-muted-foreground">{researchData.phone}</p>
-                    </div>
-                  )}
-
-                  {researchData.email && researchData.email !== "Not available" && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2">Email</h3>
-                      <p className="text-sm text-muted-foreground">{researchData.email}</p>
-                    </div>
-                  )}
-
-                  {researchData.size && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2">Company Size</h3>
-                      <p className="text-sm text-muted-foreground">{researchData.size}</p>
-                    </div>
-                  )}
-
-                  {researchData.recentNews && (
-                    <div>
-                      <h3 className="text-sm font-semibold mb-2">Recent News</h3>
-                      <p className="text-sm text-muted-foreground">{researchData.recentNews}</p>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-
-              <div className="flex justify-end pt-4">
-                <Button onClick={() => setIsResearchDialogOpen(false)}>Close</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <CompanyResearchDialog
+            isOpen={isResearchDialogOpen}
+            onOpenChange={setIsResearchDialogOpen}
+            companyName={contact.company}
+            city={contact.city}
+            contactId={contact.id}
+            onUpdate={handleResearchUpdate}
+          />
         </Card>
 
         <div className="flex items-center justify-between mb-2">
