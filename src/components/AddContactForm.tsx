@@ -22,12 +22,12 @@ import {
 import { Plus, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLeadContext } from "@/contexts/LeadContext";
-import { supabase } from "@/integrations/supabase/client";
+import { CompanyResearchDialog } from "@/components/CompanyResearchDialog";
 
 export const AddContactForm = () => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFetchingAI, setIsFetchingAI] = useState(false);
+  const [isResearchDialogOpen, setIsResearchDialogOpen] = useState(false);
   const [statuses, setStatuses] = useState<string[]>([]);
   const { toast } = useToast();
   const { syncData } = useLeadContext();
@@ -55,7 +55,7 @@ export const AddContactForm = () => {
     loadStatuses();
   }, []);
 
-  const handleFillWithAI = async () => {
+  const handleFillWithAI = () => {
     if (!formData.company.trim()) {
       toast({
         title: "Error",
@@ -64,50 +64,23 @@ export const AddContactForm = () => {
       });
       return;
     }
+    setIsResearchDialogOpen(true);
+  };
 
-    setIsFetchingAI(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('fetch-company-details', {
-        body: { companyName: formData.company }
-      });
-
-      if (error) throw error;
-
-      if (data?.success && data?.data) {
-        const companyInfo = data.data;
-        setFormData(prev => ({
-          ...prev,
-          name: companyInfo.company || prev.name || prev.company,
-          city: companyInfo.city || prev.city,
-          mobile: companyInfo.mobile || prev.mobile,
-          email: companyInfo.email || prev.email,
-          contact_person: companyInfo.contactPerson || prev.contact_person,
-          address: companyInfo.address || prev.address,
-          industry: companyInfo.industry || prev.industry,
-          remarks: companyInfo.brief || prev.remarks,
-        }));
-
-        toast({
-          title: "Success",
-          description: "Company details filled successfully",
-        });
-      } else {
-        toast({
-          title: "Info",
-          description: "Could not find complete information for this company",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching company details:", error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch company details",
-        variant: "destructive",
-      });
-    } finally {
-      setIsFetchingAI(false);
-    }
+  const handleResearchUpdate = (data: any) => {
+    setFormData(prev => ({
+      ...prev,
+      mobile: data.phone && data.phone !== "Not available" ? data.phone : prev.mobile,
+      email: data.email && data.email !== "Not available" ? data.email : prev.email,
+      contact_person: data.owner && data.owner !== "Not available" ? data.owner : prev.contact_person,
+      address: data.address && data.address !== "Not available" ? data.address : prev.address,
+      industry: data.industry && data.industry !== "Not available" ? data.industry : prev.industry,
+      remarks: data.summary && data.summary !== "Not available" ? data.summary : prev.remarks,
+    }));
+    toast({
+      title: "Success",
+      description: "Company details filled successfully",
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -257,11 +230,11 @@ export const AddContactForm = () => {
                 type="button"
                 variant="outline"
                 onClick={handleFillWithAI}
-                disabled={isFetchingAI}
+                disabled={!formData.company.trim()}
                 className="gap-2"
               >
                 <Sparkles className="h-4 w-4" />
-                {isFetchingAI ? "Fetching..." : "Fill with AI"}
+                Fill with AI
               </Button>
             </div>
           )}
