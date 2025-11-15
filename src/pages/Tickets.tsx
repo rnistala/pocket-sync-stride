@@ -139,7 +139,7 @@ export default function Tickets() {
     if (ageFilter === "older-than-10-days") {
       const tenDaysAgo = new Date();
       tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-      filtered = filtered.filter(t => new Date(t.reportedDate) < tenDaysAgo);
+      filtered = filtered.filter(t => t.status === "OPEN" && new Date(t.reportedDate) < tenDaysAgo);
     }
 
     // Search filter - use contactMap for O(1) lookup and deferred query
