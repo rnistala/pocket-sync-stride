@@ -1113,7 +1113,37 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // Step 3: Merge server data with local data
+    // Step 3: Handle customer case when no contacts returned
+    const userCompany = getUserCompany();
+    if (userCompany && fetchedContacts.length === 0) {
+      console.log("[SYNC] Customer login with no contacts from API, creating fallback contact");
+      
+      const token = localStorage.getItem("userToken");
+      const userData = token ? JSON.parse(token) : {};
+      const customerName = userData.companyforeign || userData.name || "Customer";
+      
+      // Create a single customer contact with id = userCompany
+      const customerContact: Contact = {
+        id: userCompany,
+        contact_id: "",
+        name: customerName,
+        status: "Active",
+        company: customerName,
+        city: "",
+        followup_on: "",
+        lastNotes: "",
+        phone: "",
+        email: "",
+        profile: "",
+        score: 0,
+        starred: false,
+      };
+      
+      fetchedContacts = [customerContact];
+      console.log("[SYNC] Created customer contact:", customerContact);
+    }
+    
+    // Step 4: Merge server data with local data
     if (fetchedContacts.length > 0) {
       // Load fresh data from IndexedDB to ensure we have the latest local changes
       const localContactsFromDB = await dbManager.getAllContacts();
