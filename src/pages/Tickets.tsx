@@ -109,7 +109,7 @@ export default function Tickets() {
   const ticketsOlderThan10Days = useMemo(() => {
     const tenDaysAgo = new Date();
     tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-    return tickets.filter(t => new Date(t.reportedDate) < tenDaysAgo).length;
+    return tickets.filter(t => t.status === "OPEN" && new Date(t.reportedDate) < tenDaysAgo).length;
   }, [tickets]);
 
   const filteredTickets = useMemo(() => {
@@ -289,7 +289,7 @@ export default function Tickets() {
               }}
             >
               <CardContent className="p-4 flex flex-col">
-                <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Tickets &gt;10 Days</p>
+                <p className="text-xs text-muted-foreground mb-2 h-8 flex items-start">Open Tickets &gt;10 Days</p>
                 <p className="text-2xl font-bold text-foreground">{ticketsOlderThan10Days}</p>
               </CardContent>
             </Card>
