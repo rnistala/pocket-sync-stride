@@ -32,30 +32,35 @@ const Login = () => {
         body: JSON.stringify({ username, password, cookie: "opterix", detail: "Lovable" }),
       });
 
-      const data = await response.json();
-      setDebugInfo(JSON.stringify(data, null, 2));
+    const data = await response.json();
+    setDebugInfo(JSON.stringify(data, null, 2));
 
-      if (!response.ok) throw new Error("Login failed");
-      
-      // Check if user has changed
-      const previousUserId = localStorage.getItem("userId");
-      const userChanged = previousUserId && previousUserId !== data.id;
-      
-      // Store user data
-      localStorage.setItem("userId", data.id);
-      localStorage.setItem("userToken", JSON.stringify(data));
-      
-      // Store company if provided (customer identifier)
-      if (data.company) {
-        localStorage.setItem("userCompany", data.company);
-      }
-      
-      toast.success("Login successful!");
-      
-      // Customers (with company) go to Tickets page, internal users to main page
-      const destination = data.company ? "/tickets" : "/";
-      // Always sync on login to ensure fresh data
-      navigate(destination, { state: { shouldSync: true } });
+    if (!response.ok) throw new Error("Login failed");
+    
+    // Validate response has required fields
+    if (!data || !data.id) {
+      throw new Error("Invalid login response");
+    }
+    
+    // Check if user has changed
+    const previousUserId = localStorage.getItem("userId");
+    const userChanged = previousUserId && previousUserId !== data.id;
+    
+    // Store user data
+    localStorage.setItem("userId", data.id);
+    localStorage.setItem("userToken", JSON.stringify(data));
+    
+    // Store company if provided (customer identifier)
+    if (data.company) {
+      localStorage.setItem("userCompany", data.company);
+    }
+    
+    toast.success("Login successful!");
+    
+    // Customers (with company) go to Tickets page, internal users to main page
+    const destination = data.company ? "/tickets" : "/";
+    // Always sync on login to ensure fresh data
+    navigate(destination, { state: { shouldSync: true } });
     } catch (error) {
       setDebugInfo(`Error: ${error instanceof Error ? error.message : String(error)}`);
       toast.error("Invalid credentials");
