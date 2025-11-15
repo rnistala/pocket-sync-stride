@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Star } from "lucide-react";
-import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
 
 interface UpdateTicketFormProps {
   ticket: Ticket;
@@ -17,10 +16,7 @@ interface UpdateTicketFormProps {
 }
 
 export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFormProps) => {
-  const { updateTicket, contacts } = useLeadContext();
-  const [contactId, setContactId] = useState("");
-  const [issueType, setIssueType] = useState("");
-  const [description, setDescription] = useState("");
+  const { updateTicket } = useLeadContext();
   const [targetDate, setTargetDate] = useState("");
   const [status, setStatus] = useState<"OPEN" | "IN PROGRESS" | "CLOSED">("OPEN");
   const [remarks, setRemarks] = useState("");
@@ -29,23 +25,8 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   const [priority, setPriority] = useState(false);
   const [effortInHours, setEffortInHours] = useState("");
 
-  const issueTypes = [
-    "TECHNICAL",
-    "FUNCTIONAL",
-    "PERFORMANCE",
-    "SECURITY",
-    "UI_UX",
-    "DATA",
-    "INTEGRATION",
-    "CONFIGURATION",
-    "OTHER"
-  ];
-
   useEffect(() => {
     if (ticket) {
-      setContactId(ticket.contactId);
-      setIssueType(ticket.issueType);
-      setDescription(ticket.description);
       setTargetDate(ticket.targetDate.split('T')[0]);
       setStatus(ticket.status);
       setRemarks(ticket.remarks || "");
@@ -108,9 +89,6 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
 
     const updatedTicket: Ticket = {
       ...ticket,
-      contactId,
-      issueType,
-      description: description.trim(),
       targetDate: new Date(targetDate).toISOString(),
       status,
       remarks: remarks.trim(),
@@ -136,58 +114,10 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
         <DialogHeader>
           <DialogTitle>Update Ticket</DialogTitle>
           <DialogDescription>
-            {ticket.status === "OPEN" ? "Edit ticket details, target date, remarks, and analysis" : "Update target date, remarks, and analysis for this ticket"}
+            Update target date, remarks, and analysis for this ticket
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {ticket.status === "OPEN" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="contact">Contact *</Label>
-                <Select value={contactId} onValueChange={setContactId} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select contact" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {contacts.map((contact) => (
-                      <SelectItem key={contact.id} value={contact.id}>
-                        {contact.name} {contact.company && `(${contact.company})`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="issueType">Issue Type *</Label>
-                <Select value={issueType} onValueChange={setIssueType} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select issue type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {issueTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {getIssueTypeLabel(type)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe the issue..."
-                  className="min-h-[100px]"
-                  required
-                />
-              </div>
-            </>
-          )}
-
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <div className="space-y-2">
               <Label htmlFor="targetDate">Target Date *</Label>
