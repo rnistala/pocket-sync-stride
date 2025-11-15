@@ -184,19 +184,6 @@ export default function Tickets() {
     }
   };
 
-  const handleStatusChange = async (ticketId: string, newStatus: "OPEN" | "IN PROGRESS" | "CLOSED") => {
-    const ticket = tickets.find(t => t.id === ticketId);
-    if (!ticket) return;
-
-    const updatedTicket = {
-      ...ticket,
-      status: newStatus,
-      closedDate: newStatus === "CLOSED" ? new Date().toISOString() : ticket.closedDate,
-    };
-
-    await updateTicket(updatedTicket);
-  };
-
   const handleTogglePriority = async (ticketId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const ticket = tickets.find(t => t.id === ticketId);
@@ -345,22 +332,7 @@ export default function Tickets() {
                         {contact?.company && (
                           <p className="text-sm text-muted-foreground">{contact.company}</p>
                         )}
-                      </div>
-                       <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-                        <Select
-                          value={ticket.status}
-                          onValueChange={(value) => handleStatusChange(ticket.id, value as any)}
-                        >
-                          <SelectTrigger className="w-20 sm:w-28 text-[10px] sm:text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="OPEN">OPEN</SelectItem>
-                            <SelectItem value="IN PROGRESS">IN PROGRESS</SelectItem>
-                            <SelectItem value="CLOSED">CLOSED</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                       </div>
                     </div>
                    </CardHeader>
                   <CardContent className="px-3 sm:px-6">
