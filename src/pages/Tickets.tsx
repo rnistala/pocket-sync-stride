@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut, Pencil } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { UpdateTicketForm } from "@/components/UpdateTicketForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -319,8 +319,7 @@ export default function Tickets() {
               return (
                 <Card
                   key={`${ticket.id}-${ticket.ticketId || ''}`}
-                  className="cursor-pointer hover:bg-accent/50 transition-colors w-full"
-                  onClick={() => setEditingTicket(ticket)}
+                  className="w-full"
                 >
                    <CardHeader className="pb-3 px-3 sm:px-6">
                     <div className="flex items-start justify-between gap-2">
@@ -338,6 +337,14 @@ export default function Tickets() {
                           </Button>
                           {getStatusBadge(ticket.status)}
                           <Badge variant="outline" className="truncate">{getIssueTypeLabel(ticket.issueType)}</Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 p-0 shrink-0"
+                            onClick={() => setEditingTicket(ticket)}
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </Button>
                         </div>
                         <h3 className="font-semibold text-foreground truncate">
                           {contact?.name || "Unknown Contact"}
