@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut, Pencil } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { UpdateTicketForm } from "@/components/UpdateTicketForm";
+import { EditTicketForm } from "@/components/EditTicketForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncButton } from "@/components/SyncButton";
 import { TicketFiltersDialog } from "@/components/TicketFiltersDialog";
@@ -32,6 +33,7 @@ export default function Tickets() {
   const [priorityFilter, setPriorityFilter] = useState<boolean | null>(null);
   const [ageFilter, setAgeFilter] = useState<"all" | "older-than-10-days">("all");
   const [editingTicket, setEditingTicket] = useState<typeof tickets[0] | null>(null);
+  const [updatingTicket, setUpdatingTicket] = useState<typeof tickets[0] | null>(null);
   const [mounted, setMounted] = useState(false);
   const hasSynced = useRef(false);
 
@@ -319,7 +321,8 @@ export default function Tickets() {
               return (
                 <Card
                   key={`${ticket.id}-${ticket.ticketId || ''}`}
-                  className="w-full"
+                  className="cursor-pointer hover:bg-accent/50 transition-colors w-full"
+                  onClick={() => setUpdatingTicket(ticket)}
                 >
                    <CardHeader className="pb-3 px-3 sm:px-6">
                     <div className="flex items-start justify-between gap-2">
@@ -341,7 +344,10 @@ export default function Tickets() {
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 p-0 shrink-0"
-                            onClick={() => setEditingTicket(ticket)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingTicket(ticket);
+                            }}
                           >
                             <Pencil className="h-4 w-4 text-muted-foreground" />
                           </Button>
@@ -382,12 +388,21 @@ export default function Tickets() {
         )}
       </div>
 
-      {/* Update Ticket Dialog */}
+      {/* Edit Ticket Dialog */}
       {editingTicket && (
-        <UpdateTicketForm
+        <EditTicketForm
           ticket={editingTicket}
           open={!!editingTicket}
           onOpenChange={(open) => !open && setEditingTicket(null)}
+        />
+      )}
+
+      {/* Update Ticket Dialog */}
+      {updatingTicket && (
+        <UpdateTicketForm
+          ticket={updatingTicket}
+          open={!!updatingTicket}
+          onOpenChange={(open) => !open && setUpdatingTicket(null)}
         />
       )}
     </div>
