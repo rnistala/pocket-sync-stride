@@ -207,7 +207,9 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
             <Label htmlFor="issueType">Issue Type *</Label>
             <Select value={issueType} onValueChange={setIssueType}>
               <SelectTrigger>
-                <SelectValue placeholder="Select issue type" />
+                <SelectValue placeholder="Select issue type">
+                  {issueType ? getIssueTypeLabel(issueType) : "Select issue type"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="TECH_SUPPORT">{getIssueTypeLabel("TECH_SUPPORT")}</SelectItem>
