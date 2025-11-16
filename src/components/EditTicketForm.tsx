@@ -11,7 +11,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Upload, X, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
 
 interface EditTicketFormProps {
   ticket: Ticket;
@@ -207,21 +206,13 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
             <Label htmlFor="issueType">Issue Type *</Label>
             <Select value={issueType} onValueChange={setIssueType}>
               <SelectTrigger>
-                <SelectValue placeholder="Select issue type">
-                  {issueType ? getIssueTypeLabel(issueType) : "Select issue type"}
-                </SelectValue>
+                <SelectValue placeholder="Select issue type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="TECH_SUPPORT">{getIssueTypeLabel("TECH_SUPPORT")}</SelectItem>
-                <SelectItem value="BILLING">{getIssueTypeLabel("BILLING")}</SelectItem>
-                <SelectItem value="FEATURE_REQUEST">{getIssueTypeLabel("FEATURE_REQUEST")}</SelectItem>
-                <SelectItem value="BUG_REPORT">{getIssueTypeLabel("BUG_REPORT")}</SelectItem>
-                <SelectItem value="GENERAL_INQUIRY">{getIssueTypeLabel("GENERAL_INQUIRY")}</SelectItem>
-                <SelectItem value="ACCOUNT_ISSUE">{getIssueTypeLabel("ACCOUNT_ISSUE")}</SelectItem>
-                <SelectItem value="PERFORMANCE">{getIssueTypeLabel("PERFORMANCE")}</SelectItem>
-                <SelectItem value="SECURITY">{getIssueTypeLabel("SECURITY")}</SelectItem>
-                <SelectItem value="INTEGRATION">{getIssueTypeLabel("INTEGRATION")}</SelectItem>
-                <SelectItem value="OTHER">{getIssueTypeLabel("OTHER")}</SelectItem>
+                <SelectItem value="BR">Problem</SelectItem>
+                <SelectItem value="FR">New Work</SelectItem>
+                <SelectItem value="SR">Support</SelectItem>
+                <SelectItem value="MG">Meeting</SelectItem>
               </SelectContent>
             </Select>
           </div>
