@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Upload, X, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getIssueTypeCode } from "@/lib/issueTypeUtils";
 
 interface EditTicketFormProps {
   ticket: Ticket;
@@ -29,16 +30,12 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
 
   // Initialize form with ticket data
   useEffect(() => {
-    console.log('EditTicketForm - useEffect triggered', { 
-      ticketExists: !!ticket, 
-      open, 
-      ticketIssueType: ticket?.issueType,
-      currentIssueType: issueType 
-    });
     if (ticket && open) {
-      console.log('EditTicketForm - Setting issueType to:', ticket.issueType);
       setContactId(ticket.contactId);
-      setIssueType(ticket.issueType);
+      // Convert old display format to code format if needed
+      const issueTypeCode = getIssueTypeCode(ticket.issueType);
+      console.log('EditTicketForm - Converting issueType:', ticket.issueType, 'to:', issueTypeCode);
+      setIssueType(issueTypeCode);
       setDescription(ticket.description);
       setScreenshots(ticket.screenshots || []);
     }
@@ -211,10 +208,7 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
 
           <div className="space-y-2">
             <Label htmlFor="issueType">Issue Type *</Label>
-            <Select value={issueType} onValueChange={(value) => {
-              console.log('EditTicketForm - Issue type changed to:', value);
-              setIssueType(value);
-            }}>
+            <Select value={issueType} onValueChange={setIssueType}>
               <SelectTrigger>
                 <SelectValue placeholder="Select issue type" />
               </SelectTrigger>
