@@ -29,7 +29,14 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
 
   // Initialize form with ticket data
   useEffect(() => {
+    console.log('EditTicketForm - useEffect triggered', { 
+      ticketExists: !!ticket, 
+      open, 
+      ticketIssueType: ticket?.issueType,
+      currentIssueType: issueType 
+    });
     if (ticket && open) {
+      console.log('EditTicketForm - Setting issueType to:', ticket.issueType);
       setContactId(ticket.contactId);
       setIssueType(ticket.issueType);
       setDescription(ticket.description);
@@ -204,7 +211,10 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
 
           <div className="space-y-2">
             <Label htmlFor="issueType">Issue Type *</Label>
-            <Select value={issueType} onValueChange={setIssueType}>
+            <Select value={issueType} onValueChange={(value) => {
+              console.log('EditTicketForm - Issue type changed to:', value);
+              setIssueType(value);
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select issue type" />
               </SelectTrigger>
