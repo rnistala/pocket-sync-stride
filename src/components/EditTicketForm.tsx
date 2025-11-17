@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Upload, X, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getIssueTypeCode } from "@/lib/issueTypeUtils";
 
 interface EditTicketFormProps {
   ticket: Ticket;
@@ -31,7 +32,8 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
   useEffect(() => {
     if (ticket && open) {
       setContactId(ticket.contactId);
-      setIssueType(ticket.issueType);
+      // Convert legacy or display label values to API codes
+      setIssueType(getIssueTypeCode(ticket.issueType));
       setDescription(ticket.description);
       setScreenshots(ticket.screenshots || []);
     }
