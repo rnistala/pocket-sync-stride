@@ -11,7 +11,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Upload, X, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
 
 interface EditTicketFormProps {
   ticket: Ticket;
@@ -207,9 +206,7 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
             <Label htmlFor="issueType">Issue Type *</Label>
             <Select value={issueType} onValueChange={setIssueType}>
               <SelectTrigger>
-                <SelectValue placeholder="Select issue type">
-                  {issueType ? getIssueTypeLabel(issueType) : "Select issue type"}
-                </SelectValue>
+                <SelectValue placeholder="Select issue type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="BR">Problem</SelectItem>
