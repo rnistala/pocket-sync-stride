@@ -1296,6 +1296,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             photo: apiTicket.photo || [],
             priority: apiTicket.priority === "High",
             effort_in_hours: apiTicket.effort_in_hours,
+            effort_minutes: apiTicket.effort_minutes,
             syncStatus: "synced" as const,
           }));
 
@@ -1605,6 +1606,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               photo: photoData,
               priority: apiTicket.priority === "High",
               effort_in_hours: apiTicket.effort_in_hours,
+              effort_minutes: apiTicket.effort_minutes,
               syncStatus: "synced" as const,
             };
           });
@@ -1843,6 +1845,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         remarks: ticket.remarks || "",
         root_cause: ticket.rootCause || "",
         priority: ticket.priority ? "High" : "Regular",
+        effort_minutes: ticket.effort_minutes || 0,
         ...(ticket.status === "CLOSED" && { close_date: new Date().toISOString() }),
         updated: new Date().toISOString(),
         updatedby: userId,
