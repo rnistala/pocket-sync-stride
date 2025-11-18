@@ -49,6 +49,7 @@ export interface Ticket {
   photo?: any[]; // Array of photo metadata from server
   priority?: boolean; // Star mark for priority tickets
   effort_in_hours?: number; // Effort in hours to solve the ticket
+  effort_minutes?: number; // Effort in minutes to solve the ticket
   syncStatus: "synced" | "pending" | "local";
 }
 
