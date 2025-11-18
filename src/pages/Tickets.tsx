@@ -327,9 +327,6 @@ export default function Tickets() {
                  <CardHeader className="pb-3 px-3 sm:px-6">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        {ticket.ticketId && (
-                          <p className="text-xs text-muted-foreground mb-1">#{ticket.ticketId}</p>
-                        )}
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <Button
                             variant="ghost"
@@ -355,9 +352,11 @@ export default function Tickets() {
                             <Pencil className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </div>
-                        <h3 className="font-semibold text-foreground truncate">
-                          {contact?.name || "Unknown Contact"}
-                        </h3>
+                        {ticket.ticketId && (
+                          <h3 className="font-semibold text-foreground truncate">
+                            #{ticket.ticketId}
+                          </h3>
+                        )}
                         {contact?.company && (
                           <p className="text-sm text-muted-foreground">{contact.company}</p>
                         )}
