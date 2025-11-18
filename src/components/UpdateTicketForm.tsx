@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Star } from "lucide-react";
+import { getApiRoot } from "@/lib/config";
 
 interface UpdateTicketFormProps {
   ticket: Ticket;
@@ -22,19 +23,58 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   const [remarks, setRemarks] = useState("");
   const [rootCause, setRootCause] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [priority, setPriority] = useState(false);
   const [effortInMinutes, setEffortInMinutes] = useState("");
 
   useEffect(() => {
-    if (ticket) {
-      setTargetDate(ticket.targetDate.split('T')[0]);
-      setStatus(ticket.status);
-      setRemarks(ticket.remarks || "");
-      setRootCause(ticket.rootCause || "");
-      setScreenshots(ticket.screenshots || []);
-      setPriority(ticket.priority || false);
-      setEffortInMinutes(ticket.effort_minutes?.toString() || "");
-    }
+    const loadPhotos = async () => {
+      if (ticket) {
+        setTargetDate(ticket.targetDate.split('T')[0]);
+        setStatus(ticket.status);
+        setRemarks(ticket.remarks || "");
+        setRootCause(ticket.rootCause || "");
+        setScreenshots(ticket.screenshots || []);
+        setPriority(ticket.priority || false);
+        setEffortInMinutes(ticket.effort_minutes?.toString() || "");
+        
+        // Load existing photos from server
+        if (ticket.photo && Array.isArray(ticket.photo) && ticket.photo.length > 0) {
+          try {
+            const apiRoot = await getApiRoot();
+            const photoUrls = ticket.photo.map((photoData: any) => {
+              let photoPath = "";
+              
+              if (typeof photoData === "string") {
+                try {
+                  const parsed = JSON.parse(photoData);
+                  photoPath = parsed.path || "";
+                } catch {
+                  photoPath = photoData;
+                }
+              } else if (photoData && typeof photoData === "object" && "path" in photoData) {
+                photoPath = photoData.path || "";
+              }
+              
+              if (photoPath) {
+                const cleanPath = photoPath.startsWith('/') ? photoPath : `/${photoPath}`;
+                return `${apiRoot}/photos${cleanPath}`;
+              }
+              return "";
+            }).filter(Boolean);
+            
+            setExistingPhotos(photoUrls);
+          } catch (error) {
+            console.error("Failed to load existing photos:", error);
+            setExistingPhotos([]);
+          }
+        } else {
+          setExistingPhotos([]);
+        }
+      }
+    };
+    
+    loadPhotos();
   }, [ticket]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,26 +219,53 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
               multiple
               onChange={handleImageUpload}
             />
+            
+            {/* Existing photos from server */}
+            {existingPhotos.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Existing Photos</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {existingPhotos.map((photoUrl, index) => (
+                    <div key={`existing-${index}`} className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center">
+                      <img
+                        src={photoUrl}
+                        alt={`Existing photo ${index + 1}`}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          console.error("Failed to load image:", photoUrl);
+                          e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999'%3EError%3C/text%3E%3C/svg%3E";
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* New screenshots */}
             {screenshots.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                {screenshots.map((screenshot, index) => (
-                  <div key={index} className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center">
-                    <img
-                      src={screenshot}
-                      alt={`Screenshot ${index + 1}`}
-                      className="w-full h-full object-contain"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-1 right-1 h-6 w-6"
-                      onClick={() => handleRemoveImage(index)}
-                    >
-                      ×
-                    </Button>
-                  </div>
-                ))}
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">New Screenshots</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {screenshots.map((screenshot, index) => (
+                    <div key={`new-${index}`} className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center">
+                      <img
+                        src={screenshot}
+                        alt={`Screenshot ${index + 1}`}
+                        className="w-full h-full object-contain"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-1 right-1 h-6 w-6"
+                        onClick={() => handleRemoveImage(index)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
