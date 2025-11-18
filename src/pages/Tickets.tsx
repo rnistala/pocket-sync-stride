@@ -324,9 +324,12 @@ export default function Tickets() {
                   className="cursor-pointer hover:bg-accent/50 transition-colors w-full"
                   onClick={() => setUpdatingTicket(ticket)}
                 >
-                   <CardHeader className="pb-3 px-3 sm:px-6">
+                 <CardHeader className="pb-3 px-3 sm:px-6">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0 overflow-hidden">
+                        {ticket.ticketId && (
+                          <p className="text-xs text-muted-foreground mb-1">#{ticket.ticketId}</p>
+                        )}
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <Button
                             variant="ghost"
