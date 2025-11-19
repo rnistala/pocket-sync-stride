@@ -98,27 +98,25 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
 
   const handleCheckForUpdates = async () => {
     setIsCheckingUpdates(true);
-    await checkForUpdates();
+    const updateAvailable = await checkForUpdates();
+    setIsCheckingUpdates(false);
     
-    setTimeout(() => {
-      setIsCheckingUpdates(false);
-      if (needRefresh) {
-        toast({
-          title: "Update Available",
-          description: "A new version is ready to install.",
-          action: (
-            <Button size="sm" onClick={installUpdate}>
-              Install Now
-            </Button>
-          ),
-        });
-      } else {
-        toast({
-          title: "No Updates",
-          description: "You're running the latest version.",
-        });
-      }
-    }, 1000);
+    if (updateAvailable || needRefresh) {
+      toast({
+        title: "Update Available",
+        description: "A new version is ready to install.",
+        action: (
+          <Button size="sm" onClick={installUpdate}>
+            Install Now
+          </Button>
+        ),
+      });
+    } else {
+      toast({
+        title: "No Updates",
+        description: "You're running the latest version.",
+      });
+    }
   };
 
   return (
