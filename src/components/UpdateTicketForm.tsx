@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { Star } from "lucide-react";
 import { getApiRoot } from "@/lib/config";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 interface UpdateTicketFormProps {
   ticket: Ticket;
@@ -26,6 +27,9 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
   const [priority, setPriority] = useState(false);
   const [effortInMinutes, setEffortInMinutes] = useState("");
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [allImages, setAllImages] = useState<string[]>([]);
 
   useEffect(() => {
     const loadPhotos = async () => {
@@ -64,18 +68,21 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
             }).filter(Boolean);
             
             setExistingPhotos(photoUrls);
+            setAllImages([...photoUrls, ...screenshots]);
           } catch (error) {
             console.error("Failed to load existing photos:", error);
             setExistingPhotos([]);
+            setAllImages([...screenshots]);
           }
         } else {
           setExistingPhotos([]);
+          setAllImages([...screenshots]);
         }
       }
     };
     
     loadPhotos();
-  }, [ticket]);
+  }, [ticket, screenshots]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -226,7 +233,14 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
                 <p className="text-xs text-muted-foreground mb-2">Existing Photos</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {existingPhotos.map((photoUrl, index) => (
-                    <div key={`existing-${index}`} className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center">
+                    <div 
+                      key={`existing-${index}`} 
+                      className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => {
+                        setLightboxIndex(index);
+                        setLightboxOpen(true);
+                      }}
+                    >
                       <img
                         src={photoUrl}
                         alt={`Existing photo ${index + 1}`}
@@ -248,7 +262,14 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
                 <p className="text-xs text-muted-foreground mb-2">New Screenshots</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {screenshots.map((screenshot, index) => (
-                    <div key={`new-${index}`} className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center">
+                    <div 
+                      key={`new-${index}`} 
+                      className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={() => {
+                        setLightboxIndex(existingPhotos.length + index);
+                        setLightboxOpen(true);
+                      }}
+                    >
                       <img
                         src={screenshot}
                         alt={`Screenshot ${index + 1}`}
@@ -258,8 +279,11 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
                         type="button"
                         variant="destructive"
                         size="icon"
-                        className="absolute top-1 right-1 h-6 w-6"
-                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-1 right-1 h-6 w-6 z-10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage(index);
+                        }}
                       >
                         ×
                       </Button>
@@ -309,6 +333,14 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <ImageLightbox
+        images={allImages}
+        currentIndex={lightboxIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        onNavigate={setLightboxIndex}
+      />
     </Dialog>
   );
 };
