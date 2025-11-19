@@ -68,21 +68,23 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
             }).filter(Boolean);
             
             setExistingPhotos(photoUrls);
-            setAllImages([...photoUrls, ...screenshots]);
           } catch (error) {
             console.error("Failed to load existing photos:", error);
             setExistingPhotos([]);
-            setAllImages([...screenshots]);
           }
         } else {
           setExistingPhotos([]);
-          setAllImages([...screenshots]);
         }
       }
     };
     
     loadPhotos();
-  }, [ticket, screenshots]);
+  }, [ticket]);
+
+  // Update allImages when existingPhotos or screenshots change
+  useEffect(() => {
+    setAllImages([...existingPhotos, ...screenshots]);
+  }, [existingPhotos, screenshots]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
