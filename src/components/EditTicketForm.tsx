@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Upload, X, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ImageLightbox } from "@/components/ImageLightbox";
 
 interface EditTicketFormProps {
   ticket: Ticket;
@@ -26,6 +27,8 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
   const [issueType, setIssueType] = useState("");
   const [description, setDescription] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Initialize form with ticket data
   useEffect(() => {
@@ -236,12 +239,19 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
                   <img
                     src={screenshot}
                     alt={`Screenshot ${index + 1}`}
-                    className="h-20 w-20 object-cover rounded-md"
+                    className="h-20 w-20 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => {
+                      setLightboxIndex(index);
+                      setLightboxOpen(true);
+                    }}
                   />
                   <button
                     type="button"
-                    onClick={() => removeScreenshot(index)}
-                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeScreenshot(index);
+                    }}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -271,6 +281,14 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
           </div>
         </form>
       </DialogContent>
+
+      <ImageLightbox
+        images={screenshots}
+        currentIndex={lightboxIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        onNavigate={setLightboxIndex}
+      />
     </Dialog>
   );
 };
