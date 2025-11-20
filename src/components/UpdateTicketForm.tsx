@@ -38,7 +38,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
         setStatus(ticket.status);
         setRemarks(ticket.remarks || "");
         setRootCause(ticket.rootCause || "");
-        setScreenshots(ticket.screenshots || []);
+        setScreenshots([]); // Always start fresh - existing images are in existingPhotos
         setPriority(ticket.priority || false);
         setEffortInMinutes(ticket.effort_minutes?.toString() || "");
         
