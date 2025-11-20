@@ -61,12 +61,12 @@ export const ImageLightbox = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-background/95 backdrop-blur-sm"
+        className="absolute inset-0 bg-background/95 backdrop-blur-sm z-0"
         onClick={() => onOpenChange(false)}
       />
       
       {/* Content */}
-      <div className="relative w-full h-full flex items-center justify-center p-4">
+      <div className="relative w-full h-full flex items-center justify-center p-4 z-10">
         <Button
           variant="ghost"
           size="icon"
