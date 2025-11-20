@@ -81,7 +81,10 @@ export const ImageLightbox = ({
             variant="ghost"
             size="icon"
             className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 hover:bg-background"
-            onClick={handlePrevious}
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrevious();
+            }}
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
@@ -91,6 +94,7 @@ export const ImageLightbox = ({
           src={images[currentIndex]}
           alt={`Screenshot ${currentIndex + 1}`}
           className="max-w-full max-h-full object-contain"
+          onClick={(e) => e.stopPropagation()}
         />
 
         {images.length > 1 && currentIndex < images.length - 1 && (
@@ -98,7 +102,10 @@ export const ImageLightbox = ({
             variant="ghost"
             size="icon"
             className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 hover:bg-background"
-            onClick={handleNext}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNext();
+            }}
           >
             <ChevronRight className="h-6 w-6" />
           </Button>
