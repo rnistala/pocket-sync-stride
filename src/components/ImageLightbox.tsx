@@ -61,17 +61,20 @@ export const ImageLightbox = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-background/95 backdrop-blur-sm z-0"
+        className="absolute inset-0 bg-background/95 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
       
       {/* Content */}
-      <div className="relative w-full h-full flex items-center justify-center p-4 z-10">
+      <div className="relative w-full h-full flex items-center justify-center p-4 pointer-events-none">
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 z-10 h-8 w-8 rounded-full bg-background/80 hover:bg-background"
-          onClick={() => onOpenChange(false)}
+          className="absolute top-4 right-4 z-10 h-8 w-8 rounded-full bg-background/80 hover:bg-background pointer-events-auto"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenChange(false);
+          }}
         >
           <X className="h-4 w-4" />
         </Button>
@@ -80,9 +83,10 @@ export const ImageLightbox = ({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 hover:bg-background"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 hover:bg-background pointer-events-auto"
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               handlePrevious();
             }}
           >
@@ -93,7 +97,7 @@ export const ImageLightbox = ({
         <img
           src={images[currentIndex]}
           alt={`Screenshot ${currentIndex + 1}`}
-          className="max-w-full max-h-full object-contain"
+          className="max-w-full max-h-full object-contain pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         />
 
@@ -101,9 +105,10 @@ export const ImageLightbox = ({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 hover:bg-background"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 rounded-full bg-background/80 hover:bg-background pointer-events-auto"
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               handleNext();
             }}
           >
@@ -112,7 +117,7 @@ export const ImageLightbox = ({
         )}
 
         {images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background/80 text-sm">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background/80 text-sm pointer-events-none">
             {currentIndex + 1} / {images.length}
           </div>
         )}
