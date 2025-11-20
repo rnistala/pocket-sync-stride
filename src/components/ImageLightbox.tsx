@@ -33,13 +33,27 @@ export const ImageLightbox = ({
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
+      
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onOpenChange(false);
+        } else if (e.key === 'ArrowLeft') {
+          handlePrevious();
+        } else if (e.key === 'ArrowRight') {
+          handleNext();
+        }
+      };
+      
+      window.addEventListener('keydown', handleKeyDown);
+      
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+      };
     } else {
       document.body.style.overflow = 'unset';
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [open]);
+  }, [open, currentIndex, images.length]);
 
   if (!open) return null;
 
