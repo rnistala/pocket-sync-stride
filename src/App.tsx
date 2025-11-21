@@ -10,6 +10,8 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import ContactInteractions from "./pages/ContactInteractions";
 import Tickets from "./pages/Tickets";
+import EditTicket from "./pages/EditTicket";
+import UpdateTicket from "./pages/UpdateTicket";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
 import Marketing from "./pages/Marketing";
@@ -42,6 +44,8 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/contact/:id/details" element={<ContactInteractions />} />
               <Route path="/tickets" element={<Tickets />} />
+              <Route path="/tickets/edit/:id" element={<EditTicket />} />
+              <Route path="/tickets/update/:id" element={<UpdateTicket />} />
               <Route path="/install" element={<Install />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
