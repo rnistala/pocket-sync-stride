@@ -333,9 +333,18 @@ export default function Tickets() {
             <Card 
               className="cursor-pointer hover:bg-accent transition-colors"
               onClick={() => {
-                setPriorityFilter(priorityFilter === true ? null : true);
-                setAgeFilter("all");
-                setStatusFilter("all");
+                const newParams = new URLSearchParams(searchParams);
+                // Toggle priority
+                if (priorityFilter === true) {
+                  newParams.delete("priority");
+                } else {
+                  newParams.set("priority", "true");
+                }
+                // Clear other filters
+                newParams.delete("age");
+                newParams.delete("status");
+                newParams.delete("filter");
+                setSearchParams(newParams);
               }}
             >
               <CardContent className="p-4 flex flex-col">
@@ -346,9 +355,18 @@ export default function Tickets() {
             <Card 
               className="cursor-pointer hover:bg-accent transition-colors"
               onClick={() => {
-                setAgeFilter(ageFilter === "older-than-10-days" ? "all" : "older-than-10-days");
-                setPriorityFilter(null);
-                setStatusFilter("all");
+                const newParams = new URLSearchParams(searchParams);
+                // Toggle age filter
+                if (ageFilter === "older-than-10-days") {
+                  newParams.delete("age");
+                } else {
+                  newParams.set("age", "older-than-10-days");
+                }
+                // Clear other filters
+                newParams.delete("priority");
+                newParams.delete("status");
+                newParams.delete("filter");
+                setSearchParams(newParams);
               }}
             >
               <CardContent className="p-4 flex flex-col">
