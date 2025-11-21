@@ -17,7 +17,7 @@ export default function UpdateTicket() {
   const { tickets, updateTicket } = useLeadContext();
   
   const [isLoading, setIsLoading] = useState(true);
-  const [ticket, setTicket] = useState<Ticket | undefined>(tickets.find(t => t.id === id));
+  const [ticket, setTicket] = useState<Ticket | undefined>(tickets.find(t => String(t.id) === id));
   
   const [targetDate, setTargetDate] = useState("");
   const [status, setStatus] = useState<"OPEN" | "IN PROGRESS" | "CLOSED">("OPEN");
@@ -135,7 +135,7 @@ export default function UpdateTicket() {
   // Reactive ticket lookup - update when tickets array changes
   useEffect(() => {
     if (!ticket && id) {
-      const foundTicket = tickets.find(t => t.id === id);
+      const foundTicket = tickets.find(t => String(t.id) === id);
       if (foundTicket) {
         console.log("[UPDATE TICKET] Ticket found in updated context:", foundTicket);
         setTicket(foundTicket);
