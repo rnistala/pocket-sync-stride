@@ -25,8 +25,8 @@ const mapIssueTypeToDisplay = (code: string): string => {
   return ISSUE_TYPE_REVERSE_MAP[code] || code;
 };
 
-const DB_NAME = "LeadManagerDB";
-const DB_VERSION = 4;
+export const DB_NAME = "LeadManagerDB";
+export const DB_VERSION = 4;
 const CONTACTS_STORE = "contacts";
 const INTERACTIONS_STORE = "interactions";
 const METADATA_STORE = "metadata";
@@ -48,7 +48,6 @@ export interface Ticket {
   screenshots: string[]; // Array of base64 encoded images
   photo?: any[]; // Array of photo metadata from server
   priority?: boolean; // Star mark for priority tickets
-  effort_in_hours?: number; // Effort in hours to solve the ticket
   effort_minutes?: number; // Effort in minutes to solve the ticket
   syncStatus: "synced" | "pending" | "local";
 }
@@ -1295,7 +1294,6 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             screenshots: [],
             photo: apiTicket.photo || [],
             priority: apiTicket.priority === "High",
-            effort_in_hours: apiTicket.effort_in_hours,
             effort_minutes: apiTicket.effort_minutes,
             syncStatus: "synced" as const,
           }));

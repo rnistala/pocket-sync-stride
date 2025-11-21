@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLeadContext, Ticket } from "@/contexts/LeadContext";
+import { useLeadContext, Ticket, DB_NAME, DB_VERSION } from "@/contexts/LeadContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,9 +91,10 @@ export default function UpdateTicket() {
     const loadTicket = async () => {
       if (!ticket && id && isLoading) {
         console.log("[UPDATE TICKET] Ticket not found in context, loading from IndexedDB...");
+        console.log("[UPDATE TICKET] Looking for ticket ID:", id);
+        console.log("[UPDATE TICKET] Available ticket IDs in context:", tickets.map(t => t.id));
         try {
-          const dbName = "LeadManagerDB";
-          const request = indexedDB.open(dbName);
+          const request = indexedDB.open(DB_NAME, DB_VERSION);
           
           request.onsuccess = () => {
             const db = request.result;
@@ -130,6 +131,18 @@ export default function UpdateTicket() {
     
     loadTicket();
   }, [id, ticket, isLoading]);
+
+  // Reactive ticket lookup - update when tickets array changes
+  useEffect(() => {
+    if (!ticket && id) {
+      const foundTicket = tickets.find(t => t.id === id);
+      if (foundTicket) {
+        console.log("[UPDATE TICKET] Ticket found in updated context:", foundTicket);
+        setTicket(foundTicket);
+        setIsLoading(false);
+      }
+    }
+  }, [tickets, id, ticket]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
