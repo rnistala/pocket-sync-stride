@@ -335,6 +335,7 @@ export default function Tickets() {
               onClick={() => {
                 setPriorityFilter(priorityFilter === true ? null : true);
                 setAgeFilter("all");
+                setStatusFilter("all");
               }}
             >
               <CardContent className="p-4 flex flex-col">
@@ -347,6 +348,7 @@ export default function Tickets() {
               onClick={() => {
                 setAgeFilter(ageFilter === "older-than-10-days" ? "all" : "older-than-10-days");
                 setPriorityFilter(null);
+                setStatusFilter("all");
               }}
             >
               <CardContent className="p-4 flex flex-col">
