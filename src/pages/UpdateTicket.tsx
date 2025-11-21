@@ -14,8 +14,9 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 export default function UpdateTicket() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tickets, updateTicket } = useLeadContext();
+  const { tickets, updateTicket, fetchTickets } = useLeadContext();
   
+  const [isLoading, setIsLoading] = useState(true);
   const ticket = tickets.find(t => t.id === id);
   
   const [targetDate, setTargetDate] = useState("");
@@ -84,6 +85,21 @@ export default function UpdateTicket() {
   useEffect(() => {
     setAllImages([...existingPhotos, ...screenshots]);
   }, [existingPhotos, screenshots]);
+
+  // Fetch tickets if the ticket isn't found (handles newly created tickets)
+  useEffect(() => {
+    const loadTicket = async () => {
+      if (!ticket && id && isLoading) {
+        console.log("[UPDATE TICKET] Ticket not found in context, fetching tickets...");
+        await fetchTickets();
+        setIsLoading(false);
+      } else if (ticket) {
+        setIsLoading(false);
+      }
+    };
+    
+    loadTicket();
+  }, [id, ticket, fetchTickets, isLoading]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -155,6 +171,16 @@ export default function UpdateTicket() {
 
     navigate("/tickets");
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-textured flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading ticket...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!ticket) {
     return (
