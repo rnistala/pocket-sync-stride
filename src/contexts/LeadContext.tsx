@@ -1281,7 +1281,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
         if (result.data && result.data[0] && result.data[0].body) {
           const fetchedTickets = result.data[0].body.map((apiTicket: any) => ({
-            id: apiTicket.id || crypto.randomUUID(),
+            id: String(apiTicket.id || crypto.randomUUID()),
             ticketId: apiTicket.ticket_id,
             contactId: apiTicket.contact || "",
             reportedDate: apiTicket.report_date || new Date().toISOString(),
@@ -1422,12 +1422,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             console.log("[SYNC TICKETS] Create SUCCESS - parsed result:", result);
 
             // Extract server IDs from response
-            let serverId = ticket.id;
+            let serverId: string = ticket.id;
             let serverTicketId = ticket.ticketId;
 
             if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
               const responseBody = result.Detail[0].body[0];
-              serverId = responseBody.id || serverId;
+              serverId = responseBody.id ? String(responseBody.id) : serverId;
               serverTicketId = responseBody.ticket_id || serverTicketId;
               console.log("[SYNC TICKETS] Extracted server IDs - id:", serverId, "ticket_id:", serverTicketId);
             }
@@ -1780,12 +1780,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       console.log("[TICKET] API response:", result);
 
       // Extract id and ticket_id from response (API returns in Detail array)
-      let serverId = crypto.randomUUID();
+      let serverId: string = crypto.randomUUID();
       let serverTicketId = undefined;
 
       if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
         const responseBody = result.Detail[0].body[0];
-        serverId = responseBody.id || serverId;
+        serverId = responseBody.id ? String(responseBody.id) : serverId;
         serverTicketId = responseBody.ticket_id;
       }
 
