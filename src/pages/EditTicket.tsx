@@ -296,7 +296,7 @@ export default function EditTicket() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[--radix-popover-trigger-width] max-w-[92vw] p-0">
-                  <Command>
+                  <Command shouldFilter={false}>
                     <CommandInput 
                       placeholder="Search contact..." 
                       value={contactSearch}
