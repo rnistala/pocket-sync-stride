@@ -20,7 +20,7 @@ export default function EditTicket() {
   const { tickets, contacts, updateTicket } = useLeadContext();
   
   const [isLoading, setIsLoading] = useState(true);
-  const [ticket, setTicket] = useState<Ticket | undefined>(tickets.find(t => t.id === id));
+  const [ticket, setTicket] = useState<Ticket | undefined>(tickets.find(t => String(t.id) === id));
   
   const [contactOpen, setContactOpen] = useState(false);
   const [contactId, setContactId] = useState("");
@@ -135,7 +135,7 @@ export default function EditTicket() {
   // Reactive ticket lookup - update when tickets array changes
   useEffect(() => {
     if (!ticket && id) {
-      const foundTicket = tickets.find(t => t.id === id);
+      const foundTicket = tickets.find(t => String(t.id) === id);
       if (foundTicket) {
         console.log("[EDIT TICKET] Ticket found in updated context:", foundTicket);
         setTicket(foundTicket);
