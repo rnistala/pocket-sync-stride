@@ -14,10 +14,10 @@ import { ImageLightbox } from "@/components/ImageLightbox";
 export default function UpdateTicket() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tickets, updateTicket, fetchTickets } = useLeadContext();
+  const { tickets, updateTicket } = useLeadContext();
   
   const [isLoading, setIsLoading] = useState(true);
-  const ticket = tickets.find(t => t.id === id);
+  const [ticket, setTicket] = useState<Ticket | undefined>(tickets.find(t => t.id === id));
   
   const [targetDate, setTargetDate] = useState("");
   const [status, setStatus] = useState<"OPEN" | "IN PROGRESS" | "CLOSED">("OPEN");
@@ -86,20 +86,50 @@ export default function UpdateTicket() {
     setAllImages([...existingPhotos, ...screenshots]);
   }, [existingPhotos, screenshots]);
 
-  // Fetch tickets if the ticket isn't found (handles newly created tickets)
+  // Load ticket from IndexedDB if not found in context (handles newly created tickets)
   useEffect(() => {
     const loadTicket = async () => {
       if (!ticket && id && isLoading) {
-        console.log("[UPDATE TICKET] Ticket not found in context, fetching tickets...");
-        await fetchTickets();
-        setIsLoading(false);
+        console.log("[UPDATE TICKET] Ticket not found in context, loading from IndexedDB...");
+        try {
+          const dbName = "LeadManagerDB";
+          const request = indexedDB.open(dbName);
+          
+          request.onsuccess = () => {
+            const db = request.result;
+            const transaction = db.transaction("tickets", "readonly");
+            const store = transaction.objectStore("tickets");
+            const getRequest = store.get(id);
+            
+            getRequest.onsuccess = () => {
+              if (getRequest.result) {
+                console.log("[UPDATE TICKET] Ticket loaded from IndexedDB:", getRequest.result);
+                setTicket(getRequest.result);
+              }
+              setIsLoading(false);
+            };
+            
+            getRequest.onerror = () => {
+              console.error("[UPDATE TICKET] Failed to load ticket from IndexedDB");
+              setIsLoading(false);
+            };
+          };
+          
+          request.onerror = () => {
+            console.error("[UPDATE TICKET] Failed to open IndexedDB");
+            setIsLoading(false);
+          };
+        } catch (error) {
+          console.error("[UPDATE TICKET] Error loading ticket:", error);
+          setIsLoading(false);
+        }
       } else if (ticket) {
         setIsLoading(false);
       }
     };
     
     loadTicket();
-  }, [id, ticket, fetchTickets, isLoading]);
+  }, [id, ticket, isLoading]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useLeadContext } from "@/contexts/LeadContext";
+import { useLeadContext, Ticket } from "@/contexts/LeadContext";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +17,10 @@ import { getApiRoot } from "@/lib/config";
 export default function EditTicket() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tickets, contacts, updateTicket, fetchTickets } = useLeadContext();
+  const { tickets, contacts, updateTicket } = useLeadContext();
   
   const [isLoading, setIsLoading] = useState(true);
-  const ticket = tickets.find(t => t.id === id);
+  const [ticket, setTicket] = useState<Ticket | undefined>(tickets.find(t => t.id === id));
   
   const [contactOpen, setContactOpen] = useState(false);
   const [contactId, setContactId] = useState("");
@@ -86,20 +86,50 @@ export default function EditTicket() {
     setAllImages([...existingPhotos, ...screenshots]);
   }, [existingPhotos, screenshots]);
 
-  // Fetch tickets if the ticket isn't found (handles newly created tickets)
+  // Load ticket from IndexedDB if not found in context (handles newly created tickets)
   useEffect(() => {
     const loadTicket = async () => {
       if (!ticket && id && isLoading) {
-        console.log("[EDIT TICKET] Ticket not found in context, fetching tickets...");
-        await fetchTickets();
-        setIsLoading(false);
+        console.log("[EDIT TICKET] Ticket not found in context, loading from IndexedDB...");
+        try {
+          const dbName = "LeadManagerDB";
+          const request = indexedDB.open(dbName);
+          
+          request.onsuccess = () => {
+            const db = request.result;
+            const transaction = db.transaction("tickets", "readonly");
+            const store = transaction.objectStore("tickets");
+            const getRequest = store.get(id);
+            
+            getRequest.onsuccess = () => {
+              if (getRequest.result) {
+                console.log("[EDIT TICKET] Ticket loaded from IndexedDB:", getRequest.result);
+                setTicket(getRequest.result);
+              }
+              setIsLoading(false);
+            };
+            
+            getRequest.onerror = () => {
+              console.error("[EDIT TICKET] Failed to load ticket from IndexedDB");
+              setIsLoading(false);
+            };
+          };
+          
+          request.onerror = () => {
+            console.error("[EDIT TICKET] Failed to open IndexedDB");
+            setIsLoading(false);
+          };
+        } catch (error) {
+          console.error("[EDIT TICKET] Error loading ticket:", error);
+          setIsLoading(false);
+        }
       } else if (ticket) {
         setIsLoading(false);
       }
     };
     
     loadTicket();
-  }, [id, ticket, fetchTickets, isLoading]);
+  }, [id, ticket, isLoading]);
 
   // Get selected contact display name
   const selectedContact = useMemo(() => 
