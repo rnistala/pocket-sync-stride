@@ -193,7 +193,7 @@ export default function EditTicket() {
       description: "The ticket details have been updated successfully",
     });
 
-    navigate("/tickets");
+    navigate(-1);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -257,7 +257,7 @@ export default function EditTicket() {
       <div className="min-h-screen bg-textured flex items-center justify-center">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">Ticket not found</p>
-          <Button onClick={() => navigate("/tickets")}>Back to Tickets</Button>
+          <Button onClick={() => navigate(-1)}>Back to Tickets</Button>
         </div>
       </div>
     );
@@ -269,7 +269,7 @@ export default function EditTicket() {
         <div className="sticky top-0 z-10 bg-textured backdrop-blur-sm border-b border-border">
           <div className="max-w-3xl mx-auto px-4 py-3">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/tickets")}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(-1)}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <h1 className="text-lg font-semibold text-foreground">Edit Ticket Details</h1>
@@ -438,7 +438,7 @@ export default function EditTicket() {
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate("/tickets")}>
+              <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                 Cancel
               </Button>
               <Button type="submit">Save Changes</Button>
