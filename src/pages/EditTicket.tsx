@@ -17,8 +17,9 @@ import { getApiRoot } from "@/lib/config";
 export default function EditTicket() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tickets, contacts, updateTicket } = useLeadContext();
+  const { tickets, contacts, updateTicket, fetchTickets } = useLeadContext();
   
+  const [isLoading, setIsLoading] = useState(true);
   const ticket = tickets.find(t => t.id === id);
   
   const [contactOpen, setContactOpen] = useState(false);
@@ -84,6 +85,21 @@ export default function EditTicket() {
   useEffect(() => {
     setAllImages([...existingPhotos, ...screenshots]);
   }, [existingPhotos, screenshots]);
+
+  // Fetch tickets if the ticket isn't found (handles newly created tickets)
+  useEffect(() => {
+    const loadTicket = async () => {
+      if (!ticket && id && isLoading) {
+        console.log("[EDIT TICKET] Ticket not found in context, fetching tickets...");
+        await fetchTickets();
+        setIsLoading(false);
+      } else if (ticket) {
+        setIsLoading(false);
+      }
+    };
+    
+    loadTicket();
+  }, [id, ticket, fetchTickets, isLoading]);
 
   // Get selected contact display name
   const selectedContact = useMemo(() => 
@@ -182,6 +198,16 @@ export default function EditTicket() {
     document.addEventListener('paste', handlePaste);
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-textured flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading ticket...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!ticket) {
     return (
