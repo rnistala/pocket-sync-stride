@@ -20,17 +20,80 @@ export default function Tickets() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const initialFilter = searchParams.get("filter") || "all";
+  const [searchParams, setSearchParams] = useSearchParams();
   const userCompany = localStorage.getItem("userCompany"); // Check if customer
   
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>(initialFilter);
-  const [issueTypeFilter, setIssueTypeFilter] = useState<string>("all");
-  const [contactFilter, setContactFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<boolean | null>(null);
-  const [ageFilter, setAgeFilter] = useState<"all" | "older-than-10-days">("all");
+  // Read filters from URL params
+  const searchQuery = searchParams.get("search") || "";
+  const statusFilter = searchParams.get("status") || searchParams.get("filter") || "all";
+  const issueTypeFilter = searchParams.get("issueType") || "all";
+  const contactFilter = searchParams.get("contact") || "all";
+  const priorityFilter = searchParams.get("priority") === "true" ? true : searchParams.get("priority") === "false" ? false : null;
+  const ageFilter = (searchParams.get("age") as "all" | "older-than-10-days") || "all";
   const [mounted, setMounted] = useState(false);
+
+  // Filter setter functions that update URL params
+  const setSearchQuery = (value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value) {
+      newParams.set("search", value);
+    } else {
+      newParams.delete("search");
+    }
+    setSearchParams(newParams);
+  };
+
+  const setStatusFilter = (value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === "all") {
+      newParams.delete("status");
+      newParams.delete("filter");
+    } else {
+      newParams.set("status", value);
+      newParams.delete("filter");
+    }
+    setSearchParams(newParams);
+  };
+
+  const setIssueTypeFilter = (value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === "all") {
+      newParams.delete("issueType");
+    } else {
+      newParams.set("issueType", value);
+    }
+    setSearchParams(newParams);
+  };
+
+  const setContactFilter = (value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === "all") {
+      newParams.delete("contact");
+    } else {
+      newParams.set("contact", value);
+    }
+    setSearchParams(newParams);
+  };
+
+  const setPriorityFilter = (value: boolean | null) => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === null) {
+      newParams.delete("priority");
+    } else {
+      newParams.set("priority", String(value));
+    }
+    setSearchParams(newParams);
+  };
+
+  const setAgeFilter = (value: "all" | "older-than-10-days") => {
+    const newParams = new URLSearchParams(searchParams);
+    if (value === "all") {
+      newParams.delete("age");
+    } else {
+      newParams.set("age", value);
+    }
+    setSearchParams(newParams);
+  };
   const hasSynced = useRef(false);
 
   // Defer search query for non-blocking updates
