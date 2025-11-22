@@ -209,6 +209,7 @@ export default function Tickets() {
       filtered = filtered.filter(ticket => {
         const contact = contactMap.get(ticket.contactId);
         return (
+          (ticket.ticketId || "").toLowerCase().includes(query) ||
           ticket.issueType.toLowerCase().includes(query) ||
           ticket.description.toLowerCase().includes(query) ||
           (contact?.name || "").toLowerCase().includes(query) ||
