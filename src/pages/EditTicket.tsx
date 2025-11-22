@@ -33,12 +33,23 @@ export default function EditTicket() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  // Normalize issue type to handle legacy display names
+  const normalizeIssueType = (type: string): string => {
+    const legacyMap: Record<string, string> = {
+      'Bug': 'BR',
+      'Feature Request': 'FR',
+      'Support': 'SR',
+      'Meeting': 'MG',
+    };
+    return legacyMap[type] || type;
+  };
+
   // Initialize form with ticket data
   useEffect(() => {
     const loadPhotos = async () => {
       if (ticket) {
         setContactId(ticket.contactId);
-        setIssueType(ticket.issueType);
+        setIssueType(normalizeIssueType(ticket.issueType));
         setDescription(ticket.description);
         setScreenshots(ticket.screenshots || []);
         
