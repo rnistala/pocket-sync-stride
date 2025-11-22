@@ -1518,167 +1518,192 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       }
 
       console.log("\n=== [SYNC TICKETS] Step 2: Fetching changed tickets from server ===");
-      // Step 2: Fetch tickets changed on server since last sync
-      const lastSyncStr = localStorage.getItem("lastTicketSync");
-      const lastSyncDate = lastSyncStr || new Date(0).toISOString();
-
-      console.log("[SYNC TICKETS] Last sync date:", lastSyncDate);
+      // Step 2: Fetch tickets from server with pagination
+      const BATCH_SIZE = 1000;
+      let offset = 0;
+      let allApiTickets: any[] = [];
+      let hasMore = true;
 
       const fetchUrl = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
       console.log("[SYNC TICKETS] Fetch URL:", fetchUrl);
-      
-      // Build payload - add extra filter for customer logins
-      const fetchPayload: any = {
-        id: 555,
-        offset: 0,
-        limit: 100,
-      };
-      
-      const userCompany = getUserCompany();
-      if (userCompany) {
-        // Parse user token to get user details
-        const userData = JSON.parse(token);
-        const userName = userData.companyforeign || userData.name || "";
+
+      while (hasMore) {
+        console.log("[SYNC TICKETS] Fetching batch at offset:", offset);
         
-        fetchPayload.extra = [{
-          operator: "in",
-          value: userCompany,
-          tablename: "ticket",
-          columnname: "contact",
-          function: "",
-          datatype: "Selection",
-          enable: "true",
-          show: userName,
-          extracolumn: "contact"
-        }];
+        // Build payload - add extra filter for customer logins
+        const fetchPayload: any = {
+          id: 555,
+          offset,
+          limit: BATCH_SIZE,
+        };
+        
+        const userCompany = getUserCompany();
+        if (userCompany) {
+          // Parse user token to get user details
+          const userData = JSON.parse(token);
+          const userName = userData.companyforeign || userData.name || "";
+          
+          fetchPayload.extra = [{
+            operator: "in",
+            value: userCompany,
+            tablename: "ticket",
+            columnname: "contact",
+            function: "",
+            datatype: "Selection",
+            enable: "true",
+            show: userName,
+            extracolumn: "contact"
+          }];
+        }
+
+        console.log("[SYNC TICKETS] Fetch payload:", JSON.stringify(fetchPayload, null, 2));
+
+        const fetchResponse = await fetch(fetchUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(fetchPayload),
+        });
+
+        console.log("[SYNC TICKETS] Fetch response status:", fetchResponse.status);
+        console.log("[SYNC TICKETS] Fetch response ok:", fetchResponse.ok);
+
+        if (fetchResponse.ok) {
+          const fetchResponseText = await fetchResponse.text();
+          console.log("[SYNC TICKETS] Fetch response body length:", fetchResponseText.length);
+
+          const result = JSON.parse(fetchResponseText);
+          console.log("[SYNC TICKETS] Fetch SUCCESS - parsed result");
+
+          if (result.data && result.data[0] && result.data[0].body) {
+            const batchTickets = result.data[0].body;
+            console.log(`[SYNC TICKETS] Fetched ${batchTickets.length} tickets at offset ${offset}`);
+
+            if (batchTickets.length === 0) {
+              hasMore = false;
+              break;
+            }
+
+            allApiTickets = [...allApiTickets, ...batchTickets];
+            offset += BATCH_SIZE;
+
+            console.log(`[SYNC TICKETS] Total tickets fetched so far: ${allApiTickets.length}`);
+
+            if (batchTickets.length < BATCH_SIZE) {
+              console.log(`[SYNC TICKETS] Last batch received ${batchTickets.length} tickets (less than ${BATCH_SIZE}), stopping`);
+              hasMore = false;
+            }
+          } else {
+            console.warn("[SYNC TICKETS] No tickets in response or unexpected structure");
+            hasMore = false;
+          }
+        } else {
+          const fetchResponseText = await fetchResponse.text();
+          console.error("[SYNC TICKETS] Fetch FAILED with status:", fetchResponse.status);
+          console.error("[SYNC TICKETS] Error response:", fetchResponseText);
+          hasMore = false;
+        }
       }
 
-      console.log("[SYNC TICKETS] Fetch payload:", JSON.stringify(fetchPayload, null, 2));
+      if (allApiTickets.length > 0) {
+        console.log("[SYNC TICKETS] Total tickets fetched from server:", allApiTickets.length);
 
-      const fetchResponse = await fetch(fetchUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(fetchPayload),
-      });
-
-      console.log("[SYNC TICKETS] Fetch response status:", fetchResponse.status);
-      console.log("[SYNC TICKETS] Fetch response ok:", fetchResponse.ok);
-
-      const fetchResponseText = await fetchResponse.text();
-      console.log("[SYNC TICKETS] Fetch response body:", fetchResponseText);
-
-      if (fetchResponse.ok) {
-        const result = JSON.parse(fetchResponseText);
-        console.log("[SYNC TICKETS] Fetch SUCCESS - parsed result:", result);
-
-        if (result.data && result.data[0] && result.data[0].body) {
-          console.log("[SYNC TICKETS] Server tickets found:", result.data[0].body.length);
-
-          const apiTickets = result.data[0].body;
-          console.log("[SYNC TICKETS] Raw API tickets:", apiTickets.length);
-
-          // Filter out invalid tickets and map valid ones
-          const serverTickets = apiTickets
-            .filter((apiTicket: any) => {
-              if (apiTicket.id == null) {
-                console.error("[SYNC TICKETS] Ignoring ticket with null id:", apiTicket);
-                return false;
+        // Filter out invalid tickets and map valid ones
+        const serverTickets = allApiTickets
+          .filter((apiTicket: any) => {
+            if (apiTicket.id == null) {
+              console.error("[SYNC TICKETS] Ignoring ticket with null id:", apiTicket);
+              return false;
+            }
+            return true;
+          })
+          .map((apiTicket: any) => {
+            let photoData = [];
+            if (apiTicket.photo) {
+              try {
+                photoData = typeof apiTicket.photo === 'string' 
+                  ? JSON.parse(apiTicket.photo) 
+                  : apiTicket.photo;
+              } catch (e) {
+                console.error("[SYNC TICKETS] Failed to parse photo data:", e);
+                photoData = [];
               }
-              return true;
-            })
-            .map((apiTicket: any) => {
-              let photoData = [];
-              if (apiTicket.photo) {
-                try {
-                  photoData = typeof apiTicket.photo === 'string' 
-                    ? JSON.parse(apiTicket.photo) 
-                    : apiTicket.photo;
-                } catch (e) {
-                  console.error("[SYNC TICKETS] Failed to parse photo data:", e);
-                  photoData = [];
-                }
-              }
-              
-              return {
-                id: Number(apiTicket.id),
-                ticketId: apiTicket.ticket_id ? String(apiTicket.ticket_id) : undefined,
-                contactId: apiTicket.contact || "",
-                reportedDate: apiTicket.report_date || new Date().toISOString(),
-                targetDate: apiTicket.target_date || new Date().toISOString(),
-                closedDate: apiTicket.close_date,
-                issueType: mapIssueTypeToDisplay(apiTicket.issue_type || ""),
-                status: apiTicket.status || "OPEN",
-                description: apiTicket.description || "",
-                remarks: apiTicket.remarks || "",
-                rootCause: apiTicket.root_cause || "",
-                screenshots: [],
-                photo: photoData,
-                priority: apiTicket.priority === "High",
-                effort_in_hours: apiTicket.effort_in_hours,
-                effort_minutes: apiTicket.effort_minutes,
-                syncStatus: "synced" as const,
-              };
-            });
-
-          console.log("[SYNC TICKETS] Mapped server tickets:", serverTickets.length);
-          console.log("[SYNC TICKETS] First server ticket sample:", serverTickets[0]);
-
-          // Step 3: Merge with local data
-          const localTickets = await dbManager.getAllTickets();
-          console.log("[SYNC TICKETS] Local tickets before merge:", localTickets.length);
-
-          const mergedTickets = [...localTickets];
-
-          // Update or add server tickets
-          for (const serverTicket of serverTickets) {
-            // Match by ticketId if both tickets have it
-            const existingIndex = mergedTickets.findIndex((t) => 
-              t.ticketId && serverTicket.ticketId && t.ticketId === serverTicket.ticketId
-            );
+            }
             
-            if (existingIndex >= 0) {
-              // Update existing ticket - keep local id if it's negative (local-only), otherwise use server id
-              const localId = mergedTickets[existingIndex].id;
-              mergedTickets[existingIndex] = { 
-                ...serverTicket, 
-                id: localId < 0 ? localId : serverTicket.id 
-              };
-              console.log("[SYNC TICKETS] Updated ticket - ticketId:", serverTicket.ticketId, "id:", serverTicket.id);
-            } else {
-              // Add new ticket from server
-              mergedTickets.push(serverTicket);
-              console.log("[SYNC TICKETS] Added new ticket - ticketId:", serverTicket.ticketId, "id:", serverTicket.id);
-            }
-          }
-
-          // Remove synced tickets that are no longer on server
-          const serverTicketIds = new Set(serverTickets.map((t) => t.ticketId));
-          const filteredTickets = mergedTickets.filter((ticket) => {
-            // Keep locally created tickets (pending sync)
-            if (ticket.syncStatus === "pending") {
-              console.log("[SYNC TICKETS] Keeping locally created ticket:", ticket.id);
-              return true;
-            }
-            // Keep tickets that exist on server
-            if (serverTicketIds.has(ticket.ticketId)) {
-              return true;
-            }
-            // Remove synced tickets not found on server
-            console.log("[SYNC TICKETS] Removing deleted ticket:", ticket.ticketId);
-            return false;
+            return {
+              id: Number(apiTicket.id),
+              ticketId: apiTicket.ticket_id ? String(apiTicket.ticket_id) : undefined,
+              contactId: apiTicket.contact || "",
+              reportedDate: apiTicket.report_date || new Date().toISOString(),
+              targetDate: apiTicket.target_date || new Date().toISOString(),
+              closedDate: apiTicket.close_date,
+              issueType: mapIssueTypeToDisplay(apiTicket.issue_type || ""),
+              status: apiTicket.status || "OPEN",
+              description: apiTicket.description || "",
+              remarks: apiTicket.remarks || "",
+              rootCause: apiTicket.root_cause || "",
+              screenshots: [],
+              photo: photoData,
+              priority: apiTicket.priority === "High",
+              effort_in_hours: apiTicket.effort_in_hours,
+              effort_minutes: apiTicket.effort_minutes,
+              syncStatus: "synced" as const,
+            };
           });
 
-          // Save merged tickets
-          await dbManager.saveTickets(filteredTickets);
-          setTickets(filteredTickets);
-          console.log("[SYNC TICKETS] Merge completed. Total tickets after merge:", filteredTickets.length);
-        } else {
-          console.warn("[SYNC TICKETS] No tickets in server response or unexpected structure");
-          console.warn("[SYNC TICKETS] Response structure:", JSON.stringify(result, null, 2));
+        console.log("[SYNC TICKETS] Mapped server tickets:", serverTickets.length);
+        console.log("[SYNC TICKETS] First server ticket sample:", serverTickets[0]);
+
+        // Step 3: Merge with local data
+        const localTickets = await dbManager.getAllTickets();
+        console.log("[SYNC TICKETS] Local tickets before merge:", localTickets.length);
+
+        const mergedTickets = [...localTickets];
+
+        // Update or add server tickets
+        for (const serverTicket of serverTickets) {
+          // Match by ticketId if both tickets have it
+          const existingIndex = mergedTickets.findIndex((t) => 
+            t.ticketId && serverTicket.ticketId && t.ticketId === serverTicket.ticketId
+          );
+          
+          if (existingIndex >= 0) {
+            // Update existing ticket - keep local id if it's negative (local-only), otherwise use server id
+            const localId = mergedTickets[existingIndex].id;
+            mergedTickets[existingIndex] = { 
+              ...serverTicket, 
+              id: localId < 0 ? localId : serverTicket.id 
+            };
+            console.log("[SYNC TICKETS] Updated ticket - ticketId:", serverTicket.ticketId, "id:", serverTicket.id);
+          } else {
+            // Add new ticket from server
+            mergedTickets.push(serverTicket);
+            console.log("[SYNC TICKETS] Added new ticket - ticketId:", serverTicket.ticketId, "id:", serverTicket.id);
+          }
         }
+
+        // Remove synced tickets that are no longer on server
+        const serverTicketIds = new Set(serverTickets.map((t) => t.ticketId));
+        const filteredTickets = mergedTickets.filter((ticket) => {
+          // Keep locally created tickets (pending sync)
+          if (ticket.syncStatus === "pending") {
+            console.log("[SYNC TICKETS] Keeping locally created ticket:", ticket.id);
+            return true;
+          }
+          // Keep tickets that exist on server
+          if (serverTicketIds.has(ticket.ticketId)) {
+            return true;
+          }
+          // Remove synced tickets not found on server
+          console.log("[SYNC TICKETS] Removing deleted ticket:", ticket.ticketId);
+          return false;
+        });
+
+        // Save merged tickets
+        await dbManager.saveTickets(filteredTickets);
+        setTickets(filteredTickets);
+        console.log("[SYNC TICKETS] Merge completed. Total tickets after merge:", filteredTickets.length);
       } else {
-        console.error("[SYNC TICKETS] Fetch FAILED with status:", fetchResponse.status);
-        console.error("[SYNC TICKETS] Error response:", fetchResponseText);
+        console.log("[SYNC TICKETS] No tickets fetched from server");
       }
 
       localStorage.setItem("lastTicketSync", new Date().toISOString());
