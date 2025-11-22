@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Star, ArrowLeft } from "lucide-react";
+import { Star, ArrowLeft, Upload, X } from "lucide-react";
 import { getApiRoot } from "@/lib/config";
 import { ImageLightbox } from "@/components/ImageLightbox";
 
@@ -304,34 +304,20 @@ export default function UpdateTicket() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="screenshots">Upload Images</Label>
-              <p className="text-xs text-muted-foreground">Upload files or paste screenshots (Ctrl+V / Cmd+V)</p>
-              <Input
-                id="screenshots"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-              />
-              
-              {/* Existing photos from server */}
               {existingPhotos.length > 0 && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Existing Photos</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {existingPhotos.map((photoUrl, index) => (
-                      <div 
-                        key={`existing-${index}`} 
-                        className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => {
-                          setLightboxIndex(index);
-                          setLightboxOpen(true);
-                        }}
-                      >
+                      <div key={`existing-${index}`} className="relative group">
                         <img
                           src={photoUrl}
                           alt={`Existing photo ${index + 1}`}
-                          className="w-full h-full object-contain"
+                          className="h-20 w-20 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => {
+                            setLightboxIndex(index);
+                            setLightboxOpen(true);
+                          }}
                           onError={(e) => {
                             console.error("Failed to load image:", photoUrl);
                             e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999'%3EError%3C/text%3E%3C/svg%3E";
@@ -343,42 +329,49 @@ export default function UpdateTicket() {
                 </div>
               )}
               
-              {/* New screenshots */}
-              {screenshots.length > 0 && (
-                <div>
+              <div>
+                {screenshots.length > 0 && (
                   <p className="text-xs text-muted-foreground mb-2">New Screenshots</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {screenshots.map((screenshot, index) => (
-                      <div 
-                        key={`new-${index}`} 
-                        className="relative aspect-[4/3] bg-muted rounded-md overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
+                )}
+                <div className="flex flex-wrap gap-2">
+                  {screenshots.map((screenshot, index) => (
+                    <div key={`new-${index}`} className="relative group">
+                      <img
+                        src={screenshot}
+                        alt={`Screenshot ${index + 1}`}
+                        className="h-20 w-20 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={() => {
                           setLightboxIndex(existingPhotos.length + index);
                           setLightboxOpen(true);
                         }}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage(index);
+                        }}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-10"
                       >
-                        <img
-                          src={screenshot}
-                          alt={`Screenshot ${index + 1}`}
-                          className="w-full h-full object-contain"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-1 right-1 h-6 w-6 z-10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveImage(index);
-                          }}
-                        >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="h-20 w-20 border-2 border-dashed border-muted-foreground/25 rounded-md flex items-center justify-center cursor-pointer hover:border-muted-foreground/50 transition-colors">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
-              )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                You can also paste images directly (Ctrl/Cmd + V)
+              </p>
             </div>
 
             {status === "CLOSED" && (
