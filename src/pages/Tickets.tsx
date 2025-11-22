@@ -138,7 +138,7 @@ export default function Tickets() {
   }, [location.state]);
 
   const handleSync = async () => {
-    await Promise.all([syncData(), syncTickets()]);
+    await syncTickets(); // Only sync tickets - contacts already synced on login
     setLastSync(new Date());
   };
 
