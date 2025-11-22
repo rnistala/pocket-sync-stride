@@ -246,7 +246,7 @@ export default function Tickets() {
     }
   };
 
-  const handleStatusChange = async (ticketId: string, newStatus: "OPEN" | "IN PROGRESS" | "CLOSED") => {
+  const handleStatusChange = async (ticketId: number, newStatus: "OPEN" | "IN PROGRESS" | "CLOSED") => {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
 
@@ -259,7 +259,7 @@ export default function Tickets() {
     await updateTicket(updatedTicket);
   };
 
-  const handleTogglePriority = async (ticketId: string, e: React.MouseEvent) => {
+  const handleTogglePriority = async (ticketId: number, e: React.MouseEvent) => {
     e.stopPropagation();
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;

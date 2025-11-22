@@ -34,7 +34,7 @@ const ORDERS_STORE = "orders";
 const TICKETS_STORE = "tickets";
 
 export interface Ticket {
-  id: string;
+  id: number;
   ticketId?: string; // Server-assigned ticket ID from API
   contactId: string;
   reportedDate: string;
@@ -1357,8 +1357,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         const existingPhotos = ticket.photo || [];
         const allPhotos = photoMetadata.length > 0 ? [...existingPhotos, ...photoMetadata] : existingPhotos;
 
-        // For tickets without ID - create new
-        if (!ticket.id || ticket.id.includes("-")) {
+        // For tickets without ID or with negative ID (local-only) - create new
+        if (!ticket.id || ticket.id < 0) {
           console.log("[SYNC TICKETS] Creating NEW ticket (no server ID)");
           const createUrl = `${apiRoot}/api/public/tdata/${userId}`;
           console.log("[SYNC TICKETS] Create URL:", createUrl);
@@ -1420,12 +1420,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             console.log("[SYNC TICKETS] Create SUCCESS - parsed result:", result);
 
             // Extract server IDs from response
-            let serverId: string = ticket.id;
+            let serverId: number = ticket.id;
             let serverTicketId = ticket.ticketId;
 
             if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
               const responseBody = result.Detail[0].body[0];
-              serverId = responseBody.id ? String(responseBody.id) : serverId;
+              serverId = responseBody.id ? Number(responseBody.id) : serverId;
               serverTicketId = responseBody.ticket_id || serverTicketId;
               console.log("[SYNC TICKETS] Extracted server IDs - id:", serverId, "ticket_id:", serverTicketId);
             }
@@ -1574,40 +1574,51 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         if (result.data && result.data[0] && result.data[0].body) {
           console.log("[SYNC TICKETS] Server tickets found:", result.data[0].body.length);
 
-          const serverTickets = result.data[0].body.map((apiTicket: any) => {
-            // Parse photo field if it's a JSON string
-            let photoData = [];
-            if (apiTicket.photo) {
-              try {
-                photoData = typeof apiTicket.photo === 'string' 
-                  ? JSON.parse(apiTicket.photo) 
-                  : apiTicket.photo;
-              } catch (e) {
-                console.error("[SYNC TICKETS] Failed to parse photo data:", e);
-                photoData = [];
+          const apiTickets = result.data[0].body;
+          console.log("[SYNC TICKETS] Raw API tickets:", apiTickets.length);
+
+          // Filter out invalid tickets and map valid ones
+          const serverTickets = apiTickets
+            .filter((apiTicket: any) => {
+              if (apiTicket.id == null) {
+                console.error("[SYNC TICKETS] Ignoring ticket with null id:", apiTicket);
+                return false;
               }
-            }
-            
-            return {
-              id: apiTicket.id || crypto.randomUUID(),
-              ticketId: apiTicket.ticket_id,
-              contactId: apiTicket.contact || "",
-              reportedDate: apiTicket.report_date || new Date().toISOString(),
-              targetDate: apiTicket.target_date || new Date().toISOString(),
-              closedDate: apiTicket.close_date,
-              issueType: mapIssueTypeToDisplay(apiTicket.issue_type || ""),
-              status: apiTicket.status || "OPEN",
-              description: apiTicket.description || "",
-              remarks: apiTicket.remarks || "",
-              rootCause: apiTicket.root_cause || "",
-              screenshots: [],
-              photo: photoData,
-              priority: apiTicket.priority === "High",
-              effort_in_hours: apiTicket.effort_in_hours,
-              effort_minutes: apiTicket.effort_minutes,
-              syncStatus: "synced" as const,
-            };
-          });
+              return true;
+            })
+            .map((apiTicket: any) => {
+              let photoData = [];
+              if (apiTicket.photo) {
+                try {
+                  photoData = typeof apiTicket.photo === 'string' 
+                    ? JSON.parse(apiTicket.photo) 
+                    : apiTicket.photo;
+                } catch (e) {
+                  console.error("[SYNC TICKETS] Failed to parse photo data:", e);
+                  photoData = [];
+                }
+              }
+              
+              return {
+                id: Number(apiTicket.id),
+                ticketId: apiTicket.ticket_id ? String(apiTicket.ticket_id) : undefined,
+                contactId: apiTicket.contact || "",
+                reportedDate: apiTicket.report_date || new Date().toISOString(),
+                targetDate: apiTicket.target_date || new Date().toISOString(),
+                closedDate: apiTicket.close_date,
+                issueType: mapIssueTypeToDisplay(apiTicket.issue_type || ""),
+                status: apiTicket.status || "OPEN",
+                description: apiTicket.description || "",
+                remarks: apiTicket.remarks || "",
+                rootCause: apiTicket.root_cause || "",
+                screenshots: [],
+                photo: photoData,
+                priority: apiTicket.priority === "High",
+                effort_in_hours: apiTicket.effort_in_hours,
+                effort_minutes: apiTicket.effort_minutes,
+                syncStatus: "synced" as const,
+              };
+            });
 
           console.log("[SYNC TICKETS] Mapped server tickets:", serverTickets.length);
           console.log("[SYNC TICKETS] First server ticket sample:", serverTickets[0]);
@@ -1620,15 +1631,23 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
           // Update or add server tickets
           for (const serverTicket of serverTickets) {
-            const existingIndex = mergedTickets.findIndex((t) => t.ticketId === serverTicket.ticketId);
+            // Match by ticketId if both tickets have it
+            const existingIndex = mergedTickets.findIndex((t) => 
+              t.ticketId && serverTicket.ticketId && t.ticketId === serverTicket.ticketId
+            );
+            
             if (existingIndex >= 0) {
-              // Update existing ticket - merge with local ID
-              mergedTickets[existingIndex] = { ...serverTicket, id: mergedTickets[existingIndex].id };
-              console.log("[SYNC TICKETS] Updated ticket:", serverTicket.ticketId);
+              // Update existing ticket - keep local id if it's negative (local-only), otherwise use server id
+              const localId = mergedTickets[existingIndex].id;
+              mergedTickets[existingIndex] = { 
+                ...serverTicket, 
+                id: localId < 0 ? localId : serverTicket.id 
+              };
+              console.log("[SYNC TICKETS] Updated ticket - ticketId:", serverTicket.ticketId, "id:", serverTicket.id);
             } else {
               // Add new ticket from server
               mergedTickets.push(serverTicket);
-              console.log("[SYNC TICKETS] Added new ticket:", serverTicket.ticketId);
+              console.log("[SYNC TICKETS] Added new ticket - ticketId:", serverTicket.ticketId, "id:", serverTicket.id);
             }
           }
 
@@ -1778,13 +1797,17 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       console.log("[TICKET] API response:", result);
 
       // Extract id and ticket_id from response (API returns in Detail array)
-      let serverId: string = crypto.randomUUID();
-      let serverTicketId = undefined;
+      let serverId: number | undefined = undefined;
+      let serverTicketId: string | undefined = undefined;
 
       if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
         const responseBody = result.Detail[0].body[0];
-        serverId = responseBody.id ? String(responseBody.id) : serverId;
+        serverId = responseBody.id ? Number(responseBody.id) : undefined;
         serverTicketId = responseBody.ticket_id;
+      }
+
+      if (!serverId) {
+        throw new Error("Server did not return a valid ticket ID");
       }
 
       // Create ticket with server-assigned IDs
@@ -1805,12 +1828,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       console.error("[TICKET] Failed to create ticket:", error);
 
       // Fallback: create ticket locally if API fails
+      const localId = -Date.now(); // Negative number ensures no conflict with server IDs
       const newTicket: Ticket = {
         ...ticket,
-        id: crypto.randomUUID(),
+        id: localId,
         syncStatus: "local",
       };
 
+      console.log("[TICKET] Created local-only ticket with temporary ID:", localId);
       await dbManager.addTicket(newTicket);
       setTickets((prev) => [...prev, newTicket]);
       return newTicket;
@@ -1837,7 +1862,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       const allPhotos = photoMetadata.length > 0 ? [...existingPhotos, ...photoMetadata] : existingPhotos;
 
       const bodyData: any = {
-        id: ticket.id,
+        id: Number(ticket.id),
         status: ticket.status,
         target_date: ticket.targetDate,
         remarks: ticket.remarks || "",
