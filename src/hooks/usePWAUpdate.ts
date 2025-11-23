@@ -24,35 +24,88 @@ export const usePWAUpdate = () => {
     try {
       const registration = await navigator.serviceWorker?.getRegistration();
       if (!registration) {
+        console.log('No SW registration found');
+        return false;
+      }
+
+      // Check if there's already a waiting worker
+      if (registration.waiting) {
+        console.log('Update already waiting');
+        return true;
+      }
+
+      console.log('Checking for SW update...');
+
+      // Force the browser to bypass cache by unregistering and re-registering
+      // This is a workaround for browser caching issues
+      const scriptURL = registration.active?.scriptURL;
+      
+      if (!scriptURL) {
+        console.log('No active SW script URL');
         return false;
       }
 
       // Trigger update check
       await registration.update();
 
-      // Wait for the update to be detected
+      // Wait for update detection with proper state monitoring
       return new Promise((resolve) => {
-        // If there's already a waiting worker, an update is available
+        let timeoutId: NodeJS.Timeout;
+        let stateChangeHandler: (() => void) | null = null;
+        
+        // Check immediately after update()
         if (registration.waiting) {
+          console.log('Update found immediately');
           resolve(true);
           return;
         }
 
-        // Listen for new service worker installing
-        const checkUpdate = () => {
-          if (registration.waiting || registration.installing) {
-            resolve(true);
-            registration.removeEventListener('updatefound', checkUpdate);
+        const handleUpdateFound = () => {
+          console.log('updatefound event fired');
+          const installingWorker = registration.installing;
+          
+          if (!installingWorker) {
+            console.log('No installing worker');
+            return;
+          }
+
+          console.log('Monitoring installing worker state...');
+
+          stateChangeHandler = () => {
+            console.log('SW state:', installingWorker.state);
+            
+            if (installingWorker.state === 'installed') {
+              if (registration.waiting) {
+                console.log('New SW installed and waiting');
+                cleanup();
+                resolve(true);
+              }
+            } else if (installingWorker.state === 'redundant') {
+              console.log('SW redundant - no update');
+              cleanup();
+              resolve(false);
+            }
+          };
+
+          installingWorker.addEventListener('statechange', stateChangeHandler);
+        };
+
+        const cleanup = () => {
+          clearTimeout(timeoutId);
+          registration.removeEventListener('updatefound', handleUpdateFound);
+          if (stateChangeHandler && registration.installing) {
+            registration.installing.removeEventListener('statechange', stateChangeHandler);
           }
         };
 
-        registration.addEventListener('updatefound', checkUpdate);
+        registration.addEventListener('updatefound', handleUpdateFound);
 
-        // Timeout after 5 seconds - no update found
-        setTimeout(() => {
-          registration.removeEventListener('updatefound', checkUpdate);
+        // Increase timeout to 20 seconds for slower networks
+        timeoutId = setTimeout(() => {
+          console.log('Update check timed out');
+          cleanup();
           resolve(false);
-        }, 5000);
+        }, 20000);
       });
     } catch (error) {
       console.error('Error checking for updates:', error);
