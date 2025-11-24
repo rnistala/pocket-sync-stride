@@ -104,7 +104,7 @@ export const FollowUpReminder = () => {
             onSelect={(date) => setSelectedDate(date || new Date())}
             modifiers={{ hasFollowUp: datesWithFollowUps }}
             modifiersClassNames={{
-              hasFollowUp: "relative after:content-['•'] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:text-primary after:text-lg",
+              hasFollowUp: "text-destructive font-semibold",
             }}
             className="pointer-events-auto"
           />
