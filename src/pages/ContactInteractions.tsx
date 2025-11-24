@@ -1359,13 +1359,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(interaction.date).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric' 
-                    })} {new Date(interaction.date).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {format(new Date(interaction.date), 'dd-MMM-yyyy')}
                   </div>
                 </div>
                 <p className="text-sm leading-relaxed">{interaction.notes}</p>
