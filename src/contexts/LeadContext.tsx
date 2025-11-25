@@ -3,6 +3,7 @@ import { Contact, Interaction } from "@/hooks/useLeadStorage";
 import { getApiRoot } from "@/lib/config";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
 
 export const DB_NAME = "LeadManagerDB";
 export const DB_VERSION = 4;
@@ -1828,19 +1829,22 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
 
       console.log("[TICKET] Ticket created successfully. ID:", serverId, "Ticket ID:", serverTicketId);
 
-      // Send email notification
+      // Send email notification for all ticket types
       if (serverTicketId) {
         try {
           const contact = contacts.find(c => c.id === ticket.contactId);
           if (contact && contact.email) {
             console.log("[EMAIL] Sending notification for ticket:", serverTicketId);
             
+            // Convert issue type code to display label (BR -> Problem, FR -> New Work, etc.)
+            const issueTypeLabel = getIssueTypeLabel(ticket.issueType);
+            
             const emailResponse = await supabase.functions.invoke('send-ticket-email', {
               body: {
                 userId: userId,
                 contactEmail: contact.email,
                 ticketId: serverTicketId,
-                issueType: ticket.issueType,
+                issueType: issueTypeLabel,
                 description: ticket.description
               }
             });
