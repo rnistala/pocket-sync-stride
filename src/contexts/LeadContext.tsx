@@ -1851,6 +1851,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             
             console.log("[EMAIL] Response:", emailResponse);
             
+            // Check the status field to determine if email was sent successfully
+            const emailSuccess = emailResponse.data?.success || false;
+            if (!emailSuccess) {
+              console.log("[EMAIL] Failed to send email. Status:", emailResponse.data?.status);
+            }
+            
             if (emailResponse.data?.success && emailResponse.data?.status === 'Send') {
               toast.success(`Ticket ${serverTicketId} created and email sent to ${contact.name}`);
             } else if (emailResponse.data?.status === 'Not Send') {
