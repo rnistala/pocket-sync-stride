@@ -26,7 +26,7 @@ const getBasename = () => {
     return '/';
   }
   // Otherwise use the configured base path for production
-  return '/opterix/';
+  return '/';
 };
 
 const App = () => (
