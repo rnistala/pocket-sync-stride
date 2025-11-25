@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { Contact, Interaction } from "@/hooks/useLeadStorage";
 import { getApiRoot } from "@/lib/config";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const DB_NAME = "LeadManagerDB";
 export const DB_VERSION = 4;
@@ -1826,6 +1827,42 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       setTickets((prev) => [...prev, newTicket]);
 
       console.log("[TICKET] Ticket created successfully. ID:", serverId, "Ticket ID:", serverTicketId);
+
+      // Send email notification
+      if (serverTicketId) {
+        try {
+          const contact = contacts.find(c => c.id === ticket.contactId);
+          if (contact && contact.email) {
+            console.log("[EMAIL] Sending notification for ticket:", serverTicketId);
+            
+            const emailResponse = await supabase.functions.invoke('send-ticket-email', {
+              body: {
+                userId: userId,
+                contactEmail: contact.email,
+                ticketId: serverTicketId,
+                issueType: ticket.issueType,
+                description: ticket.description
+              }
+            });
+            
+            console.log("[EMAIL] Response:", emailResponse);
+            
+            if (emailResponse.data?.success && emailResponse.data?.status === 'Send') {
+              toast.success(`Ticket ${serverTicketId} created and email sent to ${contact.name}`);
+            } else if (emailResponse.data?.status === 'Not Send') {
+              toast.warning(`Ticket ${serverTicketId} created but email was not sent to ${contact.name}`);
+            } else {
+              toast.warning(`Ticket ${serverTicketId} created but failed to send email to ${contact.name}`);
+            }
+          } else {
+            toast.success(`Ticket ${serverTicketId} created successfully`);
+          }
+        } catch (emailError) {
+          console.error("[EMAIL] Error sending notification:", emailError);
+          toast.warning(`Ticket ${serverTicketId} created but failed to send email notification`);
+        }
+      }
+
       return newTicket;
     } catch (error) {
       console.error("[TICKET] Failed to create ticket:", error);
