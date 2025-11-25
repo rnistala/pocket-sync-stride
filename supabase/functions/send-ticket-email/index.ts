@@ -23,12 +23,39 @@ const handler = async (req: Request): Promise<Response> => {
     
     console.log(`[EMAIL] Sending notification for ticket ${ticketId} to ${contactEmail}`);
     
-    // Construct email body
-    const emailBody = `A new ticket has been submitted with the following detail.
+    // Construct HTML email body
+    const emailBody = `
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
+      New Ticket Notification
+    </h2>
     
-Ticket No: ${ticketId}
-Issue Type: ${issueType}
-Description: ${description}`;
+    <p>A new ticket has been submitted with the following details:</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; width: 120px;">Ticket No:</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${ticketId}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Issue Type:</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${issueType}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; vertical-align: top;">Description:</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${description}</td>
+      </tr>
+    </table>
+    
+    <p style="margin-top: 30px; font-size: 12px; color: #6b7280;">
+      This is an automated notification from Opterix 360.
+    </p>
+  </div>
+</body>
+</html>
+`;
 
     // Call Opterix email API
     const emailPayload = [{
