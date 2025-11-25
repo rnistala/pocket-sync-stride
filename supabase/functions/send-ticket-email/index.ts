@@ -49,8 +49,15 @@ Description: ${description}`;
     const responseText = await response.text();
     console.log(`[EMAIL] API Response: ${responseText}`);
     
+    // Check if the response indicates success
+    const isSuccess = response.ok && (
+      responseText.includes('"success"') || 
+      responseText.includes('"send"') ||
+      responseText.includes('success')
+    );
+    
     return new Response(JSON.stringify({ 
-      success: response.ok,
+      success: isSuccess,
       status: responseText 
     }), {
       status: 200,
