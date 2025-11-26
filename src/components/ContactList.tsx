@@ -4,12 +4,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
-import { useRef, useEffect, useMemo, memo } from "react";
+import { useRef, useEffect, useMemo, memo, useState } from "react";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Star, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { format, addYears } from "date-fns";
 import { getApiRoot } from "@/lib/config";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ContactListProps {
   contacts: Contact[];
@@ -64,15 +74,13 @@ const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { cont
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0 -mt-1"
-                  onClick={onToggleStar}
+                  onClick={onPushDown}
                 >
-                  <Star 
-                    className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
-                  />
+                  <ArrowDown className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{contact.starred ? 'Unstar contact' : 'Star contact'}</p>
+                <p>Push down contact</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -83,13 +91,15 @@ const ContactCard = memo(({ contact, onClick, onToggleStar, onPushDown }: { cont
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0 -mt-1"
-                  onClick={onPushDown}
+                  onClick={onToggleStar}
                 >
-                  <ArrowDown className="h-4 w-4 text-muted-foreground" />
+                  <Star 
+                    className={`h-4 w-4 ${contact.starred ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Push down contact</p>
+                <p>{contact.starred ? 'Unstar contact' : 'Star contact'}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -106,6 +116,7 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
   const { scrollPosition, displayCount, setScrollPosition, setDisplayCount, toggleStarred, updateContactFollowUp, syncData } = useLeadContext();
   const observerTarget = useRef<HTMLDivElement>(null);
   const hasRestoredScroll = useRef(false);
+  const [pendingDropContact, setPendingDropContact] = useState<{id: string, name: string} | null>(null);
 
   // Restore scroll position on mount
   useEffect(() => {
@@ -162,9 +173,12 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
     toggleStarred(contactId);
   };
 
-  const handlePushDown = async (e: React.MouseEvent, contactId: string) => {
+  const handlePushDownClick = (e: React.MouseEvent, contact: Contact) => {
     e.stopPropagation();
-    
+    setPendingDropContact({ id: contact.id, name: contact.name });
+  };
+
+  const handlePushDown = async (contactId: string) => {
     const userId = localStorage.getItem("userId");
     if (!userId) {
       toast.error("User ID not found");
@@ -214,6 +228,8 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
     } catch (error) {
       console.error("Error pushing contact down:", error);
       toast.error("Failed to update contact");
+    } finally {
+      setPendingDropContact(null);
     }
   };
 
@@ -226,25 +242,48 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
   }
 
   return (
-    <div className="space-y-2">
-      {displayedContacts.map((contact) => (
-        <ContactCard
-          key={contact.id}
-          contact={contact}
-          onClick={() => handleContactTap(contact.id)}
-          onToggleStar={(e) => handleToggleStar(e, contact.id)}
-          onPushDown={(e) => handlePushDown(e, contact.id)}
-        />
-      ))}
-      
-      {displayCount < contacts.length && (
-        <div ref={observerTarget} className="py-3 text-center">
-          <p className="text-xs text-muted-foreground">
-            {displayCount} of {contacts.length}
-          </p>
-        </div>
-      )}
-    </div>
+    <>
+      <div className="space-y-2">
+        {displayedContacts.map((contact) => (
+          <ContactCard
+            key={contact.id}
+            contact={contact}
+            onClick={() => handleContactTap(contact.id)}
+            onToggleStar={(e) => handleToggleStar(e, contact.id)}
+            onPushDown={(e) => handlePushDownClick(e, contact)}
+          />
+        ))}
+        
+        {displayCount < contacts.length && (
+          <div ref={observerTarget} className="py-3 text-center">
+            <p className="text-xs text-muted-foreground">
+              {displayCount} of {contacts.length}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <AlertDialog open={!!pendingDropContact} onOpenChange={(open) => !open && setPendingDropContact(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Drop Contact?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to drop <strong>{pendingDropContact?.name}</strong>? 
+              This will set the follow-up date to 100 years in the future and change the status to 'Drop'.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => pendingDropContact && handlePushDown(pendingDropContact.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirm
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 });
 
