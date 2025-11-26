@@ -1959,7 +1959,52 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       await dbManager.updateTicket(updatedTicket);
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updatedTicket : t)));
 
-      console.log("[TICKET] Ticket updated successfully");
+      // Send email notification if ticket was closed
+      if (ticket.status === "CLOSED" && ticket.ticketId) {
+        try {
+          const contact = contacts.find(c => c.id === ticket.contactId);
+          
+          // Get user email from userToken
+          const userTokenStr = localStorage.getItem("userToken");
+          const userToken = userTokenStr ? JSON.parse(userTokenStr) : null;
+          const userEmail = userToken?.email;
+          
+          if (contact && contact.email) {
+            console.log("[EMAIL] Sending closure notification for ticket:", ticket.ticketId);
+            
+            const issueTypeLabel = getIssueTypeLabel(ticket.issueType);
+            
+            const emailResponse = await supabase.functions.invoke('send-ticket-closure-email', {
+              body: {
+                userId: userId,
+                contactEmail: contact.email,
+                userEmail: userEmail,
+                ticketId: ticket.ticketId,
+                issueType: issueTypeLabel,
+                description: ticket.description,
+                remarks: ticket.remarks || '',
+                rootCause: ticket.rootCause || '',
+                effortMinutes: ticket.effort_minutes || 0
+              }
+            });
+            
+            console.log("[EMAIL] Closure response:", emailResponse);
+            
+            if (emailResponse.data?.success) {
+              toast.success(`Ticket ${ticket.ticketId} closed and notification sent`);
+            } else {
+              console.log("[EMAIL] Failed to send closure email. Status:", emailResponse.data?.status);
+              toast.warning(`Ticket ${ticket.ticketId} closed but failed to send notification`);
+            }
+          }
+        } catch (emailError) {
+          console.error("[EMAIL] Error sending closure notification:", emailError);
+          toast.warning(`Ticket ${ticket.ticketId} closed but failed to send notification`);
+        }
+      } else {
+        console.log("[TICKET] Ticket updated successfully");
+      }
+
     } catch (error) {
       console.error("[TICKET] Failed to update ticket:", error);
 
