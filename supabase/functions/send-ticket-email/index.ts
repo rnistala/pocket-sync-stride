@@ -21,7 +21,11 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { userId, contactEmail, ticketId, issueType, description }: EmailRequest = await req.json();
     
-    console.log(`[EMAIL] Sending notification for ticket ${ticketId} to ${contactEmail}`);
+    // CC ravi@opterix.in on all new ticket notifications
+    const ccEmail = 'ravi@opterix.in';
+    const recipients = `${contactEmail},${ccEmail}`;
+    
+    console.log(`[EMAIL] Sending notification for ticket ${ticketId} to ${contactEmail} (CC: ${ccEmail})`);
     
     // Construct HTML email body
     const emailBody = `
@@ -55,12 +59,12 @@ const handler = async (req: Request): Promise<Response> => {
   </div>
 </body>
 </html>
-`;
+    `;
 
     // Call Opterix email API
     const emailPayload = [{
       id: userId,
-      to: contactEmail,
+      to: recipients,
       subject: `[Opterix 360] New ticket ${ticketId}`,
       body: emailBody
     }];
