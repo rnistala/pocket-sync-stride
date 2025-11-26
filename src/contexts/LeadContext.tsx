@@ -1962,14 +1962,21 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       // Send email notification if ticket was closed
       if (ticket.status === "CLOSED" && ticket.ticketId) {
         try {
-          const contact = contacts.find(c => c.id === ticket.contactId);
+          console.log("[EMAIL] Looking for contact ID:", ticket.contactId, "in", contacts.length, "contacts");
+          const contact = contacts.find(c => String(c.id) === String(ticket.contactId));
           
           // Get user email from userToken
           const userTokenStr = localStorage.getItem("userToken");
           const userToken = userTokenStr ? JSON.parse(userTokenStr) : null;
           const userEmail = userToken?.email;
           
-          if (contact && contact.email) {
+          if (!contact) {
+            console.warn("[EMAIL] Contact not found for ID:", ticket.contactId);
+            toast.warning(`Ticket ${ticket.ticketId} closed - contact not found for email notification`);
+          } else if (!contact.email) {
+            console.warn("[EMAIL] Contact has no email:", contact.name);
+            toast.warning(`Ticket ${ticket.ticketId} closed - contact has no email`);
+          } else if (contact && contact.email) {
             console.log("[EMAIL] Sending closure notification for ticket:", ticket.ticketId);
             
             const issueTypeLabel = getIssueTypeLabel(ticket.issueType);
@@ -2012,7 +2019,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       await dbManager.updateTicket(ticket);
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? ticket : t)));
     }
-  }, []);
+  }, [contacts]);
 
   const getContactTickets = useCallback(
     (contactId: string) => {
