@@ -164,7 +164,7 @@ export default function Tickets() {
 
   // Calculate metrics
   const priorityTicketsCount = useMemo(() => 
-    tickets.filter(t => t.priority).length
+    tickets.filter(t => t.priority && (t.status === "OPEN" || t.status === "IN PROGRESS")).length
   , [tickets]);
 
   const ticketsOlderThan10Days = useMemo(() => {
