@@ -191,9 +191,12 @@ export default function Tickets() {
       filtered = filtered.filter(t => t.contactId === contactFilter);
     }
 
-    // Priority filter
+    // Priority filter - when filtering by priority, also filter by OPEN or IN PROGRESS status
     if (priorityFilter !== null) {
-      filtered = filtered.filter(t => t.priority === priorityFilter);
+      filtered = filtered.filter(t => 
+        t.priority === priorityFilter && 
+        (priorityFilter === false || t.status === "OPEN" || t.status === "IN PROGRESS")
+      );
     }
 
     // Age filter
