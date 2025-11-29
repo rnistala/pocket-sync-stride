@@ -58,6 +58,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [isSavingInteraction, setIsSavingInteraction] = useState(false);
   const [statuses, setStatuses] = useState<string[]>([]);
   const [showTour, setShowTour] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -196,40 +197,47 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       return;
     }
     
-    // If type is Ticket, also create a ticket
-    if (interactionType === "Ticket") {
-      const ticket = await addTicket({
-        contactId: contact.id,
-        reportedDate: new Date().toISOString(),
-        targetDate: nextFollowUpDate.toISOString(),
-        issueType: ticketIssueType,
-        status: "OPEN",
-        description: notes,
-        screenshots: [],
-        priority: false,
-      });
-      
-      if (ticket) {
-        toast.success("Ticket created and interaction logged");
+    // Prevent double-clicks
+    setIsSavingInteraction(true);
+    
+    try {
+      // If type is Ticket, also create a ticket
+      if (interactionType === "Ticket") {
+        const ticket = await addTicket({
+          contactId: contact.id,
+          reportedDate: new Date().toISOString(),
+          targetDate: nextFollowUpDate.toISOString(),
+          issueType: ticketIssueType,
+          status: "OPEN",
+          description: notes,
+          screenshots: [],
+          priority: false,
+        });
+        
+        if (ticket) {
+          toast.success("Ticket created and interaction logged");
+        }
       }
-    }
-    
-    await addInteraction(
-      contact.id, 
-      interactionType, 
-      notes, 
-      undefined, 
-      nextFollowUpDate.toISOString()
-    );
-    
-    setNotes("");
-    setNextFollowUpDate(undefined);
-    setTicketIssueType("BR");
-    setNextFollowUpDateText("");
-    setIsDialogOpen(false);
-    
-    if (interactionType !== "Ticket") {
-      toast.success("Interaction logged");
+      
+      await addInteraction(
+        contact.id, 
+        interactionType, 
+        notes, 
+        undefined, 
+        nextFollowUpDate.toISOString()
+      );
+      
+      setNotes("");
+      setNextFollowUpDate(undefined);
+      setTicketIssueType("BR");
+      setNextFollowUpDateText("");
+      setIsDialogOpen(false);
+      
+      if (interactionType !== "Ticket") {
+        toast.success("Interaction logged");
+      }
+    } finally {
+      setIsSavingInteraction(false);
     }
   };
 
@@ -1329,8 +1337,12 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                     </PopoverContent>
                   </Popover>
                 </div>
-                <Button onClick={handleAddInteraction} className="w-full">
-                  Save Interaction
+                <Button 
+                  onClick={handleAddInteraction} 
+                  className="w-full"
+                  disabled={isSavingInteraction}
+                >
+                  {isSavingInteraction ? "Saving..." : "Save Interaction"}
                 </Button>
               </div>
             </DialogContent>
