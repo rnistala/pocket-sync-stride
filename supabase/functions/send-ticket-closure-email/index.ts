@@ -30,6 +30,23 @@ const formatEffort = (minutes: number): string => {
   return `${hours} hour${hours !== 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
 };
 
+// Helper function to format description with proper line breaks
+const formatDescription = (text: string): string => {
+  if (!text) return '';
+  
+  // First, convert existing newlines to <br>
+  let formatted = text.replace(/\n/g, '<br>');
+  
+  // Add line break before numbered items (1. 2. 3. etc.) that don't already have one
+  // Match patterns like "1." "2." up to "99." that are preceded by non-newline content
+  formatted = formatted.replace(/(?<!<br>)(\s*)(\d{1,2}\.\s)/g, '<br><br>$2');
+  
+  // Clean up any leading <br> tags
+  formatted = formatted.replace(/^(<br>)+/, '');
+  
+  return formatted;
+};
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -69,11 +86,11 @@ const handler = async (req: Request): Promise<Response> => {
       </tr>
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; vertical-align: top;">Original Issue:</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${description}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${formatDescription(description)}</td>
       </tr>
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; vertical-align: top;">Remarks / Analysis:</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${remarks || 'No remarks provided'}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${formatDescription(remarks) || 'No remarks provided'}</td>
       </tr>
       ${rootCause ? `
       <tr>

@@ -5,6 +5,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to format description with proper line breaks
+const formatDescription = (text: string): string => {
+  if (!text) return '';
+  
+  // First, convert existing newlines to <br>
+  let formatted = text.replace(/\n/g, '<br>');
+  
+  // Add line break before numbered items (1. 2. 3. etc.) that don't already have one
+  // Match patterns like "1." "2." up to "99." that are preceded by non-newline content
+  formatted = formatted.replace(/(?<!<br>)(\s*)(\d{1,2}\.\s)/g, '<br><br>$2');
+  
+  // Clean up any leading <br> tags
+  formatted = formatted.replace(/^(<br>)+/, '');
+  
+  return formatted;
+};
+
 interface EmailRequest {
   userId: string;
   contactEmail: string;
@@ -49,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
       </tr>
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; vertical-align: top;">Description:</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${description}</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${formatDescription(description)}</td>
       </tr>
     </table>
     
