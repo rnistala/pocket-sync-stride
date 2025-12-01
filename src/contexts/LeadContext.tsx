@@ -1915,6 +1915,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         ...(ticket.status === "CLOSED" && { close_date: new Date().toISOString() }),
         updated: new Date().toISOString(),
         updatedby: userId,
+        assigned_to: Number(userId),
       };
 
       // Add photo metadata if available
