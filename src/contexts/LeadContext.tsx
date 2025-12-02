@@ -1916,6 +1916,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         updated: new Date().toISOString(),
         updatedby: userId,
         assigned_to: Number(userId),
+        description: ticket.description || "",
+        contact: ticket.contactId,
+        issue_type: ticket.issueType,
       };
 
       // Add photo metadata if available
