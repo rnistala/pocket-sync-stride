@@ -39,16 +39,16 @@ const Index = () => {
       position: "bottom" as const,
     },
     {
-      target: '[data-tour="metrics"]',
-      title: "Key Metrics",
-      description: "Track today's interactions and this month's order values at a glance.",
-      position: "bottom" as const,
+      target: '[data-tour="sync"]',
+      title: "Sync Data",
+      description: "Keep your data synchronized with the server. The indicator shows your connection status.",
+      position: "left" as const,
     },
     {
       target: '[data-tour="starred"]',
       title: "Starred Contacts",
       description: "Toggle to view only your starred/favorite contacts for quick access.",
-      position: "top" as const,
+      position: "bottom" as const,
     },
     {
       target: '[data-tour="add-contact"]',
@@ -57,10 +57,10 @@ const Index = () => {
       position: "left" as const,
     },
     {
-      target: '[data-tour="sync"]',
-      title: "Sync Data",
-      description: "Keep your data synchronized with the server. The indicator shows your connection status.",
-      position: "left" as const,
+      target: '[data-tour="metrics"]',
+      title: "Key Metrics",
+      description: "Track today's interactions and this month's order values at a glance.",
+      position: "bottom" as const,
     },
     {
       target: '[data-tour="contact-actions"]',

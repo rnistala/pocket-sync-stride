@@ -735,13 +735,13 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     {
       target: '[data-tour="quick-actions"]',
       title: "Quick Actions",
-      description: "Quickly call, message on WhatsApp, or email this contact.",
+      description: "Quickly call, message on WhatsApp, email, or research this contact's company.",
       position: "top" as const,
     },
     {
-      target: '[data-tour="log-interaction"]',
-      title: "Log Interaction",
-      description: "Record calls, meetings, and other interactions with this contact. Interactions sync automatically.",
+      target: '[data-tour="research-company"]',
+      title: "Research Company",
+      description: "Get AI-powered insights about this contact's company to better understand their business.",
       position: "top" as const,
     },
     {
@@ -751,9 +751,9 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       position: "top" as const,
     },
     {
-      target: '[data-tour="research-company"]',
-      title: "Research Company",
-      description: "Use AI to research the contact's company for insights.",
+      target: '[data-tour="log-interaction"]',
+      title: "Log Interaction",
+      description: "Record calls, meetings, and other interactions with this contact. Interactions sync automatically.",
       position: "top" as const,
     },
   ];

@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut, Pencil } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut, Pencil, HelpCircle } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncButton } from "@/components/SyncButton";
 import { TicketFiltersDialog } from "@/components/TicketFiltersDialog";
+import { FeatureTour } from "@/components/FeatureTour";
 import { format } from "date-fns";
 import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
 
@@ -18,10 +20,53 @@ export default function Tickets() {
   const { tickets, contacts, updateTicket, syncTickets, syncData } = useLeadContext();
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showTour, setShowTour] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const userCompany = localStorage.getItem("userCompany"); // Check if customer
+
+  // Tour steps - ordered left to right, top to bottom
+  const tourSteps = [
+    {
+      target: '[data-tour="search-tickets"]',
+      title: "Search & Filter",
+      description: "Search tickets by ID, description, or company. Use the filter icon for advanced filtering options.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="metrics"]',
+      title: "Key Metrics",
+      description: "View priority tickets and tickets open for more than 10 days. Click to filter the list.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="sync-tickets"]',
+      title: "Sync Tickets",
+      description: "Keep your tickets synchronized with the server.",
+      position: "left" as const,
+    },
+    {
+      target: '[data-tour="add-ticket"]',
+      title: "Add Ticket",
+      description: "Create a new support ticket for a contact.",
+      position: "left" as const,
+    },
+    {
+      target: '[data-tour="ticket-actions"]',
+      title: "Ticket Actions",
+      description: "Star to mark as priority, edit ticket details, or click the card to update status and add notes.",
+      position: "top" as const,
+    },
+  ];
+
+  // Show tour on first visit
+  useEffect(() => {
+    const hasSeenTicketsTour = localStorage.getItem("hasSeenTicketsTour");
+    if (!hasSeenTicketsTour && tickets.length > 0) {
+      setTimeout(() => setShowTour(true), 1000);
+    }
+  }, [tickets.length]);
   
   // Read filters from URL params
   const searchQuery = searchParams.get("search") || "";
@@ -277,6 +322,19 @@ export default function Tickets() {
 
   return (
     <div className="min-h-screen bg-textured overflow-x-hidden">
+      {showTour && (
+        <FeatureTour
+          steps={tourSteps}
+          onComplete={() => {
+            setShowTour(false);
+            localStorage.setItem("hasSeenTicketsTour", "true");
+          }}
+          onSkip={() => {
+            setShowTour(false);
+            localStorage.setItem("hasSeenTicketsTour", "true");
+          }}
+        />
+      )}
       <div className="sticky top-0 z-10 bg-textured backdrop-blur-sm border-b border-border">
         <div className="max-w-5xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
@@ -289,18 +347,37 @@ export default function Tickets() {
               <h1 className="text-lg font-semibold text-foreground">Tickets</h1>
             </div>
             <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowTour(true)}
+                      className="h-8 w-8"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Take tour</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <ThemeToggle />
               {userCompany && (
                 <Button variant="outline" size="icon" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                 </Button>
               )}
-              <AddTicketForm />
+              <div data-tour="add-ticket">
+                <AddTicketForm />
+              </div>
             </div>
           </div>
 
           {/* Search */}
-          <div className="relative mb-3">
+          <div className="relative mb-3" data-tour="search-tickets">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
@@ -333,7 +410,7 @@ export default function Tickets() {
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-2 gap-3 mb-3" data-tour="metrics">
             <Card 
               className="cursor-pointer hover:bg-accent transition-colors"
               onClick={() => {
@@ -386,7 +463,9 @@ export default function Tickets() {
               <span className="text-sm font-medium text-foreground">
                 {filteredTickets.length} {filteredTickets.length === 1 ? 'Ticket' : 'Tickets'}
               </span>
-              <SyncButton lastSync={lastSync} isOnline={isOnline} onSync={handleSync} />
+              <div data-tour="sync-tickets">
+                <SyncButton lastSync={lastSync} isOnline={isOnline} onSync={handleSync} />
+              </div>
             </div>
           </div>
         </div>
@@ -399,7 +478,7 @@ export default function Tickets() {
           </div>
         ) : (
           <div className="grid gap-4 w-full">
-            {filteredTickets.map(ticket => {
+            {filteredTickets.map((ticket, index) => {
               const contact = contactMap.get(ticket.contactId);
               return (
                 <Card
@@ -410,7 +489,10 @@ export default function Tickets() {
                  <CardHeader className="pb-3 px-3 sm:px-6">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <div 
+                          className="flex items-center gap-2 mb-1 flex-wrap"
+                          {...(index === 0 ? { 'data-tour': 'ticket-actions' } : {})}
+                        >
                           <Button
                             variant="ghost"
                             size="icon"
