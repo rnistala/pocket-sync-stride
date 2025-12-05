@@ -47,12 +47,6 @@ export default function Tickets() {
       position: "left" as const,
     },
     {
-      target: '[data-tour="add-ticket"]',
-      title: "Add Ticket",
-      description: "Create a new support ticket for a contact.",
-      position: "left" as const,
-    },
-    {
       target: '[data-tour="ticket-actions"]',
       title: "Ticket Actions",
       description: "Star to mark as priority, edit ticket details, or click the card to update status and add notes.",
