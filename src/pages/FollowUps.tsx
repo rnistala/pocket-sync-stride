@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, List, HelpCircle, Star } from "lucide-react";
+import { Calendar as CalendarIcon, List, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
@@ -123,14 +123,6 @@ const FollowUps = () => {
                 title="Contact List"
               >
                 <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => window.open("https://demo.opterix.in/kb", "_blank")}
-                className="h-8 w-8"
-              >
-                <HelpCircle className="h-4 w-4" />
               </Button>
               <UserProfile onLogout={handleLogout} />
             </div>
