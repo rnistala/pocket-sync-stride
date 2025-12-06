@@ -775,7 +775,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       )}
       <div className="max-w-3xl mx-auto space-y-3 w-full">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/')} size="sm" className="gap-1.5">
+          <Button variant="ghost" onClick={() => navigate(-1)} size="sm" className="gap-1.5">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back
           </Button>
