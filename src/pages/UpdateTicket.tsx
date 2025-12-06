@@ -37,7 +37,12 @@ export default function UpdateTicket() {
         setTargetDate(ticket.targetDate.split('T')[0]);
         setStatus(ticket.status);
         setRemarks(ticket.remarks || "");
-        setRootCause(ticket.rootCause || "");
+        // Auto-set root cause to "New Work" for FR/New Work issue types
+        if (ticket.issueType === "FR" || ticket.issueType === "New Work") {
+          setRootCause("New Work");
+        } else {
+          setRootCause(ticket.rootCause || "");
+        }
         setScreenshots([]); // Always start fresh - existing images are in existingPhotos
         setPriority(ticket.priority || false);
         setEffortInMinutes(ticket.effort_minutes?.toString() || "");
@@ -386,6 +391,7 @@ export default function UpdateTicket() {
                       <SelectItem value="Software">Software</SelectItem>
                       <SelectItem value="Data">Data</SelectItem>
                       <SelectItem value="Usage">Usage</SelectItem>
+                      <SelectItem value="New Work">New Work</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
