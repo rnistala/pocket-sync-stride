@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { format, isToday, isBefore, startOfDay, addDays, isWithinInterval } from "date-fns";
+import { format } from "date-fns";
 import { useTheme } from "next-themes";
 import { NetworkStatus } from "@/components/NetworkStatus";
 import { UserProfile } from "@/components/UserProfile";
@@ -67,32 +67,6 @@ const FollowUps = () => {
     return followUpsByDate.get(dateKey) || [];
   }, [selectedDate, followUpsByDate]);
 
-  // Calculate summary stats
-  const stats = useMemo(() => {
-    const today = startOfDay(new Date());
-    const weekEnd = addDays(today, 7);
-    
-    let overdue = 0;
-    let todayCount = 0;
-    let thisWeek = 0;
-
-    contacts.forEach((contact) => {
-      if (contact.followup_on) {
-        const followUpDate = startOfDay(new Date(contact.followup_on));
-        
-        if (isBefore(followUpDate, today)) {
-          overdue++;
-        } else if (isToday(followUpDate)) {
-          todayCount++;
-        } else if (isWithinInterval(followUpDate, { start: today, end: weekEnd })) {
-          thisWeek++;
-        }
-      }
-    });
-
-    return { overdue, today: todayCount, thisWeek };
-  }, [contacts]);
-
   const handleContactClick = (contactId: number | string) => {
     navigate(`/contact/${contactId}/details`);
   };
@@ -100,27 +74,6 @@ const FollowUps = () => {
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date);
-    }
-  };
-
-  const handleStatClick = (type: 'overdue' | 'today' | 'thisWeek') => {
-    const today = new Date();
-    if (type === 'overdue' || type === 'today') {
-      setSelectedDate(today);
-      setCalendarMonth(today);
-    } else if (type === 'thisWeek') {
-      // Jump to first day with follow-up in the next 7 days
-      const weekEnd = addDays(today, 7);
-      for (const contact of contacts) {
-        if (contact.followup_on) {
-          const followUpDate = new Date(contact.followup_on);
-          if (isWithinInterval(followUpDate, { start: today, end: weekEnd }) && !isToday(followUpDate)) {
-            setSelectedDate(followUpDate);
-            setCalendarMonth(followUpDate);
-            break;
-          }
-        }
-      }
     }
   };
 
@@ -146,13 +99,18 @@ const FollowUps = () => {
     <div className="min-h-screen bg-textured">
       {/* Header - matching Index page */}
       <header className="sticky top-0 z-10 bg-textured backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-        <div className="container max-w-2xl mx-auto px-4 py-3">
+        <div className="max-w-3xl mx-auto px-3 py-2 md:px-8 md:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <img 
-                src={resolvedTheme === 'dark' ? opterixLogoLight : opterixLogoDark} 
+                src={opterixLogoDark} 
                 alt="Opterix 360" 
-                className="h-8"
+                className="h-8 md:h-10 dark:hidden"
+              />
+              <img 
+                src={opterixLogoLight} 
+                alt="Opterix 360" 
+                className="h-8 md:h-10 hidden dark:block"
               />
             </div>
             <div className="flex items-center gap-1">
@@ -181,54 +139,21 @@ const FollowUps = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container max-w-2xl mx-auto px-4 py-4">
+      <main className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
         <div className="space-y-4">
-          {/* Summary Stats */}
-          <div className="grid grid-cols-3 gap-2">
-            <Card 
-              className="p-3 cursor-pointer hover:bg-accent/50 transition-colors border-destructive/30 bg-destructive/10"
-              onClick={() => handleStatClick('overdue')}
-            >
-              <div className="text-center">
-                <div className="text-2xl font-bold text-destructive">{stats.overdue}</div>
-                <div className="text-xs text-muted-foreground">Overdue</div>
-              </div>
-            </Card>
-            <Card 
-              className="p-3 cursor-pointer hover:bg-accent/50 transition-colors border-primary/30 bg-primary/10"
-              onClick={() => handleStatClick('today')}
-            >
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary">{stats.today}</div>
-                <div className="text-xs text-muted-foreground">Today</div>
-              </div>
-            </Card>
-            <Card 
-              className="p-3 cursor-pointer hover:bg-accent/50 transition-colors border-accent-foreground/30 bg-accent/50"
-              onClick={() => handleStatClick('thisWeek')}
-            >
-              <div className="text-center">
-                <div className="text-2xl font-bold text-accent-foreground">{stats.thisWeek}</div>
-                <div className="text-xs text-muted-foreground">This Week</div>
-              </div>
-            </Card>
-          </div>
-
           {/* Calendar */}
-          <div className="flex justify-center">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateSelect}
-              month={calendarMonth}
-              onMonthChange={setCalendarMonth}
-              modifiers={{ hasFollowUp: datesWithFollowUps }}
-              modifiersClassNames={{
-                hasFollowUp: "text-destructive font-semibold",
-              }}
-              className="rounded-lg border bg-card p-4 shadow-sm"
-            />
-          </div>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={handleDateSelect}
+            month={calendarMonth}
+            onMonthChange={setCalendarMonth}
+            modifiers={{ hasFollowUp: datesWithFollowUps }}
+            modifiersClassNames={{
+              hasFollowUp: "text-destructive font-semibold",
+            }}
+            className="w-full rounded-lg border bg-card p-4 shadow-sm"
+          />
 
           {/* Contacts for Selected Date */}
           <div className="space-y-3">
