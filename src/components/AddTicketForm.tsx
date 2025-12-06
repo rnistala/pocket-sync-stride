@@ -22,6 +22,7 @@ export const AddTicketForm = () => {
   const [description, setDescription] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
   const [priority, setPriority] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Get selected contact display name
   const selectedContact = useMemo(() => 
@@ -56,32 +57,39 @@ export const AddTicketForm = () => {
       return;
     }
 
-    const newTicket = await addTicket({
-      contactId,
-      reportedDate: new Date().toISOString(),
-      targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default to 7 days from now
-      issueType,
-      status: "OPEN",
-      description,
-      screenshots,
-      priority,
-    });
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-    toast({
-      title: "Ticket Created",
-      description: newTicket?.ticketId 
-        ? `Ticket ${newTicket.ticketId} has been created successfully`
-        : "Action item has been added successfully",
-    });
+    try {
+      const newTicket = await addTicket({
+        contactId,
+        reportedDate: new Date().toISOString(),
+        targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default to 7 days from now
+        issueType,
+        status: "OPEN",
+        description,
+        screenshots,
+        priority,
+      });
 
-    // Reset form
-    setContactId("");
-    setContactSearch("");
-    setIssueType("");
-    setDescription("");
-    setScreenshots([]);
-    setPriority(false);
-    setOpen(false);
+      toast({
+        title: "Ticket Created",
+        description: newTicket?.ticketId 
+          ? `Ticket ${newTicket.ticketId} has been created successfully`
+          : "Action item has been added successfully",
+      });
+
+      // Reset form
+      setContactId("");
+      setContactSearch("");
+      setIssueType("");
+      setDescription("");
+      setScreenshots([]);
+      setPriority(false);
+      setOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -313,7 +321,9 @@ export const AddTicketForm = () => {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit">Create Ticket</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Ticket"}
+            </Button>
           </div>
         </form>
       </DialogContent>
