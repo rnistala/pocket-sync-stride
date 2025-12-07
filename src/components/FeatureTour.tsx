@@ -114,14 +114,9 @@ export const FeatureTour = ({ steps, onComplete, onSkip }: FeatureTourProps) => 
       style.transform = "translate(-50%, 0)";
       style.maxWidth = `calc(100vw - ${padding * 2}px)`;
       
-      // Position below target on mobile, but ensure it's visible
+      // Always position below target on mobile - scroll will handle visibility
       const topPosition = targetRect.bottom + padding;
-      if (topPosition + 300 > viewportHeight) {
-        // If tooltip would go off bottom, position it above
-        style.top = `${Math.max(padding, targetRect.top - 200)}px`;
-      } else {
-        style.top = `${topPosition}px`;
-      }
+      style.top = `${topPosition}px`;
     }
 
     return style;
