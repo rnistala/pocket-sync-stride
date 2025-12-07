@@ -715,45 +715,27 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
   const tourSteps = [
     {
-      target: '[data-tour="contact-actions"]',
-      title: "Contact Actions",
-      description: "Star to favorite, drop to archive, or edit contact details.",
-      position: "bottom" as const,
-    },
-    {
-      target: '[data-tour="contact-status"]',
-      title: "Contact Status",
-      description: "Update the status of this contact to track progress.",
-      position: "bottom" as const,
-    },
-    {
-      target: '[data-tour="follow-up-date"]',
-      title: "Follow-up Date",
-      description: "Set or update when to follow up with this contact.",
-      position: "bottom" as const,
-    },
-    {
       target: '[data-tour="quick-actions"]',
-      title: "Quick Actions",
-      description: "Quickly call, message on WhatsApp, email, or research this contact's company.",
+      title: "📞 Quick Contact",
+      description: "Reach out directly via phone, WhatsApp, or email with one tap.",
       position: "top" as const,
     },
     {
       target: '[data-tour="research-company"]',
-      title: "Research Company",
-      description: "Get AI-powered insights about this contact's company to better understand their business.",
-      position: "top" as const,
-    },
-    {
-      target: '[data-tour="create-order"]',
-      title: "Create Order",
-      description: "Submit a new order for this contact.",
+      title: "✨ AI Research",
+      description: "Get a detailed company brief before you pick up the phone. Know your customer!",
       position: "top" as const,
     },
     {
       target: '[data-tour="log-interaction"]',
-      title: "Log Interaction",
-      description: "Record calls, meetings, and other interactions with this contact. Interactions sync automatically.",
+      title: "📝 Log Interaction",
+      description: "Record each conversation. Opterix 360 will remind you of all previous interactions.",
+      position: "top" as const,
+    },
+    {
+      target: '[data-tour="create-order"]',
+      title: "📦 Book Orders",
+      description: "Capture orders on the go. Opterix 360 helps you track your target achievement.",
       position: "top" as const,
     },
   ];
