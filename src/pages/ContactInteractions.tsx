@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown, Info, HelpCircle } from "lucide-react";
+import { ArrowLeft, Phone, Mail, Plus, RefreshCw, CalendarIcon, Cloud, Pencil, Star, ArrowDown, Sparkles, HelpCircle } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncButton } from "@/components/SyncButton";
 import { Card } from "@/components/ui/card";
@@ -1087,7 +1087,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             </div>
           </div>
           
-          <div className="grid grid-cols-4 gap-1.5 mt-2" data-tour="quick-actions">
+          <div className="grid grid-cols-5 gap-1.5 mt-2" data-tour="quick-actions">
             <Button onClick={handleCall} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.phone}>
               <Phone className="h-4 w-4" />
             </Button>
@@ -1099,9 +1099,16 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             <Button onClick={handleEmail} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.email}>
               <Mail className="h-4 w-4" />
             </Button>
-            <div data-tour="research-company">
-              <Button onClick={handleResearchCompany} variant="outline" size="icon" className="h-9 w-full" disabled={!contact.company}>
-                <Info className="h-4 w-4" />
+            <div data-tour="research-company" className="col-span-2">
+              <Button 
+                onClick={handleResearchCompany} 
+                variant="outline" 
+                size="sm" 
+                className="h-9 w-full gap-1.5 text-xs"
+                disabled={!contact.company}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                AI Research
               </Button>
             </div>
           </div>
