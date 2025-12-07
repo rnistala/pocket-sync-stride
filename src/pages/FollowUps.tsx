@@ -1,8 +1,9 @@
-import { Calendar as CalendarIcon, List, Star } from "lucide-react";
+import { Calendar as CalendarIcon, List, Star, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -10,11 +11,34 @@ import { format } from "date-fns";
 import { useTheme } from "next-themes";
 import { NetworkStatus } from "@/components/NetworkStatus";
 import { UserProfile } from "@/components/UserProfile";
+import { FeatureTour } from "@/components/FeatureTour";
 import opterixLogoDark from "@/assets/opterix-logo-dark.png";
 import opterixLogoLight from "@/assets/opterix-logo-light.png";
 
+const tourSteps = [
+  {
+    target: '[data-tour="calendar"]',
+    title: "📅 Welcome to Follow-ups!",
+    description: "Click on a highlighted date to view contacts due for follow-up that day. Red dates have scheduled follow-ups.",
+    position: "bottom" as const,
+  },
+  {
+    target: '[data-tour="first-contact-card"]',
+    title: "👆 Contact Cards",
+    description: "Tap a card to view contact details and record a new interaction. Stay on top of your conversations!",
+    position: "top" as const,
+  },
+  {
+    target: '[data-tour="list-icon"]',
+    title: "📋 Back to Contacts",
+    description: "Takes you back to the full contacts list. Switch between calendar and list views anytime!",
+    position: "bottom" as const,
+  },
+];
+
 const FollowUps = () => {
   const { contacts, toggleStarred } = useLeadContext();
+  const [showTour, setShowTour] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { resolvedTheme } = useTheme();
@@ -121,9 +145,27 @@ const FollowUps = () => {
                 onClick={() => navigate("/")}
                 className="h-8 w-8"
                 title="Contact List"
+                data-tour="list-icon"
               >
                 <List className="h-4 w-4" />
               </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowTour(true)}
+                      className="h-8 w-8"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Take tour</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <UserProfile onLogout={handleLogout} />
             </div>
           </div>
@@ -134,17 +176,18 @@ const FollowUps = () => {
       <main className="max-w-3xl mx-auto px-3 py-4 md:px-8 md:py-6">
         <div className="space-y-4">
           {/* Calendar */}
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={handleDateSelect}
-            month={calendarMonth}
-            onMonthChange={setCalendarMonth}
-            modifiers={{ hasFollowUp: datesWithFollowUps }}
-            modifiersClassNames={{
-              hasFollowUp: "text-destructive font-semibold",
-            }}
-            className="w-full rounded-lg border bg-card p-4 shadow-sm pointer-events-auto"
+          <div data-tour="calendar">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={handleDateSelect}
+              month={calendarMonth}
+              onMonthChange={setCalendarMonth}
+              modifiers={{ hasFollowUp: datesWithFollowUps }}
+              modifiersClassNames={{
+                hasFollowUp: "text-destructive font-semibold",
+              }}
+              className="w-full rounded-lg border bg-card p-4 shadow-sm pointer-events-auto"
             classNames={{
               months: "w-full",
               month: "w-full space-y-4",
@@ -156,6 +199,7 @@ const FollowUps = () => {
               day: "h-10 w-10 p-0 font-normal aria-selected:opacity-100 hover:bg-accent hover:text-accent-foreground rounded-md",
             }}
           />
+          </div>
 
           {/* Contacts for Selected Date */}
           <div className="space-y-3">
@@ -171,11 +215,12 @@ const FollowUps = () => {
               </Card>
             ) : (
               <div className="space-y-2">
-                {contactsForSelectedDate.map((contact) => (
+                {contactsForSelectedDate.map((contact, index) => (
                   <Card
                     key={contact.id}
                     onClick={() => handleContactClick(contact.id)}
                     className="p-3 hover:bg-accent/50 cursor-pointer transition-all border-l-4 border-l-primary/60"
+                    {...(index === 0 ? { "data-tour": "first-contact-card" } : {})}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
@@ -239,6 +284,21 @@ const FollowUps = () => {
           </div>
         </div>
       </main>
+
+      {/* Feature Tour */}
+      {showTour && (
+        <FeatureTour
+          steps={tourSteps}
+          onComplete={() => {
+            setShowTour(false);
+            localStorage.setItem("followUpsTourCompleted", "true");
+          }}
+          onSkip={() => {
+            setShowTour(false);
+            localStorage.setItem("followUpsTourCompleted", "true");
+          }}
+        />
+      )}
     </div>
   );
 };
