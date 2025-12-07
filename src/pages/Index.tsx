@@ -72,7 +72,7 @@ const Index = () => {
       target: '[data-tour="contact-cards"]',
       title: "Contact Cards 👆",
       description: "To follow-up with a contact, simply tap on their card. Record interactions, schedule follow-ups, and track your progress.",
-      position: "top" as const,
+      position: "bottom" as const,
     },
     {
       target: '[data-tour="logo"]',
