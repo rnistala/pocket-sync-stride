@@ -26,30 +26,42 @@ export default function Tickets() {
   const [searchParams, setSearchParams] = useSearchParams();
   const userCompany = localStorage.getItem("userCompany"); // Check if customer
 
-  // Tour steps - ordered left to right, top to bottom
+  // Tour steps - 6-step tour covering key ticket features
   const tourSteps = [
     {
-      target: '[data-tour="search-tickets"]',
-      title: "Search & Filter",
-      description: "Search tickets by ID, description, or company. Use the filter icon for advanced filtering options.",
+      target: '[data-tour="priority-metric"]',
+      title: "🌟 Priority Tickets",
+      description: "Focus on what matters most. Click to filter by starred priority tickets.",
       position: "bottom" as const,
     },
     {
-      target: '[data-tour="metrics"]',
-      title: "Key Metrics",
-      description: "View priority tickets and tickets open for more than 10 days. Click to filter the list.",
+      target: '[data-tour="age-metric"]',
+      title: "⏰ Aging Tickets",
+      description: "Spot tickets open for more than 10 days. Click to filter and take action.",
       position: "bottom" as const,
     },
     {
-      target: '[data-tour="sync-tickets"]',
-      title: "Sync Tickets",
-      description: "Keep your tickets synchronized with the server.",
-      position: "left" as const,
+      target: '[data-tour="ticket-status"]',
+      title: "📊 Ticket Status",
+      description: "See the current status at a glance - Open, In Progress, or Closed.",
+      position: "top" as const,
     },
     {
-      target: '[data-tour="ticket-actions"]',
-      title: "Ticket Actions",
-      description: "Star to mark as priority, edit ticket details, or click the card to update status and add notes.",
+      target: '[data-tour="ticket-issue-type"]',
+      title: "🏷️ Issue Type",
+      description: "Quickly identify the type - Problem, New Work, Support, or Meeting.",
+      position: "top" as const,
+    },
+    {
+      target: '[data-tour="ticket-edit"]',
+      title: "✏️ Edit Details",
+      description: "Update ticket details like description, contact, or issue type.",
+      position: "top" as const,
+    },
+    {
+      target: '[data-tour="ticket-card"]',
+      title: "👆 Update Ticket",
+      description: "Tap anywhere on the card to add notes, update status, or close the ticket.",
       position: "top" as const,
     },
   ];
@@ -406,6 +418,7 @@ export default function Tickets() {
           {/* Metrics */}
           <div className="grid grid-cols-2 gap-3 mb-3" data-tour="metrics">
             <Card 
+              data-tour="priority-metric"
               className="cursor-pointer hover:bg-accent transition-colors"
               onClick={() => {
                 const newParams = new URLSearchParams(searchParams);
@@ -428,6 +441,7 @@ export default function Tickets() {
               </CardContent>
             </Card>
             <Card 
+              data-tour="age-metric"
               className="cursor-pointer hover:bg-accent transition-colors"
               onClick={() => {
                 const newParams = new URLSearchParams(searchParams);
@@ -479,14 +493,12 @@ export default function Tickets() {
                   key={`${ticket.id}-${ticket.ticketId || ''}`}
                   className="cursor-pointer hover:bg-accent/50 transition-colors w-full"
                   onClick={() => navigate(`/tickets/update/${ticket.id}`)}
+                  {...(index === 0 ? { 'data-tour': 'ticket-card' } : {})}
                 >
                  <CardHeader className="pb-3 px-3 sm:px-6">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div 
-                          className="flex items-center gap-2 mb-1 flex-wrap"
-                          {...(index === 0 ? { 'data-tour': 'ticket-actions' } : {})}
-                        >
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -497,8 +509,12 @@ export default function Tickets() {
                               className={`h-4 w-4 ${ticket.priority ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`}
                             />
                           </Button>
-                          {getStatusBadge(ticket.status)}
-                          <Badge variant="outline" className="truncate">{getIssueTypeLabel(ticket.issueType)}</Badge>
+                          <span {...(index === 0 ? { 'data-tour': 'ticket-status' } : {})}>
+                            {getStatusBadge(ticket.status)}
+                          </span>
+                          <span {...(index === 0 ? { 'data-tour': 'ticket-issue-type' } : {})}>
+                            <Badge variant="outline" className="truncate">{getIssueTypeLabel(ticket.issueType)}</Badge>
+                          </span>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -507,6 +523,7 @@ export default function Tickets() {
                               e.stopPropagation();
                               navigate(`/tickets/edit/${ticket.id}`);
                             }}
+                            {...(index === 0 ? { 'data-tour': 'ticket-edit' } : {})}
                           >
                             <Pencil className="h-4 w-4 text-muted-foreground" />
                           </Button>
