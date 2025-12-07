@@ -69,7 +69,7 @@ const Index = () => {
       position: "bottom" as const,
     },
     {
-      target: '[data-tour="contact-cards"]',
+      target: '[data-tour="first-contact-card"]',
       title: "Contact Cards 👆",
       description: "To follow-up with a contact, simply tap on their card. Record interactions, schedule follow-ups, and track your progress.",
       position: "bottom" as const,

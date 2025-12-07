@@ -244,14 +244,15 @@ export const ContactList = memo(({ contacts }: ContactListProps) => {
   return (
     <>
       <div className="space-y-2">
-        {displayedContacts.map((contact) => (
-          <ContactCard
-            key={contact.id}
-            contact={contact}
-            onClick={() => handleContactTap(contact.id)}
-            onToggleStar={(e) => handleToggleStar(e, contact.id)}
-            onPushDown={(e) => handlePushDownClick(e, contact)}
-          />
+        {displayedContacts.map((contact, index) => (
+          <div key={contact.id} data-tour={index === 0 ? "first-contact-card" : undefined}>
+            <ContactCard
+              contact={contact}
+              onClick={() => handleContactTap(contact.id)}
+              onToggleStar={(e) => handleToggleStar(e, contact.id)}
+              onPushDown={(e) => handlePushDownClick(e, contact)}
+            />
+          </div>
         ))}
         
         {displayCount < contacts.length && (
