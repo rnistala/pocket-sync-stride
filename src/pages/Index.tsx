@@ -33,39 +33,45 @@ const Index = () => {
 
   const tourSteps = [
     {
-      target: '[data-tour="search"]',
-      title: "Search & Filter",
-      description: "Search contacts by name, company, or email. Use advanced filters to narrow down your results.",
+      target: '[data-tour="logo"]',
+      title: "Opterix 360",
+      description: "AI Powered Lead Management Solution.",
       position: "bottom" as const,
     },
     {
-      target: '[data-tour="sync"]',
-      title: "Sync Data",
-      description: "Keep your data synchronized with the server. The indicator shows your connection status.",
-      position: "left" as const,
+      target: '[data-tour="network-status"]',
+      title: "Works Offline",
+      description: "Stay productive even when there's no network coverage. Your data syncs automatically when you're back online.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="follow-up-calendar"]',
+      title: "Follow-up Calendar",
+      description: "A super easy way to clear your follow-up backlogs. Never miss a follow-up again.",
+      position: "bottom" as const,
+    },
+    {
+      target: '[data-tour="contact-count"]',
+      title: "Your Contacts",
+      description: "Stay in touch with 10s of thousands of contacts easily.",
+      position: "bottom" as const,
     },
     {
       target: '[data-tour="starred"]',
       title: "Starred Contacts",
-      description: "Toggle to view only your starred/favorite contacts for quick access.",
+      description: "Star mark your contacts for more intense follow-ups.",
       position: "bottom" as const,
-    },
-    {
-      target: '[data-tour="add-contact"]',
-      title: "Add Contacts",
-      description: "Quickly add new contacts with their details and assign them a status.",
-      position: "left" as const,
     },
     {
       target: '[data-tour="metrics"]',
-      title: "Key Metrics",
-      description: "Track today's interactions and this month's order values at a glance.",
+      title: "Quick Stats",
+      description: "3 things you can do with Opterix 360: Follow-up with contacts. Book orders. Manage action items.",
       position: "bottom" as const,
     },
     {
-      target: '[data-tour="contact-actions"]',
-      title: "Contact Actions",
-      description: "Each contact has a star button to mark favorites and a down arrow to drop/archive contacts for later.",
+      target: '[data-tour="contact-cards"]',
+      title: "Contact Cards",
+      description: "To follow-up with a contact, just tap on their card.",
       position: "top" as const,
     },
   ];
@@ -279,7 +285,7 @@ const Index = () => {
       <div className="sticky top-0 z-10 bg-textured backdrop-blur-sm border-b border-border shadow-sm">
         <div className="max-w-3xl mx-auto px-3 py-2 md:px-8 md:py-4">
           <div className="flex items-center justify-between mb-3 md:mb-4">
-            <div>
+            <div data-tour="logo">
               <img 
                 src={opterixLogoDark} 
                 alt="Opterix 360" 
@@ -292,8 +298,12 @@ const Index = () => {
               />
             </div>
             <div className="flex items-center gap-2">
-              <NetworkStatus />
-              <FollowUpReminder />
+              <div data-tour="network-status">
+                <NetworkStatus />
+              </div>
+              <div data-tour="follow-up-calendar">
+                <FollowUpReminder />
+              </div>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -361,7 +371,7 @@ const Index = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-foreground">
+                <span data-tour="contact-count" className="text-sm font-medium text-foreground">
                   {filteredContacts.length} {filteredContacts.length === 1 ? 'Contact' : 'Contacts'}
                   {(searchQuery || showStarredOnly || advancedFilters.statuses.length > 0 || advancedFilters.city || advancedFilters.dateFrom || advancedFilters.dateTo) && (
                     <span className="text-xs text-muted-foreground ml-1">of {contacts.length}</span>
@@ -417,7 +427,9 @@ const Index = () => {
             Loading contacts...
           </div>
         ) : (
-          <ContactList contacts={filteredContacts} />
+          <div data-tour="contact-cards">
+            <ContactList contacts={filteredContacts} />
+          </div>
         )}
       </div>
       <BackToTop />
