@@ -26,7 +26,7 @@ const tourSteps = [
     target: '[data-tour="first-contact-card"]',
     title: "👆 Contact Cards",
     description: "Tap a card to view contact details and record a new interaction. Stay on top of your conversations!",
-    position: "top" as const,
+    position: "bottom" as const,
   },
   {
     target: '[data-tour="list-icon"]',
