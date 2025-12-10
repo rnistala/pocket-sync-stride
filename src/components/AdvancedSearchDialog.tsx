@@ -19,6 +19,7 @@ export interface AdvancedFilters {
   city: string;
   dateFrom: Date | undefined;
   dateTo: Date | undefined;
+  scoreRange: string;
 }
 
 interface AdvancedSearchDialogProps {
@@ -43,12 +44,13 @@ export const AdvancedSearchDialog = ({ contacts, filters, onApplyFilters, onClea
     return Array.from(cities).sort();
   }, [contacts]);
 
-  const hasActiveFilters = filters.statuses.length > 0 || filters.city || filters.dateFrom || filters.dateTo;
+  const hasActiveFilters = filters.statuses.length > 0 || filters.city || filters.dateFrom || filters.dateTo || Boolean(filters.scoreRange);
   const activeFilterCount = [
     filters.statuses.length > 0,
     Boolean(filters.city),
     Boolean(filters.dateFrom),
-    Boolean(filters.dateTo)
+    Boolean(filters.dateTo),
+    Boolean(filters.scoreRange)
   ].filter(Boolean).length;
 
   const handleStatusToggle = (status: string) => {
@@ -70,7 +72,8 @@ export const AdvancedSearchDialog = ({ contacts, filters, onApplyFilters, onClea
       statuses: [],
       city: "",
       dateFrom: undefined,
-      dateTo: undefined
+      dateTo: undefined,
+      scoreRange: ""
     };
     setLocalFilters(emptyFilters);
     onClearFilters();
@@ -174,6 +177,46 @@ export const AdvancedSearchDialog = ({ contacts, filters, onApplyFilters, onClea
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Clear city filter</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+          </div>
+
+          {/* Score Filter */}
+          <div className="space-y-2">
+            <Label htmlFor="score">Score (Interactions)</Label>
+            <div className="flex gap-2">
+              <Select
+                value={localFilters.scoreRange || undefined}
+                onValueChange={(value) => setLocalFilters(prev => ({ ...prev, scoreRange: value }))}
+              >
+                <SelectTrigger id="score" className="flex-1">
+                  <SelectValue placeholder="All scores" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">0 (No interactions)</SelectItem>
+                  <SelectItem value="1-5">1-5</SelectItem>
+                  <SelectItem value="5-10">5-10</SelectItem>
+                  <SelectItem value="10+">10+</SelectItem>
+                </SelectContent>
+              </Select>
+              {localFilters.scoreRange && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setLocalFilters(prev => ({ ...prev, scoreRange: "" }))}
+                        className="shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Clear score filter</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
