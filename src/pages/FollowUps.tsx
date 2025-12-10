@@ -183,6 +183,9 @@ const FollowUps = () => {
               onSelect={handleDateSelect}
               month={calendarMonth}
               onMonthChange={setCalendarMonth}
+              captionLayout="dropdown"
+              fromYear={2020}
+              toYear={2030}
               modifiers={{ hasFollowUp: datesWithFollowUps }}
               modifiersClassNames={{
                 hasFollowUp: "text-destructive font-semibold",
