@@ -297,11 +297,13 @@ interface LeadContextType {
   searchQuery: string;
   showStarredOnly: boolean;
   advancedFilters: AdvancedFilters;
+  filteredContactIds: string[];
   setScrollPosition: (position: number) => void;
   setDisplayCount: (count: number) => void;
   setSearchQuery: (query: string) => void;
   setShowStarredOnly: (show: boolean) => void;
   setAdvancedFilters: (filters: AdvancedFilters) => void;
+  setFilteredContactIds: (ids: string[]) => void;
   addInteraction: (
     contactId: string,
     type: Interaction["type"],
@@ -344,6 +346,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     dateTo: undefined,
     scoreRange: "",
   });
+  const [filteredContactIds, setFilteredContactIds] = useState<string[]>([]);
 
   // Load data once on mount
   useEffect(() => {
@@ -2049,11 +2052,13 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       searchQuery,
       showStarredOnly,
       advancedFilters,
+      filteredContactIds,
       setScrollPosition,
       setDisplayCount,
       setSearchQuery,
       setShowStarredOnly,
       setAdvancedFilters,
+      setFilteredContactIds,
       addInteraction,
       getContactInteractions,
       syncData,
@@ -2081,6 +2086,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       searchQuery,
       showStarredOnly,
       advancedFilters,
+      filteredContactIds,
     ],
   );
 

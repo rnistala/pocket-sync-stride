@@ -14,12 +14,14 @@ import {
   ArrowDown,
   Sparkles,
   HelpCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncButton } from "@/components/SyncButton";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -63,6 +65,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     updateContactStatus,
     fetchOrders,
     addTicket,
+    filteredContactIds,
   } = useLeadContext();
 
   // Get fresh contact from context every render
@@ -124,6 +127,74 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
 
   // Track which contacts have been fetched
   const fetchedContactsRef = useRef<Set<string>>(new Set());
+
+  // Swipe gesture refs
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const minSwipeDistance = 50;
+
+  // Navigation helpers
+  const currentIndex = filteredContactIds.indexOf(contactId);
+  const hasPrevious = currentIndex > 0;
+  const hasNext = currentIndex < filteredContactIds.length - 1 && currentIndex !== -1;
+
+  const goToPrevious = useCallback(() => {
+    if (hasPrevious) {
+      const prevId = filteredContactIds[currentIndex - 1];
+      navigate(`/contact/${prevId}/details`);
+    }
+  }, [hasPrevious, filteredContactIds, currentIndex, navigate]);
+
+  const goToNext = useCallback(() => {
+    if (hasNext) {
+      const nextId = filteredContactIds[currentIndex + 1];
+      navigate(`/contact/${nextId}/details`);
+    }
+  }, [hasNext, filteredContactIds, currentIndex, navigate]);
+
+  // Keyboard navigation (Arrow keys)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger when typing in inputs
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goToPrevious();
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goToNext();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [goToPrevious, goToNext]);
+
+  // Swipe gesture handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) goToNext();      // Swipe left → Next contact
+    if (isRightSwipe) goToPrevious(); // Swipe right → Previous contact
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
 
   // Track online/offline status
   useEffect(() => {
@@ -759,7 +830,12 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   ];
 
   return (
-    <div className="min-h-screen bg-textured p-3 overflow-x-hidden">
+    <div 
+      className="min-h-screen bg-textured p-3 overflow-x-hidden"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {showTour && (
         <FeatureTour
           steps={tourSteps}
@@ -775,10 +851,41 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
       )}
       <div className="max-w-3xl mx-auto space-y-3 w-full">
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate(-1)} size="sm" className="gap-1.5">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => navigate(-1)} size="sm" className="gap-1.5">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back
+            </Button>
+            
+            {/* Previous/Next navigation */}
+            {filteredContactIds.length > 0 && currentIndex !== -1 && (
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={goToPrevious}
+                  disabled={!hasPrevious}
+                  className="h-7 w-7"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <span className="text-xs text-muted-foreground px-1 min-w-[3rem] text-center">
+                  {currentIndex + 1} / {filteredContactIds.length}
+                </span>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={goToNext}
+                  disabled={!hasNext}
+                  className="h-7 w-7"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setShowTour(true)}>
               <HelpCircle className="h-4 w-4" />

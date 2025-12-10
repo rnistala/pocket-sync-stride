@@ -25,7 +25,7 @@ import opterixLogoDark from "@/assets/opterix-logo-dark.png";
 import opterixLogoLight from "@/assets/opterix-logo-light.png";
 
 const Index = () => {
-  const { contacts, interactions, orders, syncData, fetchOrders, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly, advancedFilters, setAdvancedFilters } = useLeadContext();
+  const { contacts, interactions, orders, syncData, fetchOrders, lastSync, isLoading, searchQuery, setSearchQuery, showStarredOnly, setShowStarredOnly, advancedFilters, setAdvancedFilters, setFilteredContactIds } = useLeadContext();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [showOrdersDialog, setShowOrdersDialog] = useState(false);
   const [showInteractionsDialog, setShowInteractionsDialog] = useState(false);
@@ -185,6 +185,11 @@ const Index = () => {
       return dateA - dateB;
     });
   }, [contacts, searchQuery, showStarredOnly, advancedFilters]);
+
+  // Update filtered contact IDs for navigation
+  useEffect(() => {
+    setFilteredContactIds(filteredContacts.map(c => c.id));
+  }, [filteredContacts, setFilteredContactIds]);
 
   // Fetch orders only when clicking "Closed This Month"
   const handleClosedClick = async () => {
