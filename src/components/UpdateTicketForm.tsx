@@ -30,6 +30,7 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [allImages, setAllImages] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadPhotos = async () => {
@@ -136,25 +137,32 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const updatedTicket: Ticket = {
-      ...ticket,
-      targetDate: new Date(targetDate).toISOString(),
-      status,
-      remarks: remarks.trim(),
-      rootCause: rootCause.trim(),
-      screenshots,
-      priority,
-      effort_minutes: effortInMinutes ? parseFloat(effortInMinutes) : undefined,
-    };
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-    await updateTicket(updatedTicket);
+    try {
+      const updatedTicket: Ticket = {
+        ...ticket,
+        targetDate: new Date(targetDate).toISOString(),
+        status,
+        remarks: remarks.trim(),
+        rootCause: rootCause.trim(),
+        screenshots,
+        priority,
+        effort_minutes: effortInMinutes ? parseFloat(effortInMinutes) : undefined,
+      };
 
-    toast({
-      title: "Ticket Updated",
-      description: "The ticket has been updated successfully",
-    });
+      await updateTicket(updatedTicket);
 
-    onOpenChange(false);
+      toast({
+        title: "Ticket Updated",
+        description: "The ticket has been updated successfully",
+      });
+
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -322,10 +330,12 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
             )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

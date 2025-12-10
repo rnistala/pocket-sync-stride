@@ -9,12 +9,18 @@ interface AddTaskFormProps {
 
 export const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
   const [title, setTitle] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (title.trim()) {
+    if (isAdding || !title.trim()) return;
+    
+    setIsAdding(true);
+    try {
       onAdd(title.trim());
       setTitle("");
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -26,7 +32,7 @@ export const AddTaskForm = ({ onAdd }: AddTaskFormProps) => {
         placeholder="Add a new task..."
         className="flex-1"
       />
-      <Button type="submit" size="icon">
+      <Button type="submit" size="icon" disabled={isAdding || !title.trim()}>
         <Plus className="h-4 w-4" />
       </Button>
     </form>

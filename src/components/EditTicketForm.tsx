@@ -32,6 +32,7 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
   const [allImages, setAllImages] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize form with ticket data
   useEffect(() => {
@@ -109,6 +110,8 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isSubmitting) return;
+
     if (!contactId || !issueType || !description) {
       toast({
         title: "Missing Information",
@@ -118,22 +121,28 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
       return;
     }
 
-    const updatedTicket: Ticket = {
-      ...ticket,
-      contactId,
-      issueType,
-      description,
-      screenshots,
-    };
+    setIsSubmitting(true);
 
-    await updateTicket(updatedTicket);
+    try {
+      const updatedTicket: Ticket = {
+        ...ticket,
+        contactId,
+        issueType,
+        description,
+        screenshots,
+      };
 
-    toast({
-      title: "Ticket Updated",
-      description: "The ticket details have been updated successfully",
-    });
+      await updateTicket(updatedTicket);
 
-    onOpenChange(false);
+      toast({
+        title: "Ticket Updated",
+        description: "The ticket details have been updated successfully",
+      });
+
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,10 +363,12 @@ export const EditTicketForm = ({ ticket, open, onOpenChange }: EditTicketFormPro
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
                 Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
             </div>
           </form>
         </DialogContent>
