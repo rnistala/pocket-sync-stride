@@ -282,6 +282,7 @@ export interface AdvancedFilters {
   city: string;
   dateFrom: Date | undefined;
   dateTo: Date | undefined;
+  scoreRange: string;
 }
 
 interface LeadContextType {
@@ -341,6 +342,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     city: "",
     dateFrom: undefined,
     dateTo: undefined,
+    scoreRange: "",
   });
 
   // Load data once on mount

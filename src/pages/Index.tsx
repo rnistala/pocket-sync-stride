@@ -141,6 +141,25 @@ const Index = () => {
       });
     }
     
+    // Apply score range filter
+    if (advancedFilters.scoreRange) {
+      filtered = filtered.filter(contact => {
+        const score = contact.score || 0;
+        switch (advancedFilters.scoreRange) {
+          case "0":
+            return score === 0;
+          case "1-5":
+            return score >= 1 && score <= 5;
+          case "5-10":
+            return score >= 5 && score <= 10;
+          case "10+":
+            return score > 10;
+          default:
+            return true;
+        }
+      });
+    }
+    
     // Then apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -349,7 +368,8 @@ const Index = () => {
                   statuses: [],
                   city: "",
                   dateFrom: undefined,
-                  dateTo: undefined
+                  dateTo: undefined,
+                  scoreRange: ""
                 })}
               />
               {searchQuery && (
@@ -379,7 +399,7 @@ const Index = () => {
               <div className="flex items-center gap-3">
                 <span data-tour="contact-count" className="text-sm font-medium text-foreground">
                   {filteredContacts.length} {filteredContacts.length === 1 ? 'Contact' : 'Contacts'}
-                  {(searchQuery || showStarredOnly || advancedFilters.statuses.length > 0 || advancedFilters.city || advancedFilters.dateFrom || advancedFilters.dateTo) && (
+                  {(searchQuery || showStarredOnly || advancedFilters.statuses.length > 0 || advancedFilters.city || advancedFilters.dateFrom || advancedFilters.dateTo || advancedFilters.scoreRange) && (
                     <span className="text-xs text-muted-foreground ml-1">of {contacts.length}</span>
                   )}
                 </span>
