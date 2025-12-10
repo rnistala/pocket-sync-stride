@@ -38,7 +38,7 @@ const tourSteps = [
 ];
 
 const FollowUps = () => {
-  const { contacts, toggleStarred } = useLeadContext();
+  const { contacts, toggleStarred, setFilteredContactIds } = useLeadContext();
   const [showTour, setShowTour] = useState(false);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -91,6 +91,11 @@ const FollowUps = () => {
     const dateKey = selectedDate.toDateString();
     return followUpsByDate.get(dateKey) || [];
   }, [selectedDate, followUpsByDate]);
+
+  // Update filtered contact IDs for navigation
+  useEffect(() => {
+    setFilteredContactIds(contactsForSelectedDate.map(c => c.id));
+  }, [contactsForSelectedDate, setFilteredContactIds]);
 
   const handleContactClick = (contactId: number | string) => {
     navigate(`/contact/${contactId}/details`);
