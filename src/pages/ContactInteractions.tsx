@@ -141,14 +141,14 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   const goToPrevious = useCallback(() => {
     if (hasPrevious) {
       const prevId = filteredContactIds[currentIndex - 1];
-      navigate(`/contact/${prevId}/details`);
+      navigate(`/contact/${prevId}/details`, { replace: true });
     }
   }, [hasPrevious, filteredContactIds, currentIndex, navigate]);
 
   const goToNext = useCallback(() => {
     if (hasNext) {
       const nextId = filteredContactIds[currentIndex + 1];
-      navigate(`/contact/${nextId}/details`);
+      navigate(`/contact/${nextId}/details`, { replace: true });
     }
   }, [hasNext, filteredContactIds, currentIndex, navigate]);
 
