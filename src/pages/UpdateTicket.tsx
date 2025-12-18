@@ -30,6 +30,7 @@ export default function UpdateTicket() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [allImages, setAllImages] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const loadPhotos = async () => {
@@ -197,27 +198,32 @@ export default function UpdateTicket() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!ticket) return;
+    if (!ticket || isSubmitting) return;
 
-    const updatedTicket: Ticket = {
-      ...ticket,
-      targetDate: new Date(targetDate).toISOString(),
-      status,
-      remarks: remarks.trim(),
-      rootCause: rootCause.trim(),
-      screenshots,
-      priority,
-      effort_minutes: effortInMinutes ? parseFloat(effortInMinutes) : undefined,
-    };
+    setIsSubmitting(true);
+    try {
+      const updatedTicket: Ticket = {
+        ...ticket,
+        targetDate: new Date(targetDate).toISOString(),
+        status,
+        remarks: remarks.trim(),
+        rootCause: rootCause.trim(),
+        screenshots,
+        priority,
+        effort_minutes: effortInMinutes ? parseFloat(effortInMinutes) : undefined,
+      };
 
-    await updateTicket(updatedTicket);
+      await updateTicket(updatedTicket);
 
-    toast({
-      title: "Ticket Updated",
-      description: "The ticket has been updated successfully",
-    });
+      toast({
+        title: "Ticket Updated",
+        description: "The ticket has been updated successfully",
+      });
 
-    navigate(-1);
+      navigate(-1);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -415,7 +421,9 @@ export default function UpdateTicket() {
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                 Cancel
               </Button>
-              <Button type="submit">Save Changes</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Changes"}
+              </Button>
             </div>
           </form>
         </div>
