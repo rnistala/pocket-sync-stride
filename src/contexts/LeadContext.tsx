@@ -21,7 +21,7 @@ export interface Ticket {
   targetDate: string;
   closedDate?: string;
   issueType: string;
-  status: "OPEN" | "IN PROGRESS" | "CLOSED";
+  status: "OPEN" | "IN PROGRESS" | "CLOSED" | "CLIENT QUERY";
   description: string;
   remarks?: string;
   rootCause?: string;
@@ -1968,8 +1968,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       await dbManager.updateTicket(updatedTicket);
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updatedTicket : t)));
 
-      // Send email notification if ticket was closed
-      if (ticket.status === "CLOSED" && ticket.ticketId) {
+      // Send email notification if ticket was closed or set to client query
+      if ((ticket.status === "CLOSED" || ticket.status === "CLIENT QUERY") && ticket.ticketId) {
         try {
           console.log("[EMAIL] Looking for contact ID:", ticket.contactId, "in", contacts.length, "contacts");
           const contact = contacts.find(c => String(c.id) === String(ticket.contactId));
@@ -1981,41 +1981,66 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           
           if (!contact) {
             console.warn("[EMAIL] Contact not found for ID:", ticket.contactId);
-            toast.warning(`Ticket ${ticket.ticketId} closed - contact not found for email notification`);
+            toast.warning(`Ticket ${ticket.ticketId} updated - contact not found for email notification`);
           } else if (!contact.email) {
             console.warn("[EMAIL] Contact has no email:", contact.name);
-            toast.warning(`Ticket ${ticket.ticketId} closed - contact has no email`);
+            toast.warning(`Ticket ${ticket.ticketId} updated - contact has no email`);
           } else if (contact && contact.email) {
-            console.log("[EMAIL] Sending closure notification for ticket:", ticket.ticketId);
-            
             const issueTypeLabel = getIssueTypeLabel(ticket.issueType);
             
-            const emailResponse = await supabase.functions.invoke('send-ticket-closure-email', {
-              body: {
-                userId: userId,
-                contactEmail: contact.email,
-                userEmail: userEmail,
-                ticketId: ticket.ticketId,
-                issueType: issueTypeLabel,
-                description: ticket.description,
-                remarks: ticket.remarks || '',
-                rootCause: ticket.rootCause || '',
-                effortMinutes: ticket.effort_minutes || 0
+            if (ticket.status === "CLOSED") {
+              console.log("[EMAIL] Sending closure notification for ticket:", ticket.ticketId);
+              
+              const emailResponse = await supabase.functions.invoke('send-ticket-closure-email', {
+                body: {
+                  userId: userId,
+                  contactEmail: contact.email,
+                  userEmail: userEmail,
+                  ticketId: ticket.ticketId,
+                  issueType: issueTypeLabel,
+                  description: ticket.description,
+                  remarks: ticket.remarks || '',
+                  rootCause: ticket.rootCause || '',
+                  effortMinutes: ticket.effort_minutes || 0
+                }
+              });
+              
+              console.log("[EMAIL] Closure response:", emailResponse);
+              
+              if (emailResponse.data?.success) {
+                toast.success(`Ticket ${ticket.ticketId} closed and notification sent`);
+              } else {
+                console.log("[EMAIL] Failed to send closure email. Status:", emailResponse.data?.status);
+                toast.warning(`Ticket ${ticket.ticketId} closed but failed to send notification`);
               }
-            });
-            
-            console.log("[EMAIL] Closure response:", emailResponse);
-            
-            if (emailResponse.data?.success) {
-              toast.success(`Ticket ${ticket.ticketId} closed and notification sent`);
-            } else {
-              console.log("[EMAIL] Failed to send closure email. Status:", emailResponse.data?.status);
-              toast.warning(`Ticket ${ticket.ticketId} closed but failed to send notification`);
+            } else if (ticket.status === "CLIENT QUERY") {
+              console.log("[EMAIL] Sending client query notification for ticket:", ticket.ticketId);
+              
+              const emailResponse = await supabase.functions.invoke('send-ticket-query-email', {
+                body: {
+                  userId: userId,
+                  contactEmail: contact.email,
+                  userEmail: userEmail,
+                  ticketId: ticket.ticketId,
+                  issueType: issueTypeLabel,
+                  description: ticket.description,
+                  remarks: ticket.remarks || ''
+                }
+              });
+              
+              console.log("[EMAIL] Query response:", emailResponse);
+              
+              if (emailResponse.data?.success) {
+                toast.success(`Ticket ${ticket.ticketId} set to Client Query and notification sent`);
+              } else {
+                console.log("[EMAIL] Failed to send query email. Status:", emailResponse.data?.status);
+                toast.warning(`Ticket ${ticket.ticketId} updated but failed to send notification`);
+              }
             }
           }
         } catch (emailError) {
-          console.error("[EMAIL] Error sending closure notification:", emailError);
-          toast.warning(`Ticket ${ticket.ticketId} closed but failed to send notification`);
+          console.error("[EMAIL] Error sending notification:", emailError);
+          toast.warning(`Ticket ${ticket.ticketId} updated but failed to send notification`);
         }
       } else {
         console.log("[TICKET] Ticket updated successfully");
