@@ -293,6 +293,8 @@ export default function Tickets() {
         return <Badge variant="destructive">OPEN</Badge>;
       case "IN PROGRESS":
         return <Badge variant="secondary">IN PROGRESS</Badge>;
+      case "CLIENT QUERY":
+        return <Badge className="bg-amber-500 text-white hover:bg-amber-600">CLIENT QUERY</Badge>;
       case "CLOSED":
         return <Badge variant="outline">CLOSED</Badge>;
       default:
@@ -300,7 +302,7 @@ export default function Tickets() {
     }
   };
 
-  const handleStatusChange = async (ticketId: number, newStatus: "OPEN" | "IN PROGRESS" | "CLOSED") => {
+  const handleStatusChange = async (ticketId: number, newStatus: "OPEN" | "IN PROGRESS" | "CLOSED" | "CLIENT QUERY") => {
     const ticket = tickets.find(t => t.id === ticketId);
     if (!ticket) return;
 

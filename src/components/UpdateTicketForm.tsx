@@ -20,7 +20,7 @@ interface UpdateTicketFormProps {
 export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFormProps) => {
   const { updateTicket } = useLeadContext();
   const [targetDate, setTargetDate] = useState("");
-  const [status, setStatus] = useState<"OPEN" | "IN PROGRESS" | "CLOSED">("OPEN");
+  const [status, setStatus] = useState<"OPEN" | "IN PROGRESS" | "CLOSED" | "CLIENT QUERY">("OPEN");
   const [remarks, setRemarks] = useState("");
   const [rootCause, setRootCause] = useState("");
   const [screenshots, setScreenshots] = useState<string[]>([]);
@@ -190,13 +190,14 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
               
               <div className="space-y-2">
                 <Label htmlFor="status">Status *</Label>
-                <Select value={status} onValueChange={(value) => setStatus(value as "OPEN" | "IN PROGRESS" | "CLOSED")}>
+                <Select value={status} onValueChange={(value) => setStatus(value as "OPEN" | "IN PROGRESS" | "CLOSED" | "CLIENT QUERY")}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="OPEN">Open</SelectItem>
                     <SelectItem value="IN PROGRESS">In Progress</SelectItem>
+                    <SelectItem value="CLIENT QUERY">Client Query</SelectItem>
                     <SelectItem value="CLOSED">Closed</SelectItem>
                   </SelectContent>
                 </Select>

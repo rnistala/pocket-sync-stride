@@ -95,6 +95,7 @@ export function TicketFiltersDialog({
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="OPEN">OPEN</SelectItem>
                 <SelectItem value="IN PROGRESS">IN PROGRESS</SelectItem>
+                <SelectItem value="CLIENT QUERY">CLIENT QUERY</SelectItem>
                 <SelectItem value="CLOSED">CLOSED</SelectItem>
               </SelectContent>
             </Select>
