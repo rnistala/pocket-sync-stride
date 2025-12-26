@@ -5,6 +5,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to get a preview of the description for subject line
+const getSubjectPreview = (description: string, maxLength: number = 50): string => {
+  if (!description) return '';
+  const cleaned = description.replace(/\s+/g, ' ').trim();
+  if (cleaned.length <= maxLength) return cleaned;
+  const truncated = cleaned.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return (lastSpace > 20 ? truncated.substring(0, lastSpace) : truncated) + '...';
+};
+
 // Helper function to format description with proper line breaks
 const formatDescription = (text: string): string => {
   if (!text) return '';
@@ -82,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailPayload = [{
       id: userId,
       to: recipients,
-      subject: `[Opterix 360] New ticket ${ticketId}`,
+      subject: `[Opterix 360] ${ticketId} | ${issueType}: ${getSubjectPreview(description)}`,
       body: emailBody
     }];
 
