@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.send-ticket-query-email]
 verify_jwt = false
+
+[functions.send-dashboard-email]
+verify_jwt = false

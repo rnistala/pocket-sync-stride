@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut, Pencil, HelpCircle } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut, Pencil, HelpCircle, BarChart3 } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncButton } from "@/components/SyncButton";
@@ -355,6 +355,25 @@ export default function Tickets() {
               <h1 className="text-lg font-semibold text-foreground">Tickets</h1>
             </div>
             <div className="flex items-center gap-2">
+              {!userCompany && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate("/dashboard")}
+                        className="h-8 w-8"
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Effort Dashboard</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
