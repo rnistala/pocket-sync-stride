@@ -112,7 +112,7 @@ const CustomerDashboard = () => {
     };
     
     customerTickets.forEach(ticket => {
-      result.totalEffortMinutes += ticket.effort_minutes || 0;
+      result.totalEffortMinutes += Number(ticket.effort_minutes) || 0;
       
       switch (ticket.status) {
         case "OPEN":
@@ -132,7 +132,7 @@ const CustomerDashboard = () => {
       const issueType = ticket.issueType;
       if (issueType in result.byIssueType) {
         result.byIssueType[issueType]++;
-        result.effortByIssueType[issueType] += ticket.effort_minutes || 0;
+        result.effortByIssueType[issueType] += Number(ticket.effort_minutes) || 0;
       }
     });
     
@@ -175,7 +175,7 @@ const CustomerDashboard = () => {
             issueType: getIssueTypeLabel(t.issueType),
             description: t.description,
             status: t.status,
-            effortMinutes: t.effort_minutes || 0,
+            effortMinutes: Number(t.effort_minutes) || 0,
             reportedDate: t.reportedDate,
             closedDate: t.closedDate,
           })),
@@ -374,7 +374,7 @@ const CustomerDashboard = () => {
                           {ticket.description}
                         </TableCell>
                         <TableCell>{getStatusBadge(ticket.status)}</TableCell>
-                        <TableCell>{formatEffort(ticket.effort_minutes || 0)}</TableCell>
+                        <TableCell>{formatEffort(Number(ticket.effort_minutes) || 0)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(ticket.reportedDate).toLocaleDateString()}
                         </TableCell>

@@ -105,7 +105,7 @@ const Dashboard = () => {
       
       const stats = statsMap.get(ticket.contactId)!;
       stats.totalTickets++;
-      stats.totalEffortMinutes += ticket.effort_minutes || 0;
+      stats.totalEffortMinutes += Number(ticket.effort_minutes) || 0;
       
       // Count by status
       switch (ticket.status) {
@@ -127,7 +127,7 @@ const Dashboard = () => {
       const issueType = ticket.issueType as keyof typeof stats.byIssueType;
       if (issueType in stats.byIssueType) {
         stats.byIssueType[issueType]++;
-        stats.effortByIssueType[issueType] += ticket.effort_minutes || 0;
+        stats.effortByIssueType[issueType] += Number(ticket.effort_minutes) || 0;
       }
     });
     
