@@ -1,0 +1,151 @@
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Helper function to get a preview of the description for subject line
+const getSubjectPreview = (description: string, maxLength: number = 50): string => {
+  if (!description) return '';
+  const cleaned = description.replace(/\s+/g, ' ').trim();
+  if (cleaned.length <= maxLength) return cleaned;
+  const truncated = cleaned.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return (lastSpace > 20 ? truncated.substring(0, lastSpace) : truncated) + '...';
+};
+
+// Helper function to format description with proper line breaks
+const formatDescription = (text: string): string => {
+  if (!text) return '';
+  
+  // First, convert existing newlines to <br>
+  let formatted = text.replace(/\n/g, '<br>');
+  
+  // Add line break before numbered items (1. 2. 3. etc.) that don't already have one
+  formatted = formatted.replace(/(?<!<br>)(\s*)(\d{1,2}\.\s)/g, '<br><br>$2');
+  
+  // Clean up any leading <br> tags
+  formatted = formatted.replace(/^(<br>)+/, '');
+  
+  return formatted;
+};
+
+interface AssignmentEmailRequest {
+  userId: string;
+  assigneeEmail: string;
+  assigneeName: string;
+  assignerName: string;
+  ticketId: string;
+  issueType: string;
+  description: string;
+  contactName: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { 
+      userId, 
+      assigneeEmail, 
+      assigneeName, 
+      assignerName, 
+      ticketId, 
+      issueType, 
+      description,
+      contactName 
+    }: AssignmentEmailRequest = await req.json();
+    
+    console.log(`[ASSIGNMENT EMAIL] Sending notification for ticket ${ticketId} to ${assigneeEmail}`);
+    
+    // Construct HTML email body
+    const emailBody = `
+<html>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px;">
+      Ticket Assigned to You
+    </h2>
+    
+    <p>Hello ${assigneeName},</p>
+    
+    <p>${assignerName} has assigned a ticket to you. Here are the details:</p>
+    
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; width: 120px;">Ticket No:</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${ticketId}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Contact:</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${contactName}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold;">Issue Type:</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${issueType}</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; vertical-align: top;">Description:</td>
+        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${formatDescription(description)}</td>
+      </tr>
+    </table>
+    
+    <p style="margin-top: 30px;">Please review and work on this ticket at your earliest convenience.</p>
+    
+    <p style="margin-top: 30px; font-size: 12px; color: #6b7280;">
+      This is an automated notification from Opterix 360.
+    </p>
+  </div>
+</body>
+</html>
+    `;
+
+    // Call Opterix email API
+    const emailPayload = [{
+      id: userId,
+      to: assigneeEmail,
+      subject: `[Opterix 360] Ticket Assigned: ${ticketId} | ${issueType}: ${getSubjectPreview(description)}`,
+      body: emailBody
+    }];
+
+    console.log(`[ASSIGNMENT EMAIL] Calling API: https://demo.opterix.in/api/public/qmail/${userId}`);
+    
+    const response = await fetch(`https://demo.opterix.in/api/public/qmail/${userId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailPayload)
+    });
+
+    const responseText = await response.text();
+    console.log(`[ASSIGNMENT EMAIL] API Response: ${responseText}`);
+    
+    // Check if the response indicates success
+    const isSuccess = response.ok && (
+      responseText.includes('"success"') || 
+      responseText.includes('"send"') ||
+      responseText.includes('success')
+    );
+    
+    return new Response(JSON.stringify({ 
+      success: isSuccess,
+      status: responseText 
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  } catch (error: any) {
+    console.error('[ASSIGNMENT EMAIL] Error sending email:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    });
+  }
+};
+
+serve(handler);
