@@ -29,7 +29,15 @@ export interface Ticket {
   photo?: any[]; // Array of photo metadata from server
   priority?: boolean; // Star mark for priority tickets
   effort_minutes?: number; // Effort in minutes to solve the ticket
+  assigned_to?: number; // User ID of assigned user
+  assignedToName?: string; // Display name of assigned user
   syncStatus: "synced" | "pending" | "local";
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email?: string;
 }
 
 class IndexedDBManager {
@@ -290,6 +298,7 @@ interface LeadContextType {
   interactions: Interaction[];
   orders: any[];
   tickets: Ticket[];
+  users: User[];
   lastSync: Date | null;
   isLoading: boolean;
   scrollPosition: number;
@@ -320,9 +329,10 @@ interface LeadContextType {
   updateContactStatus: (contactId: string, status: string) => Promise<void>;
   fetchOrders: () => Promise<void>;
   fetchTickets: () => Promise<void>;
+  fetchUsers: () => Promise<void>;
   syncTickets: () => Promise<void>;
   addTicket: (ticket: Omit<Ticket, "id" | "syncStatus">) => Promise<Ticket | undefined>;
-  updateTicket: (ticket: Ticket) => Promise<void>;
+  updateTicket: (ticket: Ticket, previousAssignedTo?: number) => Promise<void>;
   getContactTickets: (contactId: string) => Ticket[];
 }
 
@@ -333,6 +343,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const [interactions, setInteractions] = useState<Interaction[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -1212,6 +1223,59 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const fetchUsers = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("userToken");
+
+    console.log("[USERS] Starting fetchUsers");
+
+    if (!userId || !token) {
+      console.error("[USERS] Missing userId or token");
+      return;
+    }
+
+    try {
+      const apiRoot = await getApiRoot();
+      // Fetch users using the users widget ID
+      const url = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
+      const payload = { id: 195, offset: 0, limit: 0 };
+
+      console.log("[USERS] Fetching from:", url);
+      console.log("[USERS] Payload:", payload);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      console.log("[USERS] Response status:", response.status);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("[USERS] Response data:", result);
+
+        if (result.data && result.data[0] && result.data[0].body) {
+          const fetchedUsers: User[] = result.data[0].body.map((apiUser: any) => ({
+            id: String(apiUser.id),
+            name: apiUser.name || apiUser.username || "",
+            email: apiUser.email || "",
+          }));
+          console.log("[USERS] Fetched users count:", fetchedUsers.length);
+          setUsers(fetchedUsers);
+        } else {
+          console.error("[USERS] Unexpected response structure:", result);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error("[USERS] API returned error status:", response.status);
+        console.error("[USERS] Error response:", errorText);
+      }
+    } catch (error) {
+      console.error("[USERS] Failed to fetch users:", error);
+    }
+  }, []);
+
   const fetchTickets = useCallback(async () => {
     const userId = localStorage.getItem("userId");
     const token = localStorage.getItem("userToken");
@@ -1280,6 +1344,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             photo: apiTicket.photo || [],
             priority: apiTicket.priority === "High",
             effort_minutes: Number(apiTicket.effort_minutes) || 0,
+            assigned_to: apiTicket.assigned_to ? Number(apiTicket.assigned_to) : undefined,
+            assignedToName: apiTicket.assigned_to_name || "",
             syncStatus: "synced" as const,
           }));
 
@@ -1631,6 +1697,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               priority: apiTicket.priority === "High",
               effort_in_hours: apiTicket.effort_in_hours,
               effort_minutes: Number(apiTicket.effort_minutes) || 0,
+              assigned_to: apiTicket.assigned_to ? Number(apiTicket.assigned_to) : undefined,
+              assignedToName: apiTicket.assigned_to_name || "",
               syncStatus: "synced" as const,
             };
           });
@@ -1890,7 +1958,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [contacts]);
 
-  const updateTicket = useCallback(async (ticket: Ticket) => {
+  const updateTicket = useCallback(async (ticket: Ticket, previousAssignedTo?: number) => {
     const userId = localStorage.getItem("userId");
 
     if (!userId) {
@@ -1920,7 +1988,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         ...(ticket.status === "CLOSED" && { close_date: new Date().toISOString() }),
         updated: new Date().toISOString(),
         updatedby: userId,
-        assigned_to: Number(userId),
+        assigned_to: ticket.assigned_to || Number(userId),
         description: ticket.description || "",
         contact: ticket.contactId,
         issue_type: ticket.issueType,
@@ -1967,6 +2035,57 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       // Update local storage
       await dbManager.updateTicket(updatedTicket);
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updatedTicket : t)));
+
+      // Check if assignment changed and send email
+      const assignmentChanged = previousAssignedTo !== undefined && 
+        ticket.assigned_to !== undefined && 
+        previousAssignedTo !== ticket.assigned_to;
+      
+      if (assignmentChanged && ticket.ticketId) {
+        try {
+          // Find the assigned user
+          const assignedUser = users.find(u => String(u.id) === String(ticket.assigned_to));
+          const contact = contacts.find(c => String(c.id) === String(ticket.contactId));
+          
+          // Get current user name from token
+          const userTokenStr = localStorage.getItem("userToken");
+          const userToken = userTokenStr ? JSON.parse(userTokenStr) : null;
+          const assignerName = userToken?.name || userToken?.username || "A team member";
+          
+          if (assignedUser && assignedUser.email) {
+            console.log("[EMAIL] Sending assignment notification to:", assignedUser.email);
+            
+            const issueTypeLabel = getIssueTypeLabel(ticket.issueType);
+            
+            const emailResponse = await supabase.functions.invoke('send-ticket-assignment-email', {
+              body: {
+                userId: userId,
+                assigneeEmail: assignedUser.email,
+                assigneeName: assignedUser.name,
+                assignerName: assignerName,
+                ticketId: ticket.ticketId,
+                issueType: issueTypeLabel,
+                description: ticket.description,
+                contactName: contact?.name || "Unknown"
+              }
+            });
+            
+            console.log("[EMAIL] Assignment notification response:", emailResponse);
+            
+            if (emailResponse.data?.success) {
+              toast.success(`Ticket assigned to ${assignedUser.name} and notification sent`);
+            } else {
+              toast.warning(`Ticket assigned but failed to send notification`);
+            }
+          } else if (assignedUser) {
+            console.warn("[EMAIL] Assigned user has no email:", assignedUser.name);
+            toast.success(`Ticket assigned to ${assignedUser.name}`);
+          }
+        } catch (emailError) {
+          console.error("[EMAIL] Error sending assignment notification:", emailError);
+          toast.warning(`Ticket assigned but failed to send notification`);
+        }
+      }
 
       // Send email notification if ticket was closed or set to client query
       if ((ticket.status === "CLOSED" || ticket.status === "CLIENT QUERY") && ticket.ticketId) {
@@ -2070,6 +2189,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       interactions,
       orders,
       tickets,
+      users,
       lastSync,
       isLoading,
       scrollPosition,
@@ -2094,6 +2214,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       updateContactStatus,
       fetchOrders,
       fetchTickets,
+      fetchUsers,
       syncTickets,
       addTicket,
       updateTicket,
@@ -2104,6 +2225,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       interactions,
       orders,
       tickets,
+      users,
       lastSync,
       isLoading,
       scrollPosition,
