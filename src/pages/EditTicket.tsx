@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Upload, X, Check, ChevronsUpDown, ArrowLeft } from "lucide-react";
+import { Upload, X, Check, ChevronsUpDown, ArrowLeft, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { ImageLightbox } from "@/components/ImageLightbox";
@@ -17,7 +17,7 @@ import { getApiRoot } from "@/lib/config";
 export default function EditTicket() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tickets, contacts, updateTicket } = useLeadContext();
+  const { tickets, contacts, users, updateTicket, fetchUsers } = useLeadContext();
   
   const [isLoading, setIsLoading] = useState(true);
   const [ticket, setTicket] = useState<Ticket | undefined>(tickets.find(t => String(t.id) === id));
@@ -32,6 +32,19 @@ export default function EditTicket() {
   const [allImages, setAllImages] = useState<string[]>([]);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  
+  // Assign To state
+  const [assignedTo, setAssignedTo] = useState<string>("");
+  const [userOpen, setUserOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [originalAssignedTo, setOriginalAssignedTo] = useState<number | undefined>();
+
+  // Fetch users on mount
+  useEffect(() => {
+    if (users.length === 0) {
+      fetchUsers();
+    }
+  }, [users.length, fetchUsers]);
 
   // Normalize issue type to handle legacy display names
   const normalizeIssueType = (type: string): string => {
@@ -52,6 +65,8 @@ export default function EditTicket() {
         setIssueType(normalizeIssueType(ticket.issueType));
         setDescription(ticket.description);
         setScreenshots(ticket.screenshots || []);
+        setAssignedTo(ticket.assigned_to ? String(ticket.assigned_to) : "");
+        setOriginalAssignedTo(ticket.assigned_to);
         
         // Load existing photos from server
         if (ticket.photo && Array.isArray(ticket.photo) && ticket.photo.length > 0) {
@@ -161,6 +176,12 @@ export default function EditTicket() {
     [contacts, contactId]
   );
 
+  // Get selected user display name
+  const selectedUser = useMemo(() => 
+    users.find(u => u.id === assignedTo),
+    [users, assignedTo]
+  );
+
   // Filter contacts by search
   const filteredContacts = useMemo(() => {
     if (!contactSearch.trim()) return contacts.slice(0, 50);
@@ -174,6 +195,19 @@ export default function EditTicket() {
       )
       .slice(0, 50);
   }, [contacts, contactSearch]);
+
+  // Filter users by search
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users.slice(0, 50);
+    
+    const query = userSearch.toLowerCase();
+    return users
+      .filter(user => 
+        user.name.toLowerCase().includes(query) ||
+        (user.email && user.email.toLowerCase().includes(query))
+      )
+      .slice(0, 50);
+  }, [users, userSearch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,15 +223,20 @@ export default function EditTicket() {
 
     if (!ticket) return;
 
-    const updatedTicket = {
+    const newAssignedTo = assignedTo ? Number(assignedTo) : undefined;
+    const assignedUser = users.find(u => u.id === assignedTo);
+
+    const updatedTicket: Ticket = {
       ...ticket,
       contactId,
       issueType,
       description,
       screenshots,
+      assigned_to: newAssignedTo,
+      assignedToName: assignedUser?.name || "",
     };
 
-    await updateTicket(updatedTicket);
+    await updateTicket(updatedTicket, originalAssignedTo);
 
     toast({
       title: "Ticket Updated",
@@ -336,6 +375,89 @@ export default function EditTicket() {
                               <span className="font-medium">{contact.name}</span>
                               {contact.company && (
                                 <span className="text-xs text-muted-foreground">{contact.company}</span>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Assign To field */}
+            <div className="space-y-2">
+              <Label htmlFor="assignTo">Assign To</Label>
+              <Popover open={userOpen} onOpenChange={setUserOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={userOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedUser ? (
+                      <div className="flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        <span>{selectedUser.name}</span>
+                        {selectedUser.email && (
+                          <span className="text-xs text-muted-foreground">({selectedUser.email})</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Select user to assign...</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] max-w-[92vw] p-0">
+                  <Command shouldFilter={false}>
+                    <CommandInput 
+                      placeholder="Search user..." 
+                      value={userSearch}
+                      onValueChange={setUserSearch}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No user found.</CommandEmpty>
+                      <CommandGroup>
+                        {/* Option to unassign */}
+                        <CommandItem
+                          value=""
+                          onSelect={() => {
+                            setAssignedTo("");
+                            setUserOpen(false);
+                            setUserSearch("");
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              !assignedTo ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <span className="text-muted-foreground">Unassigned</span>
+                        </CommandItem>
+                        {filteredUsers.map((user) => (
+                          <CommandItem
+                            key={user.id}
+                            value={user.id}
+                            onSelect={(currentValue) => {
+                              setAssignedTo(currentValue === assignedTo ? "" : currentValue);
+                              setUserOpen(false);
+                              setUserSearch("");
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                assignedTo === user.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span className="font-medium">{user.name}</span>
+                              {user.email && (
+                                <span className="text-xs text-muted-foreground">{user.email}</span>
                               )}
                             </div>
                           </CommandItem>
