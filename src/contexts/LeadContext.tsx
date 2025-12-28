@@ -2037,9 +2037,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updatedTicket : t)));
 
       // Check if assignment changed and send email
-      const assignmentChanged = previousAssignedTo !== undefined && 
-        ticket.assigned_to !== undefined && 
-        previousAssignedTo !== ticket.assigned_to;
+      // Case 1: New assignment (was unassigned, now assigned)
+      // Case 2: Reassignment (was assigned to someone else)
+      const assignmentChanged = (
+        (previousAssignedTo === undefined && ticket.assigned_to !== undefined) ||
+        (previousAssignedTo !== undefined && ticket.assigned_to !== undefined && previousAssignedTo !== ticket.assigned_to)
+      );
+      
+      console.log("[ASSIGNMENT] previousAssignedTo:", previousAssignedTo, "ticket.assigned_to:", ticket.assigned_to, "assignmentChanged:", assignmentChanged, "ticketId:", ticket.ticketId);
       
       if (assignmentChanged && ticket.ticketId) {
         try {
