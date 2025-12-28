@@ -1967,6 +1967,9 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    const previousAssignedToEffective =
+      previousAssignedTo ?? tickets.find((t) => t.id === ticket.id)?.assigned_to;
+
     try {
       console.log("[TICKET] Updating ticket:", ticket.id);
 
@@ -1989,7 +1992,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         ...(ticket.status === "CLOSED" && { close_date: new Date().toISOString() }),
         updated: new Date().toISOString(),
         updatedby: userId,
-        assigned_to: ticket.assigned_to || Number(userId),
+        assigned_to: ticket.assigned_to ?? Number(userId),
         description: ticket.description || "",
         contact: ticket.contactId,
         issue_type: ticket.issueType,
@@ -2037,78 +2040,107 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       await dbManager.updateTicket(updatedTicket);
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? updatedTicket : t)));
 
-      // Check if assignment changed and send email
-      // Case 1: New assignment (was unassigned, now assigned)
-      // Case 2: Reassignment (was assigned to someone else)
-      const assignmentChanged = (
-        (previousAssignedTo === undefined && ticket.assigned_to !== undefined) ||
-        (previousAssignedTo !== undefined && ticket.assigned_to !== undefined && previousAssignedTo !== ticket.assigned_to)
-      );
-      
-      console.log("[ASSIGNMENT] previousAssignedTo:", previousAssignedTo, "ticket.assigned_to:", ticket.assigned_to, "assignmentChanged:", assignmentChanged, "ticketId:", ticket.ticketId);
-      
-      if (assignmentChanged && ticket.ticketId) {
-        try {
-          // Debug logging for email lookup
-          console.log("[ASSIGNMENT DEBUG] Users array:", users.map(u => ({ id: u.id, name: u.name, email: u.email })));
-          console.log("[ASSIGNMENT DEBUG] Looking for assigned_to:", ticket.assigned_to, "type:", typeof ticket.assigned_to);
-          
-          // Find the assigned user
-          const assignedUser = users.find(u => String(u.id) === String(ticket.assigned_to));
-          console.log("[ASSIGNMENT DEBUG] Found user:", assignedUser);
-          const contact = contacts.find(c => String(c.id) === String(ticket.contactId));
-          
-          // Get current user name from token
-          const userTokenStr = localStorage.getItem("userToken");
-          const userToken = userTokenStr ? JSON.parse(userTokenStr) : null;
-          const assignerName = userToken?.name || userToken?.username || "A team member";
-          
-          if (assignedUser && assignedUser.email) {
-            console.log("[EMAIL] Sending assignment notification to:", assignedUser.email);
-            
-            const issueTypeLabel = getIssueTypeLabel(ticket.issueType);
-            
-            const emailResponse = await supabase.functions.invoke('send-ticket-assignment-email', {
-              body: {
-                userId: userId,
+      // Assignment email instrumentation
+      const assignmentChanged =
+        ticket.assigned_to !== undefined && previousAssignedToEffective !== ticket.assigned_to;
+
+      console.log("[ASSIGNMENT FLOW]", {
+        ticketDbId: ticket.id,
+        serverTicketId: ticket.ticketId,
+        previousAssignedTo,
+        previousAssignedToEffective,
+        nextAssignedTo: ticket.assigned_to,
+        assignmentChanged,
+        usersCount: users.length,
+      });
+
+      if (assignmentChanged) {
+        if (!ticket.ticketId) {
+          console.warn("[ASSIGNMENT FLOW] Skipped: ticket.ticketId missing, cannot send assignment email", {
+            ticketDbId: ticket.id,
+            nextAssignedTo: ticket.assigned_to,
+          });
+          toast.warning("Ticket assigned, but email not sent (missing Ticket No)");
+        } else {
+          try {
+            console.log("[ASSIGNMENT FLOW] Users snapshot:", users.map((u) => ({ id: u.id, name: u.name, email: u.email })));
+
+            const assignedUser = users.find((u) => String(u.id) === String(ticket.assigned_to));
+            const contact = contacts.find((c) => String(c.id) === String(ticket.contactId));
+
+            if (!assignedUser) {
+              console.warn("[ASSIGNMENT FLOW] Skipped: assigned user not found", {
+                assigned_to: ticket.assigned_to,
+                usersCount: users.length,
+              });
+              toast.warning("Ticket assigned, but email not sent (assignee not found)");
+            } else if (!assignedUser.email) {
+              console.warn("[ASSIGNMENT FLOW] Skipped: assigned user has no email", {
+                assigneeId: assignedUser.id,
+                assigneeName: assignedUser.name,
+              });
+              toast.warning(`Ticket assigned to ${assignedUser.name}, but email not sent (no email on user)`);
+            } else {
+              // Get current user name from token
+              const userTokenStr = localStorage.getItem("userToken");
+              const userToken = userTokenStr ? JSON.parse(userTokenStr) : null;
+              const assignerName = userToken?.name || userToken?.username || "A team member";
+
+              const issueTypeLabel = getIssueTypeLabel(ticket.issueType);
+
+              console.log("[ASSIGNMENT FLOW] Invoking send-ticket-assignment-email", {
+                serverTicketId: ticket.ticketId,
                 assigneeEmail: assignedUser.email,
                 assigneeName: assignedUser.name,
-                assignerName: assignerName,
-                ticketId: ticket.ticketId,
-                issueType: issueTypeLabel,
-                description: ticket.description,
-                contactName: contact?.name || "Unknown"
+                assignerName,
+              });
+
+              const emailResponse = await supabase.functions.invoke("send-ticket-assignment-email", {
+                body: {
+                  userId: userId,
+                  assigneeEmail: assignedUser.email,
+                  assigneeName: assignedUser.name,
+                  assignerName: assignerName,
+                  ticketId: ticket.ticketId,
+                  issueType: issueTypeLabel,
+                  description: ticket.description,
+                  contactName: contact?.name || "Unknown",
+                },
+              });
+
+              console.log("[ASSIGNMENT FLOW] send-ticket-assignment-email result", {
+                data: emailResponse.data,
+                error: emailResponse.error,
+              });
+
+              if (emailResponse.error) {
+                toast.warning("Ticket assigned, but email failed to send");
+              } else if (emailResponse.data?.success) {
+                toast.success(`Ticket assigned to ${assignedUser.name} and notification sent`);
+              } else {
+                toast.warning("Ticket assigned, but email failed to send");
               }
-            });
-            
-            console.log("[EMAIL] Assignment notification response:", emailResponse);
-            
-            if (emailResponse.data?.success) {
-              toast.success(`Ticket assigned to ${assignedUser.name} and notification sent`);
-            } else {
-              toast.warning(`Ticket assigned but failed to send notification`);
             }
-          } else if (assignedUser) {
-            console.warn("[EMAIL] Assigned user has no email:", assignedUser.name);
-            toast.success(`Ticket assigned to ${assignedUser.name}`);
+          } catch (emailError) {
+            console.error("[ASSIGNMENT FLOW] Error while sending assignment notification:", emailError);
+            toast.warning("Ticket assigned, but email failed to send");
           }
-        } catch (emailError) {
-          console.error("[EMAIL] Error sending assignment notification:", emailError);
-          toast.warning(`Ticket assigned but failed to send notification`);
         }
+      } else {
+        console.log("[ASSIGNMENT FLOW] Skipped: assignmentChanged=false");
       }
 
       // Send email notification if ticket was closed or set to client query
       if ((ticket.status === "CLOSED" || ticket.status === "CLIENT QUERY") && ticket.ticketId) {
         try {
           console.log("[EMAIL] Looking for contact ID:", ticket.contactId, "in", contacts.length, "contacts");
-          const contact = contacts.find(c => String(c.id) === String(ticket.contactId));
-          
+          const contact = contacts.find((c) => String(c.id) === String(ticket.contactId));
+
           // Get user email from userToken
           const userTokenStr = localStorage.getItem("userToken");
           const userToken = userTokenStr ? JSON.parse(userTokenStr) : null;
           const userEmail = userToken?.email;
-          
+
           if (!contact) {
             console.warn("[EMAIL] Contact not found for ID:", ticket.contactId);
             toast.warning(`Ticket ${ticket.ticketId} updated - contact not found for email notification`);
@@ -2117,11 +2149,11 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             toast.warning(`Ticket ${ticket.ticketId} updated - contact has no email`);
           } else if (contact && contact.email) {
             const issueTypeLabel = getIssueTypeLabel(ticket.issueType);
-            
+
             if (ticket.status === "CLOSED") {
               console.log("[EMAIL] Sending closure notification for ticket:", ticket.ticketId);
-              
-              const emailResponse = await supabase.functions.invoke('send-ticket-closure-email', {
+
+              const emailResponse = await supabase.functions.invoke("send-ticket-closure-email", {
                 body: {
                   userId: userId,
                   contactEmail: contact.email,
@@ -2129,14 +2161,14 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
                   ticketId: ticket.ticketId,
                   issueType: issueTypeLabel,
                   description: ticket.description,
-                  remarks: ticket.remarks || '',
-                  rootCause: ticket.rootCause || '',
-                  effortMinutes: ticket.effort_minutes || 0
-                }
+                  remarks: ticket.remarks || "",
+                  rootCause: ticket.rootCause || "",
+                  effortMinutes: ticket.effort_minutes || 0,
+                },
               });
-              
+
               console.log("[EMAIL] Closure response:", emailResponse);
-              
+
               if (emailResponse.data?.success) {
                 toast.success(`Ticket ${ticket.ticketId} closed and notification sent`);
               } else {
@@ -2145,8 +2177,8 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
               }
             } else if (ticket.status === "CLIENT QUERY") {
               console.log("[EMAIL] Sending client query notification for ticket:", ticket.ticketId);
-              
-              const emailResponse = await supabase.functions.invoke('send-ticket-query-email', {
+
+              const emailResponse = await supabase.functions.invoke("send-ticket-query-email", {
                 body: {
                   userId: userId,
                   contactEmail: contact.email,
@@ -2154,12 +2186,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
                   ticketId: ticket.ticketId,
                   issueType: issueTypeLabel,
                   description: ticket.description,
-                  remarks: ticket.remarks || ''
-                }
+                  remarks: ticket.remarks || "",
+                },
               });
-              
+
               console.log("[EMAIL] Query response:", emailResponse);
-              
+
               if (emailResponse.data?.success) {
                 toast.success(`Ticket ${ticket.ticketId} set to Client Query and notification sent`);
               } else {
@@ -2175,7 +2207,6 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       } else {
         console.log("[TICKET] Ticket updated successfully");
       }
-
     } catch (error) {
       console.error("[TICKET] Failed to update ticket:", error);
 
@@ -2183,7 +2214,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       await dbManager.updateTicket(ticket);
       setTickets((prev) => prev.map((t) => (t.id === ticket.id ? ticket : t)));
     }
-  }, [contacts]);
+  }, [contacts, tickets, users]);
 
   const getContactTickets = useCallback(
     (contactId: string) => {
