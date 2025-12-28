@@ -1262,6 +1262,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
             email: apiUser.email || "",
           }));
           console.log("[USERS] Fetched users count:", fetchedUsers.length);
+          console.log("[USERS] Fetched users with emails:", fetchedUsers.map(u => ({ id: u.id, name: u.name, email: u.email })));
           setUsers(fetchedUsers);
         } else {
           console.error("[USERS] Unexpected response structure:", result);
@@ -2048,8 +2049,13 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       
       if (assignmentChanged && ticket.ticketId) {
         try {
+          // Debug logging for email lookup
+          console.log("[ASSIGNMENT DEBUG] Users array:", users.map(u => ({ id: u.id, name: u.name, email: u.email })));
+          console.log("[ASSIGNMENT DEBUG] Looking for assigned_to:", ticket.assigned_to, "type:", typeof ticket.assigned_to);
+          
           // Find the assigned user
           const assignedUser = users.find(u => String(u.id) === String(ticket.assigned_to));
+          console.log("[ASSIGNMENT DEBUG] Found user:", assignedUser);
           const contact = contacts.find(c => String(c.id) === String(ticket.contactId));
           
           // Get current user name from token
