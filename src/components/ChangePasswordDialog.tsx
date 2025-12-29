@@ -96,12 +96,14 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
 
       const data = await response.json();
 
-      if (response.ok && data.success !== false) {
-        toast.success("Password changed successfully");
+      // API returns { Success: "message" } or { Error: "message" }
+      if (response.ok && data.Success) {
+        toast.success(data.Success);
         handleClose(false);
       } else {
-        // Extract error message - handle both string and object error formats
-        const errorMessage = data.message || 
+        // Handle capitalized Error key, plus fallbacks for other formats
+        const errorMessage = data.Error || 
+          data.message || 
           (typeof data.error === 'string' ? data.error : data.error?.description) || 
           "Failed to change password";
         toast.error(errorMessage);
