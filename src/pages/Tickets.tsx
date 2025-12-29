@@ -15,6 +15,8 @@ import { TicketFiltersDialog } from "@/components/TicketFiltersDialog";
 import { FeatureTour } from "@/components/FeatureTour";
 import { format } from "date-fns";
 import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
+import opterixLogoDark from "@/assets/opterix-logo-dark.png";
+import opterixLogoLight from "@/assets/opterix-logo-light.png";
 
 export default function Tickets() {
   const { tickets, contacts, updateTicket, syncTickets, syncData } = useLeadContext();
@@ -347,12 +349,27 @@ export default function Tickets() {
         <div className="max-w-5xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              {!userCompany && (
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/")}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+              {userCompany ? (
+                <div data-tour="logo">
+                  <img 
+                    src={opterixLogoDark} 
+                    alt="Opterix 360" 
+                    className="h-8 md:h-10 dark:hidden"
+                  />
+                  <img 
+                    src={opterixLogoLight} 
+                    alt="Opterix 360" 
+                    className="h-8 md:h-10 hidden dark:block"
+                  />
+                </div>
+              ) : (
+                <>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate("/")}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <h1 className="text-lg font-semibold text-foreground">Tickets</h1>
+                </>
               )}
-              <h1 className="text-lg font-semibold text-foreground">Tickets</h1>
             </div>
             <div className="flex items-center gap-2">
               {!userCompany && (
@@ -392,9 +409,6 @@ export default function Tickets() {
                 </Tooltip>
               </TooltipProvider>
               <UserProfile onLogout={handleLogout} />
-              <div data-tour="add-ticket">
-                <AddTicketForm />
-              </div>
             </div>
           </div>
 
@@ -580,6 +594,11 @@ export default function Tickets() {
             })}
           </div>
         )}
+      </div>
+
+      {/* Floating Add Ticket Button */}
+      <div className="fixed bottom-6 right-6 z-50" data-tour="add-ticket">
+        <AddTicketForm />
       </div>
     </div>
   );
