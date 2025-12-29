@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LogOut, User, RefreshCw } from "lucide-react";
+import { LogOut, User, RefreshCw, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { getApiRoot } from "@/lib/config";
 import { usePWAUpdate } from "@/hooks/usePWAUpdate";
 import { useToast } from "@/hooks/use-toast";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 
 interface UserData {
   id: string;
@@ -27,6 +28,7 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const { needRefresh, checkForUpdates, installUpdate } = usePWAUpdate();
   const { toast } = useToast();
 
@@ -192,6 +194,21 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
             </div>
 
             <div className="flex items-center justify-between">
+              <span className="text-sm text-foreground">Change Password</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setIsOpen(false);
+                  setIsChangePasswordOpen(true);
+                }}
+              >
+                <Key className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">Logout</span>
               <Button
                 variant="ghost"
@@ -208,6 +225,11 @@ export const UserProfile = ({ onLogout }: { onLogout: () => void }) => {
           </div>
         </div>
       </PopoverContent>
+
+      <ChangePasswordDialog 
+        open={isChangePasswordOpen} 
+        onOpenChange={setIsChangePasswordOpen} 
+      />
     </Popover>
   );
 };
