@@ -495,7 +495,7 @@ export default function Tickets() {
             </Card>
           </div>
 
-          {/* Count and Sync */}
+          {/* Count, Sync and Add Ticket */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-foreground">
@@ -504,6 +504,9 @@ export default function Tickets() {
               <div data-tour="sync-tickets">
                 <SyncButton lastSync={lastSync} isOnline={isOnline} onSync={handleSync} />
               </div>
+            </div>
+            <div data-tour="add-ticket">
+              <AddTicketForm />
             </div>
           </div>
         </div>
@@ -596,10 +599,6 @@ export default function Tickets() {
         )}
       </div>
 
-      {/* Floating Add Ticket Button */}
-      <div className="fixed bottom-6 right-6 z-50" data-tour="add-ticket">
-        <AddTicketForm />
-      </div>
     </div>
   );
 }
