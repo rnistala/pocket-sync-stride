@@ -150,11 +150,9 @@ export const AddTicketForm = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button 
-          className="h-14 w-14 rounded-full shadow-lg bg-red-500 hover:bg-red-600 text-white md:w-auto md:h-auto md:px-6 md:py-2 md:rounded-lg"
-        >
-          <Plus className="h-6 w-6 md:h-4 md:w-4 md:mr-2" />
-          <span className="hidden md:inline">New Ticket</span>
+        <Button size="sm">
+          <Plus className="h-4 w-4 mr-1" />
+          New Ticket
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[92vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
