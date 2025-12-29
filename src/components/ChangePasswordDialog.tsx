@@ -100,7 +100,11 @@ export const ChangePasswordDialog = ({ open, onOpenChange }: ChangePasswordDialo
         toast.success("Password changed successfully");
         handleClose(false);
       } else {
-        toast.error(data.message || data.error || "Failed to change password");
+        // Extract error message - handle both string and object error formats
+        const errorMessage = data.message || 
+          (typeof data.error === 'string' ? data.error : data.error?.description) || 
+          "Failed to change password";
+        toast.error(errorMessage);
       }
     } catch (error) {
       console.error("Change password error:", error);
