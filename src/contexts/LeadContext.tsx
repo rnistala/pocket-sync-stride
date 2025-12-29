@@ -1834,6 +1834,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
         createdby: userId,
         remarks: ticket.remarks || "",
         priority: ticket.priority ? "High" : "Regular",
+        assigned_to: ticket.assigned_to || undefined,
       };
 
       // Add photo metadata if available
