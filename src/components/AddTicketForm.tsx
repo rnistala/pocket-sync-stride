@@ -8,12 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Upload, X, Check, ChevronsUpDown, Star } from "lucide-react";
+import { Plus, Upload, X, Check, ChevronsUpDown, Star, UserPlus } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 export const AddTicketForm = () => {
-  const { contacts, addTicket } = useLeadContext();
+  const { contacts, addTicket, users, fetchUsers } = useLeadContext();
   const [open, setOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [contactId, setContactId] = useState("");
@@ -23,6 +23,9 @@ export const AddTicketForm = () => {
   const [screenshots, setScreenshots] = useState<string[]>([]);
   const [priority, setPriority] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [assignedTo, setAssignedTo] = useState("");
+  const [userOpen, setUserOpen] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
 
   // Get selected contact display name
   const selectedContact = useMemo(() => 
@@ -64,12 +67,13 @@ export const AddTicketForm = () => {
       const newTicket = await addTicket({
         contactId,
         reportedDate: new Date().toISOString(),
-        targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default to 7 days from now
+        targetDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         issueType,
         status: "OPEN",
         description,
         screenshots,
         priority,
+        assigned_to: assignedTo ? Number(assignedTo) : undefined,
       });
 
       toast({
@@ -86,6 +90,7 @@ export const AddTicketForm = () => {
       setDescription("");
       setScreenshots([]);
       setPriority(false);
+      setAssignedTo("");
       setOpen(false);
     } finally {
       setIsSubmitting(false);
@@ -146,6 +151,29 @@ export const AddTicketForm = () => {
       setContactId(contacts[0].id);
     }
   }, [open, contacts, contactId]);
+
+  // Fetch users when dialog opens
+  useEffect(() => {
+    if (open && users.length === 0) {
+      fetchUsers();
+    }
+  }, [open, users.length, fetchUsers]);
+
+  // Filter users for assign dropdown
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users.slice(0, 50);
+    const query = userSearch.toLowerCase();
+    return users.filter(user => 
+      user.name.toLowerCase().includes(query) ||
+      (user.email && user.email.toLowerCase().includes(query))
+    ).slice(0, 50);
+  }, [users, userSearch]);
+
+  // Get selected user display
+  const selectedUser = useMemo(() => 
+    users.find(u => u.id === assignedTo),
+    [users, assignedTo]
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -251,7 +279,39 @@ export const AddTicketForm = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Popover open={userOpen} onOpenChange={setUserOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" role="combobox" className="min-w-[130px] justify-between">
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  <span className="truncate">{selectedUser ? selectedUser.name : "Assign..."}</span>
+                  <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0" align="start">
+                <Command shouldFilter={false}>
+                  <CommandInput placeholder="Search user..." value={userSearch} onValueChange={setUserSearch} />
+                  <CommandList>
+                    <CommandEmpty>No user found.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem onSelect={() => { setAssignedTo(""); setUserOpen(false); }}>
+                        <span className="text-muted-foreground">Unassigned</span>
+                      </CommandItem>
+                      {filteredUsers.map((user) => (
+                        <CommandItem 
+                          key={user.id} 
+                          value={user.id} 
+                          onSelect={(val) => { setAssignedTo(val); setUserOpen(false); setUserSearch(""); }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", assignedTo === user.id ? "opacity-100" : "opacity-0")} />
+                          <span className="truncate">{user.name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             <Button
               type="button"
               variant="outline"
@@ -259,8 +319,8 @@ export const AddTicketForm = () => {
               onClick={() => setPriority(!priority)}
               className={priority ? "bg-accent" : ""}
             >
-              <Star className={`h-4 w-4 mr-2 ${priority ? 'fill-yellow-500 text-yellow-500' : ''}`} />
-              {priority ? 'Priority Ticket' : 'Mark as Priority'}
+              <Star className={`h-4 w-4 mr-1 ${priority ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+              {priority ? 'Priority' : 'Priority'}
             </Button>
           </div>
 
