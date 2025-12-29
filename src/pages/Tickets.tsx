@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ArrowLeft, Search, Plus, X, Calendar, Star, LogOut, Pencil, HelpCircle, BarChart3 } from "lucide-react";
+import { ArrowLeft, Search, Plus, X, Calendar, Star, Pencil, HelpCircle, BarChart3 } from "lucide-react";
 import { AddTicketForm } from "@/components/AddTicketForm";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserProfile } from "@/components/UserProfile";
 import { SyncButton } from "@/components/SyncButton";
 import { TicketFiltersDialog } from "@/components/TicketFiltersDialog";
 import { FeatureTour } from "@/components/FeatureTour";
@@ -391,12 +391,7 @@ export default function Tickets() {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <ThemeToggle />
-              {userCompany && (
-                <Button variant="outline" size="icon" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              )}
+              <UserProfile onLogout={handleLogout} />
               <div data-tour="add-ticket">
                 <AddTicketForm />
               </div>
