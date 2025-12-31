@@ -27,7 +27,7 @@ const formatDescription = (text: string): string => {
   // - Are preceded by <br> (already on new line), OR
   // - Are preceded by whitespace (not part of another number like "10.")
   // Using positive lookbehind to prevent splitting "10." into "1" and "0."
-  formatted = formatted.replace(/(?<=^|<br>|\s)(\d{1,2}\.\s)/g, '<br><br>$1');
+  formatted = formatted.replace(/(?<=^|<br>|\s)(\d{1,2}\.\s)/g, '<br>$1');
   
   // Clean up any leading <br> tags
   formatted = formatted.replace(/^(<br>)+/, '');
