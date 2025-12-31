@@ -22,12 +22,18 @@ const formatDescription = (text: string): string => {
   // First, convert existing newlines to <br>
   let formatted = text.replace(/\n/g, '<br>');
   
-  // Add line break before numbered items (1. 2. 3. etc.) that don't already have one
-  // Match patterns like "1." "2." up to "99." that are preceded by non-newline content
-  formatted = formatted.replace(/(?<!<br>)(\s*)(\d{1,2}\.\s)/g, '<br><br>$2');
+  // Add line break before numbered items (1. 2. 3. etc.) that:
+  // - Are at the start of the text, OR
+  // - Are preceded by <br> (already on new line), OR
+  // - Are preceded by whitespace (not part of another number like "10.")
+  // Using positive lookbehind to prevent splitting "10." into "1" and "0."
+  formatted = formatted.replace(/(?<=^|<br>|\s)(\d{1,2}\.\s)/g, '<br><br>$1');
   
   // Clean up any leading <br> tags
   formatted = formatted.replace(/^(<br>)+/, '');
+  
+  // Clean up excessive consecutive <br> tags (3+ becomes 2)
+  formatted = formatted.replace(/(<br>){3,}/g, '<br><br>');
   
   return formatted;
 };
