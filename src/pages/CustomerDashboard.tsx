@@ -12,6 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import opterixLogoDark from "@/assets/opterix-logo-dark.png";
 import opterixLogoLight from "@/assets/opterix-logo-light.png";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { Progress } from "@/components/ui/progress";
 
 const formatEffort = (minutes: number): string => {
   if (minutes === 0) return "0h";
@@ -20,19 +22,6 @@ const formatEffort = (minutes: number): string => {
   if (hours === 0) return `${remainingMinutes}m`;
   if (remainingMinutes === 0) return `${hours}h`;
   return `${hours}h ${remainingMinutes}m`;
-};
-
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case "CLOSED":
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Closed</Badge>;
-    case "IN PROGRESS":
-      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">In Progress</Badge>;
-    case "CLIENT QUERY":
-      return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Query</Badge>;
-    default:
-      return <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">Open</Badge>;
-  }
 };
 
 const getIssueTypeBadge = (issueType: string) => {
@@ -49,6 +38,45 @@ const getIssueTypeBadge = (issueType: string) => {
     default:
       return <Badge variant="outline">{label}</Badge>;
   }
+};
+
+const getRootCauseBadge = (rootCause: string | undefined) => {
+  const cause = rootCause || "Unspecified";
+  switch (cause) {
+    case "Software":
+      return <Badge variant="outline" className="border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400">{cause}</Badge>;
+    case "Data":
+      return <Badge variant="outline" className="border-orange-300 text-orange-700 dark:border-orange-700 dark:text-orange-400">{cause}</Badge>;
+    case "Usage":
+      return <Badge variant="outline" className="border-green-300 text-green-700 dark:border-green-700 dark:text-green-400">{cause}</Badge>;
+    case "New Work":
+      return <Badge variant="outline" className="border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-400">{cause}</Badge>;
+    default:
+      return <Badge variant="outline" className="border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400">{cause}</Badge>;
+  }
+};
+
+// Color constants for charts
+const STATUS_COLORS = {
+  "Open": "#f97316",
+  "In Progress": "#3b82f6",
+  "Client Query": "#eab308",
+  "Closed": "#22c55e",
+};
+
+const ISSUE_TYPE_COLORS = {
+  "Problem": "#ef4444",
+  "New Work": "#3b82f6",
+  "Support": "#a855f7",
+  "Meeting": "#6b7280",
+};
+
+const ROOT_CAUSE_COLORS = {
+  "Software": "#3b82f6",
+  "Data": "#f97316",
+  "Usage": "#22c55e",
+  "New Work": "#a855f7",
+  "Unspecified": "#9ca3af",
 };
 
 const CustomerDashboard = () => {
@@ -98,6 +126,11 @@ const CustomerDashboard = () => {
       .sort((a, b) => new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime());
   }, [tickets, contactId, selectedMonth]);
 
+  // Filter only closed tickets
+  const closedTickets = useMemo(() => {
+    return customerTickets.filter(t => t.status === "CLOSED");
+  }, [customerTickets]);
+
   // Calculate stats
   const stats = useMemo(() => {
     const result = {
@@ -109,6 +142,7 @@ const CustomerDashboard = () => {
       totalEffortMinutes: 0,
       byIssueType: { BR: 0, FR: 0, SR: 0, MG: 0 } as Record<string, number>,
       effortByIssueType: { BR: 0, FR: 0, SR: 0, MG: 0 } as Record<string, number>,
+      byRootCause: { Software: 0, Data: 0, Usage: 0, "New Work": 0, Unspecified: 0 } as Record<string, number>,
     };
     
     customerTickets.forEach(ticket => {
@@ -123,6 +157,13 @@ const CustomerDashboard = () => {
           break;
         case "CLOSED":
           result.closedTickets++;
+          // Count root cause only for closed tickets
+          const rootCause = ticket.rootCause || "Unspecified";
+          if (rootCause in result.byRootCause) {
+            result.byRootCause[rootCause]++;
+          } else {
+            result.byRootCause["Unspecified"]++;
+          }
           break;
         case "CLIENT QUERY":
           result.clientQueryTickets++;
@@ -139,7 +180,40 @@ const CustomerDashboard = () => {
     return result;
   }, [customerTickets]);
 
+  // Prepare chart data
+  const statusChartData = useMemo(() => {
+    return [
+      { name: "Open", value: stats.openTickets, color: STATUS_COLORS["Open"] },
+      { name: "In Progress", value: stats.inProgressTickets, color: STATUS_COLORS["In Progress"] },
+      { name: "Client Query", value: stats.clientQueryTickets, color: STATUS_COLORS["Client Query"] },
+      { name: "Closed", value: stats.closedTickets, color: STATUS_COLORS["Closed"] },
+    ].filter(item => item.value > 0);
+  }, [stats]);
+
+  const issueTypeChartData = useMemo(() => {
+    return [
+      { name: "Problem", value: stats.byIssueType.BR, color: ISSUE_TYPE_COLORS["Problem"] },
+      { name: "New Work", value: stats.byIssueType.FR, color: ISSUE_TYPE_COLORS["New Work"] },
+      { name: "Support", value: stats.byIssueType.SR, color: ISSUE_TYPE_COLORS["Support"] },
+      { name: "Meeting", value: stats.byIssueType.MG, color: ISSUE_TYPE_COLORS["Meeting"] },
+    ].filter(item => item.value > 0);
+  }, [stats]);
+
+  const rootCauseChartData = useMemo(() => {
+    return [
+      { name: "Software", value: stats.byRootCause.Software, color: ROOT_CAUSE_COLORS["Software"] },
+      { name: "Data", value: stats.byRootCause.Data, color: ROOT_CAUSE_COLORS["Data"] },
+      { name: "Usage", value: stats.byRootCause.Usage, color: ROOT_CAUSE_COLORS["Usage"] },
+      { name: "New Work", value: stats.byRootCause["New Work"], color: ROOT_CAUSE_COLORS["New Work"] },
+      { name: "Unspecified", value: stats.byRootCause.Unspecified, color: ROOT_CAUSE_COLORS["Unspecified"] },
+    ].filter(item => item.value > 0);
+  }, [stats]);
+
   const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || '';
+
+  // Calculate percentages for progress bars
+  const closedPercentage = stats.totalTickets > 0 ? (stats.closedTickets / stats.totalTickets) * 100 : 0;
+  const openPercentage = stats.totalTickets > 0 ? ((stats.openTickets + stats.inProgressTickets + stats.clientQueryTickets) / stats.totalTickets) * 100 : 0;
 
   const handleSendEmail = async () => {
     if (!contact?.email) {
@@ -195,6 +269,37 @@ const CustomerDashboard = () => {
     } finally {
       setIsSendingEmail(false);
     }
+  };
+
+  // Custom tooltip for pie charts
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg">
+          <p className="font-medium">{data.name}</p>
+          <p className="text-sm text-muted-foreground">{data.value} tickets</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom legend for pie charts
+  const CustomLegend = ({ payload }: any) => {
+    return (
+      <div className="flex flex-wrap justify-center gap-3 mt-2">
+        {payload.map((entry: any, index: number) => (
+          <div key={index} className="flex items-center gap-1.5 text-sm">
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: entry.color }}
+            />
+            <span className="text-muted-foreground">{entry.value}: {entry.payload.value}</span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -269,7 +374,7 @@ const CustomerDashboard = () => {
           </Select>
         </div>
 
-        {/* Summary cards */}
+        {/* Summary cards with progress indicators */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <Card>
             <CardContent className="pt-4">
@@ -277,7 +382,10 @@ const CustomerDashboard = () => {
                 <TicketIcon className="h-4 w-4" />
                 <span>Total Tickets</span>
               </div>
-              <p className="text-2xl font-bold mt-1">{stats.totalTickets}</p>
+              <p className="text-3xl font-bold mt-1">{stats.totalTickets}</p>
+              <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -286,7 +394,10 @@ const CustomerDashboard = () => {
                 <Clock className="h-4 w-4" />
                 <span>Total Effort</span>
               </div>
-              <p className="text-2xl font-bold mt-1">{formatEffort(stats.totalEffortMinutes)}</p>
+              <p className="text-3xl font-bold mt-1">{formatEffort(stats.totalEffortMinutes)}</p>
+              <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${Math.min(100, (stats.totalEffortMinutes / 480) * 100)}%` }} />
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -295,7 +406,8 @@ const CustomerDashboard = () => {
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span>Closed</span>
               </div>
-              <p className="text-2xl font-bold mt-1">{stats.closedTickets}</p>
+              <p className="text-3xl font-bold mt-1 text-green-600 dark:text-green-400">{stats.closedTickets}</p>
+              <Progress value={closedPercentage} className="mt-2 h-2 [&>div]:bg-green-500" />
             </CardContent>
           </Card>
           <Card>
@@ -304,10 +416,122 @@ const CustomerDashboard = () => {
                 <AlertCircle className="h-4 w-4 text-orange-500" />
                 <span>Open</span>
               </div>
-              <p className="text-2xl font-bold mt-1">{stats.openTickets + stats.inProgressTickets}</p>
+              <p className="text-3xl font-bold mt-1 text-orange-600 dark:text-orange-400">{stats.openTickets + stats.inProgressTickets + stats.clientQueryTickets}</p>
+              <Progress value={openPercentage} className="mt-2 h-2 [&>div]:bg-orange-500" />
             </CardContent>
           </Card>
         </div>
+
+        {/* Pie Charts Row */}
+        <div className="grid md:grid-cols-2 gap-4 mb-6">
+          {/* Tickets by Status */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Tickets by Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {statusChartData.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={statusChartData}
+                        cx="50%"
+                        cy="45%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {statusChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend content={<CustomLegend />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  No tickets to display
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Tickets by Issue Type */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Tickets by Issue Type</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {issueTypeChartData.length > 0 ? (
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={issueTypeChartData}
+                        cx="50%"
+                        cy="45%"
+                        innerRadius={50}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {issueTypeChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend content={<CustomLegend />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  No tickets to display
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Closed Tickets by Root Cause */}
+        <Card className="mb-6">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Closed Tickets by Root Cause</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {rootCauseChartData.length > 0 ? (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={rootCauseChartData}
+                      cx="50%"
+                      cy="45%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {rootCauseChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend content={<CustomLegend />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-muted-foreground">
+                No closed tickets to display
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Issue type breakdown */}
         <Card className="mb-6">
@@ -340,15 +564,15 @@ const CustomerDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Ticket list */}
+        {/* Closed Tickets list */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Ticket Details</CardTitle>
+            <CardTitle className="text-lg">Closed Tickets</CardTitle>
           </CardHeader>
           <CardContent>
-            {customerTickets.length === 0 ? (
+            {closedTickets.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                No tickets found for {selectedMonthLabel}
+                No closed tickets for {selectedMonthLabel}
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -358,13 +582,13 @@ const CustomerDashboard = () => {
                       <TableHead>Ticket ID</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead className="max-w-[300px]">Description</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Root Cause</TableHead>
                       <TableHead>Effort</TableHead>
                       <TableHead>Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {customerTickets.map(ticket => (
+                    {closedTickets.map(ticket => (
                       <TableRow key={ticket.id}>
                         <TableCell className="font-mono text-sm">
                           {ticket.ticketId || `#${ticket.id}`}
@@ -373,7 +597,7 @@ const CustomerDashboard = () => {
                         <TableCell className="max-w-[300px] truncate">
                           {ticket.description}
                         </TableCell>
-                        <TableCell>{getStatusBadge(ticket.status)}</TableCell>
+                        <TableCell>{getRootCauseBadge(ticket.rootCause)}</TableCell>
                         <TableCell>{formatEffort(Number(ticket.effort_minutes) || 0)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(ticket.reportedDate).toLocaleDateString()}
