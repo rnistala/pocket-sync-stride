@@ -64,12 +64,6 @@ const STATUS_COLORS = {
   "Closed": "#22c55e",
 };
 
-const ISSUE_TYPE_COLORS = {
-  "Problem": "#ef4444",
-  "New Work": "#3b82f6",
-  "Support": "#a855f7",
-  "Meeting": "#6b7280",
-};
 
 const ROOT_CAUSE_COLORS = {
   "Software": "#3b82f6",
@@ -190,14 +184,6 @@ const CustomerDashboard = () => {
     ].filter(item => item.value > 0);
   }, [stats]);
 
-  const issueTypeChartData = useMemo(() => {
-    return [
-      { name: "Problem", value: stats.byIssueType.BR, color: ISSUE_TYPE_COLORS["Problem"] },
-      { name: "New Work", value: stats.byIssueType.FR, color: ISSUE_TYPE_COLORS["New Work"] },
-      { name: "Support", value: stats.byIssueType.SR, color: ISSUE_TYPE_COLORS["Support"] },
-      { name: "Meeting", value: stats.byIssueType.MG, color: ISSUE_TYPE_COLORS["Meeting"] },
-    ].filter(item => item.value > 0);
-  }, [stats]);
 
   const rootCauseChartData = useMemo(() => {
     return [
@@ -460,18 +446,18 @@ const CustomerDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Tickets by Issue Type */}
+          {/* Closed Tickets by Root Cause */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Tickets by Issue Type</CardTitle>
+              <CardTitle className="text-lg">Closed Tickets by Root Cause</CardTitle>
             </CardHeader>
             <CardContent>
-              {issueTypeChartData.length > 0 ? (
+              {rootCauseChartData.length > 0 ? (
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={issueTypeChartData}
+                        data={rootCauseChartData}
                         cx="50%"
                         cy="45%"
                         innerRadius={50}
@@ -479,7 +465,7 @@ const CustomerDashboard = () => {
                         paddingAngle={2}
                         dataKey="value"
                       >
-                        {issueTypeChartData.map((entry, index) => (
+                        {rootCauseChartData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
@@ -490,48 +476,12 @@ const CustomerDashboard = () => {
                 </div>
               ) : (
                 <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  No tickets to display
+                  No closed tickets to display
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
-
-        {/* Closed Tickets by Root Cause */}
-        <Card className="mb-6">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Closed Tickets by Root Cause</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {rootCauseChartData.length > 0 ? (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={rootCauseChartData}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {rootCauseChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend content={<CustomLegend />} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                No closed tickets to display
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Issue type breakdown */}
         <Card className="mb-6">
@@ -580,27 +530,29 @@ const CustomerDashboard = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Ticket ID</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="max-w-[300px]">Description</TableHead>
+                      <TableHead>Description</TableHead>
                       <TableHead>Root Cause</TableHead>
                       <TableHead>Effort</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Reported</TableHead>
+                      <TableHead>Closed</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {closedTickets.map(ticket => (
-                      <TableRow key={ticket.id}>
+                      <TableRow key={ticket.id} className="align-top">
                         <TableCell className="font-mono text-sm">
                           {ticket.ticketId || `#${ticket.id}`}
                         </TableCell>
-                        <TableCell>{getIssueTypeBadge(ticket.issueType)}</TableCell>
-                        <TableCell className="max-w-[300px] truncate">
+                        <TableCell className="whitespace-pre-wrap break-words">
                           {ticket.description}
                         </TableCell>
                         <TableCell>{getRootCauseBadge(ticket.rootCause)}</TableCell>
                         <TableCell>{formatEffort(Number(ticket.effort_minutes) || 0)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {new Date(ticket.reportedDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {ticket.closedDate ? new Date(ticket.closedDate).toLocaleDateString() : '-'}
                         </TableCell>
                       </TableRow>
                     ))}
