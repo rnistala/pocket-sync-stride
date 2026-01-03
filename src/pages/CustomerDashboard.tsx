@@ -321,7 +321,6 @@ const CustomerDashboard = () => {
             <span style="background-color: ${rootCauseColors.bg}; color: ${rootCauseColors.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${rootCause}</span>
           </td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatEffortPreview(Number(ticket.effort_minutes) || 0)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${reportedDate}</td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${closedDate}</td>
         </tr>
       `;
@@ -409,12 +408,11 @@ const CustomerDashboard = () => {
                   <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Description</th>
                   <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Root Cause</th>
                   <th style="padding: 12px 10px; text-align: right; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Effort</th>
-                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Reported</th>
                   <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Closed</th>
                 </tr>
               </thead>
               <tbody>
-                ${ticketRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #6b7280;">No closed tickets for this period</td></tr>'}
+                ${ticketRows || '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #6b7280;">No closed tickets for this period</td></tr>'}
               </tbody>
             </table>
             
@@ -645,7 +643,6 @@ const CustomerDashboard = () => {
                       <TableHead>Description</TableHead>
                       <TableHead>Root Cause</TableHead>
                       <TableHead>Effort</TableHead>
-                      <TableHead>Reported</TableHead>
                       <TableHead>Closed</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -660,9 +657,6 @@ const CustomerDashboard = () => {
                         </TableCell>
                         <TableCell>{getRootCauseBadge(ticket.rootCause)}</TableCell>
                         <TableCell>{formatEffort(Number(ticket.effort_minutes) || 0)}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(ticket.reportedDate).toLocaleDateString()}
-                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {ticket.closedDate ? new Date(ticket.closedDate).toLocaleDateString() : '-'}
                         </TableCell>
