@@ -33,14 +33,22 @@ interface DashboardEmailRequest {
   tickets: TicketSummary[];
 }
 
-// Helper function to format effort in hours and minutes
+// Helper function to format effort in short format (e.g., "1h 59m")
 const formatEffort = (minutes: number): string => {
-  if (minutes === 0) return "0 hours";
+  if (minutes === 0) return "0h";
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  if (hours === 0) return `${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
-  if (remainingMinutes === 0) return `${hours} hour${hours !== 1 ? 's' : ''}`;
-  return `${hours} hour${hours !== 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
+  if (hours === 0) return `${remainingMinutes}m`;
+  if (remainingMinutes === 0) return `${hours}h`;
+  return `${hours}h ${remainingMinutes}m`;
+};
+
+// Helper function to format date as dd-mmm (e.g., "30-Dec")
+const formatDateShort = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  return `${day}-${month}`;
 };
 
 const getRootCauseColor = (rootCause: string): { bg: string; text: string } => {
@@ -83,7 +91,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Build closed ticket rows HTML (matching app display)
     const ticketRows = tickets.map(ticket => {
       const rootCauseColors = getRootCauseColor(ticket.rootCause);
-      const closedDate = ticket.closedDate ? new Date(ticket.closedDate).toLocaleDateString() : '-';
+      const closedDate = ticket.closedDate ? formatDateShort(ticket.closedDate) : '-';
       
       return `
         <tr style="vertical-align: top;">
