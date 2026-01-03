@@ -120,6 +120,7 @@ const CustomerDashboard = () => {
       byIssueType: { BR: 0, FR: 0, SR: 0, MG: 0 } as Record<string, number>,
       effortByIssueType: { BR: 0, FR: 0, SR: 0, MG: 0 } as Record<string, number>,
       byRootCause: { Software: 0, Data: 0, Usage: 0, "New Work": 0, Unspecified: 0 } as Record<string, number>,
+      effortByRootCause: { Software: 0, Data: 0, Usage: 0, "New Work": 0, Unspecified: 0 } as Record<string, number>,
     };
     
     customerTickets.forEach(ticket => {
@@ -134,12 +135,15 @@ const CustomerDashboard = () => {
           break;
         case "CLOSED":
           result.closedTickets++;
-          // Count root cause only for closed tickets
+          // Count root cause and effort only for closed tickets
           const rootCause = ticket.rootCause || "Unspecified";
+          const ticketEffort = Number(ticket.effort_minutes) || 0;
           if (rootCause in result.byRootCause) {
             result.byRootCause[rootCause]++;
+            result.effortByRootCause[rootCause] += ticketEffort;
           } else {
             result.byRootCause["Unspecified"]++;
+            result.effortByRootCause["Unspecified"] += ticketEffort;
           }
           break;
         case "CLIENT QUERY":
@@ -342,32 +346,37 @@ const CustomerDashboard = () => {
         </div>
 
 
-        {/* Issue type breakdown */}
+        {/* Root cause breakdown (closed tickets only) */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Effort by Issue Type</CardTitle>
+            <CardTitle className="text-lg">Effort by Root Cause (Closed Tickets)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30">
-                <p className="text-sm font-medium text-red-700 dark:text-red-400">{getIssueTypeLabel('BR')}</p>
-                <p className="text-lg font-bold">{stats.byIssueType.BR} tickets</p>
-                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByIssueType.BR)}</p>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30">
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-400">{getIssueTypeLabel('FR')}</p>
-                <p className="text-lg font-bold">{stats.byIssueType.FR} tickets</p>
-                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByIssueType.FR)}</p>
+                <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Software</p>
+                <p className="text-lg font-bold">{stats.byRootCause.Software} tickets</p>
+                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByRootCause.Software)}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30">
+                <p className="text-sm font-medium text-orange-700 dark:text-orange-400">Data</p>
+                <p className="text-lg font-bold">{stats.byRootCause.Data} tickets</p>
+                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByRootCause.Data)}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30">
+                <p className="text-sm font-medium text-green-700 dark:text-green-400">Usage</p>
+                <p className="text-lg font-bold">{stats.byRootCause.Usage} tickets</p>
+                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByRootCause.Usage)}</p>
               </div>
               <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30">
-                <p className="text-sm font-medium text-purple-700 dark:text-purple-400">{getIssueTypeLabel('SR')}</p>
-                <p className="text-lg font-bold">{stats.byIssueType.SR} tickets</p>
-                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByIssueType.SR)}</p>
+                <p className="text-sm font-medium text-purple-700 dark:text-purple-400">New Work</p>
+                <p className="text-lg font-bold">{stats.byRootCause["New Work"]} tickets</p>
+                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByRootCause["New Work"])}</p>
               </div>
               <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-400">{getIssueTypeLabel('MG')}</p>
-                <p className="text-lg font-bold">{stats.byIssueType.MG} tickets</p>
-                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByIssueType.MG)}</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-400">Unspecified</p>
+                <p className="text-lg font-bold">{stats.byRootCause.Unspecified} tickets</p>
+                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByRootCause.Unspecified)}</p>
               </div>
             </div>
           </CardContent>
