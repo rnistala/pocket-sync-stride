@@ -228,21 +228,23 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
 `;
 
-    // Call Opterix email API for each recipient
+    // Call Opterix email API with comma-separated recipients
     const emailSubject = subject || `[Opterix 360] Monthly Performance Summary - ${companyName} - ${monthLabel}`;
-    const emailPayloads = recipients.map(recipientEmail => ({
+    const allRecipients = recipients.join(',');
+    
+    const emailPayload = {
       id: userId,
-      to: recipientEmail,
+      to: allRecipients,
       subject: emailSubject,
       body: emailBody
-    }));
+    };
 
-    console.log(`[DASHBOARD EMAIL] Sending to ${recipients.length} recipient(s): ${recipients.join(', ')}`);
+    console.log(`[DASHBOARD EMAIL] Sending to ${recipients.length} recipient(s): ${allRecipients}`);
     
     const response = await fetch(`https://demo.opterix.in/api/public/qmail/${userId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(emailPayloads)
+      body: JSON.stringify(emailPayload)
     });
 
     const responseText = await response.text();
