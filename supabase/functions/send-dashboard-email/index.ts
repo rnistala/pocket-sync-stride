@@ -83,7 +83,6 @@ const handler = async (req: Request): Promise<Response> => {
     // Build closed ticket rows HTML (matching app display)
     const ticketRows = tickets.map(ticket => {
       const rootCauseColors = getRootCauseColor(ticket.rootCause);
-      const reportedDate = new Date(ticket.reportedDate).toLocaleDateString();
       const closedDate = ticket.closedDate ? new Date(ticket.closedDate).toLocaleDateString() : '-';
       
       return `
@@ -94,7 +93,6 @@ const handler = async (req: Request): Promise<Response> => {
             <span style="background-color: ${rootCauseColors.bg}; color: ${rootCauseColors.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${ticket.rootCause}</span>
           </td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatEffort(ticket.effortMinutes)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${reportedDate}</td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${closedDate}</td>
         </tr>
       `;
@@ -193,12 +191,11 @@ const handler = async (req: Request): Promise<Response> => {
             <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Description</th>
             <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Root Cause</th>
             <th style="padding: 12px 10px; text-align: right; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Effort</th>
-            <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Reported</th>
             <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Closed</th>
           </tr>
         </thead>
         <tbody>
-          ${ticketRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #6b7280;">No closed tickets for this period</td></tr>'}
+          ${ticketRows || '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #6b7280;">No closed tickets for this period</td></tr>'}
         </tbody>
       </table>
       
