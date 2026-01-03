@@ -348,23 +348,16 @@ const CustomerDashboard = () => {
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; padding: 20px;">
         <div style="max-width: 700px; margin: 0 auto;">
           <!-- Compact Header -->
-          <div style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); padding: 16px 24px; border-radius: 12px 12px 0 0;">
+          <div style="background: #f8f9fa; border-bottom: 2px solid #e5e7eb; padding: 16px 24px; border-radius: 12px 12px 0 0;">
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td style="vertical-align: middle;">
-                  <img src="https://opterix.tech/opterix/assets/opterix-logo-light-_x27VVyN.png" alt="Opterix 360" style="height: 32px; display: block;"/>
-                </td>
-                <td style="text-align: right; vertical-align: middle;">
-                  <div style="color: white; font-weight: 600; font-size: 16px;">${contact?.company}</div>
-                  <div style="color: rgba(255,255,255,0.8); font-size: 13px;">Report Date: ${reportDate}</div>
-                </td>
+                <td style="font-size: 18px; font-weight: bold; color: #1a1a1a;">${contact?.company}</td>
+                <td style="text-align: right; font-size: 14px; color: #666666;">Report: ${selectedMonthLabel}</td>
+              </tr>
+              <tr>
+                <td colspan="2" style="font-size: 14px; color: #666666; padding-top: 4px;">Summary of Interactions</td>
               </tr>
             </table>
-          </div>
-          
-          <!-- Title Banner -->
-          <div style="background-color: #1e40af; padding: 16px 24px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 600;">Summary of Interactions - ${selectedMonthLabel}</h1>
           </div>
           
           <div style="background-color: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
