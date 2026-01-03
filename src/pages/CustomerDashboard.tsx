@@ -352,7 +352,7 @@ const CustomerDashboard = () => {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="vertical-align: middle;">
-                  <div style="color: white; font-size: 20px; font-weight: bold; letter-spacing: 1px;">OPTERIX<span style="color: #ef4444;">.</span> 360</div>
+                  <img src="https://opterix.tech/opterix/assets/opterix-logo-light-_x27VVyN.png" alt="Opterix 360" style="height: 32px; display: block;"/>
                 </td>
                 <td style="text-align: right; vertical-align: middle;">
                   <div style="color: white; font-weight: 600; font-size: 16px;">${contact?.company}</div>
