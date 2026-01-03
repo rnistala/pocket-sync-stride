@@ -355,7 +355,7 @@ const CustomerDashboard = () => {
                 <td style="text-align: right; font-size: 14px; color: #666666;">Report: ${selectedMonthLabel}</td>
               </tr>
               <tr>
-                <td colspan="2" style="font-size: 14px; color: #666666; padding-top: 4px;">Summary of Interactions</td>
+                <td colspan="2" style="font-size: 14px; color: #666666; padding-top: 4px;">Monthly Performance Summary</td>
               </tr>
             </table>
           </div>

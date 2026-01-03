@@ -139,7 +139,7 @@ const handler = async (req: Request): Promise<Response> => {
           <td style="text-align: right; font-size: 14px; color: #666666;">Report: ${monthLabel}</td>
         </tr>
         <tr>
-          <td colspan="2" style="font-size: 14px; color: #666666; padding-top: 4px;">Summary of Interactions</td>
+          <td colspan="2" style="font-size: 14px; color: #666666; padding-top: 4px;">Monthly Performance Summary</td>
         </tr>
       </table>
     </div>
@@ -230,7 +230,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailPayloads = recipients.map(recipientEmail => ({
       id: userId,
       to: recipientEmail,
-      subject: `[Opterix 360] Summary of Interactions - ${companyName} - ${monthLabel}`,
+      subject: `[Opterix 360] Monthly Performance Summary - ${companyName} - ${monthLabel}`,
       body: emailBody
     }));
 
