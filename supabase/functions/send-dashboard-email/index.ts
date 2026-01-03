@@ -232,12 +232,12 @@ const handler = async (req: Request): Promise<Response> => {
     const emailSubject = subject || `[Opterix 360] Monthly Performance Summary - ${companyName} - ${monthLabel}`;
     const allRecipients = recipients.join(',');
     
-    const emailPayload = {
+    const emailPayload = [{
       id: userId,
       to: allRecipients,
       subject: emailSubject,
       body: emailBody
-    };
+    }];
 
     console.log(`[DASHBOARD EMAIL] Sending to ${recipients.length} recipient(s): ${allRecipients}`);
     
