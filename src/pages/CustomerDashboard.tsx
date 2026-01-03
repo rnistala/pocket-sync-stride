@@ -28,6 +28,13 @@ const formatEffort = (minutes: number): string => {
   return `${hours}h ${remainingMinutes}m`;
 };
 
+const formatDateShort = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = date.toLocaleDateString('en-US', { month: 'short' });
+  return `${day}-${month}`;
+};
+
 const getIssueTypeBadge = (issueType: string) => {
   const label = getIssueTypeLabel(issueType);
   switch (issueType) {
@@ -284,14 +291,7 @@ const CustomerDashboard = () => {
 
   // Generate email preview HTML
   const generatePreviewHtml = () => {
-    const formatEffortPreview = (minutes: number): string => {
-      if (minutes === 0) return "0 hours";
-      const hours = Math.floor(minutes / 60);
-      const remainingMinutes = minutes % 60;
-      if (hours === 0) return `${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
-      if (remainingMinutes === 0) return `${hours} hour${hours !== 1 ? 's' : ''}`;
-      return `${hours} hour${hours !== 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
-    };
+    // Using compact formatEffort and formatDateShort helpers defined at module level
 
     const getRootCauseColor = (rootCause: string): { bg: string; text: string } => {
       switch (rootCause) {
@@ -310,8 +310,7 @@ const CustomerDashboard = () => {
     const ticketRows = closedTickets.map(ticket => {
       const rootCause = ticket.rootCause || "Unspecified";
       const rootCauseColors = getRootCauseColor(rootCause);
-      const reportedDate = new Date(ticket.reportedDate).toLocaleDateString();
-      const closedDate = ticket.closedDate ? new Date(ticket.closedDate).toLocaleDateString() : '-';
+      const closedDate = ticket.closedDate ? formatDateShort(ticket.closedDate) : '-';
       
       return `
         <tr style="vertical-align: top;">
@@ -320,7 +319,7 @@ const CustomerDashboard = () => {
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
             <span style="background-color: ${rootCauseColors.bg}; color: ${rootCauseColors.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${rootCause}</span>
           </td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatEffortPreview(Number(ticket.effort_minutes) || 0)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatEffort(Number(ticket.effort_minutes) || 0)}</td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${closedDate}</td>
         </tr>
       `;
@@ -336,7 +335,7 @@ const CustomerDashboard = () => {
           <td style="padding: 12px; text-align: center; background-color: ${colors.bg}; border-radius: 8px;">
             <div style="color: ${colors.text}; font-weight: 600; font-size: 13px;">${cause}</div>
             <div style="font-size: 18px; font-weight: bold; margin: 4px 0;">${count} tickets</div>
-            <div style="font-size: 12px; color: #6b7280;">${formatEffortPreview(effort)}</div>
+            <div style="font-size: 12px; color: #6b7280;">${formatEffort(effort)}</div>
           </td>
         `;
       }).join('<td style="width: 8px;"></td>');
@@ -386,7 +385,7 @@ const CustomerDashboard = () => {
                 <td style="width: 10px;"></td>
                 <td style="padding: 15px; text-align: center; background-color: #faf5ff; border-radius: 8px;">
                   <div style="color: #7c3aed; font-size: 12px; text-transform: uppercase;">Total Effort</div>
-                  <div style="font-size: 20px; font-weight: bold; color: #7c3aed;">${formatEffortPreview(stats.totalEffortMinutes)}</div>
+                  <div style="font-size: 20px; font-weight: bold; color: #7c3aed;">${formatEffort(stats.totalEffortMinutes)}</div>
                 </td>
               </tr>
             </table>
@@ -418,7 +417,7 @@ const CustomerDashboard = () => {
             
             <div style="margin-top: 20px; padding: 15px; background-color: #f0f9ff; border-radius: 8px; text-align: right;">
               <span style="color: #0369a1; font-weight: 600;">Total Effort This Month:</span>
-              <span style="font-size: 18px; font-weight: bold; color: #0284c7; margin-left: 10px;">${formatEffortPreview(stats.totalEffortMinutes)}</span>
+              <span style="font-size: 18px; font-weight: bold; color: #0284c7; margin-left: 10px;">${formatEffort(stats.totalEffortMinutes)}</span>
             </div>
           </div>
           
@@ -658,7 +657,7 @@ const CustomerDashboard = () => {
                         <TableCell>{getRootCauseBadge(ticket.rootCause)}</TableCell>
                         <TableCell>{formatEffort(Number(ticket.effort_minutes) || 0)}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {ticket.closedDate ? new Date(ticket.closedDate).toLocaleDateString() : '-'}
+                          {ticket.closedDate ? formatDateShort(ticket.closedDate) : '-'}
                         </TableCell>
                       </TableRow>
                     ))}
