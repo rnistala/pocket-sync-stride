@@ -200,6 +200,16 @@ export default function UpdateTicket() {
 
     if (!ticket || isSubmitting) return;
 
+    // Validate root cause is required when closing
+    if (status === "CLOSED" && !rootCause.trim()) {
+      toast({
+        title: "Root Cause Required",
+        description: "Please select a root cause before closing this ticket",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const updatedTicket: Ticket = {
@@ -389,7 +399,7 @@ export default function UpdateTicket() {
             {status === "CLOSED" && (
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rootCause">Root Cause</Label>
+                  <Label htmlFor="rootCause">Root Cause *</Label>
                   <Select value={rootCause} onValueChange={setRootCause}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select root cause" />
