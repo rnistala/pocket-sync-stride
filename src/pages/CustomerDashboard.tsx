@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import opterixLogoDark from "@/assets/opterix-logo-dark.png";
 import opterixLogoLight from "@/assets/opterix-logo-light.png";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { Progress } from "@/components/ui/progress";
 
 const formatEffort = (minutes: number): string => {
@@ -56,22 +55,6 @@ const getRootCauseBadge = (rootCause: string | undefined) => {
   }
 };
 
-// Color constants for charts
-const STATUS_COLORS = {
-  "Open": "#f97316",
-  "In Progress": "#3b82f6",
-  "Client Query": "#eab308",
-  "Closed": "#22c55e",
-};
-
-
-const ROOT_CAUSE_COLORS = {
-  "Software": "#3b82f6",
-  "Data": "#f97316",
-  "Usage": "#22c55e",
-  "New Work": "#a855f7",
-  "Unspecified": "#9ca3af",
-};
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
@@ -174,26 +157,6 @@ const CustomerDashboard = () => {
     return result;
   }, [customerTickets]);
 
-  // Prepare chart data
-  const statusChartData = useMemo(() => {
-    return [
-      { name: "Open", value: stats.openTickets, color: STATUS_COLORS["Open"] },
-      { name: "In Progress", value: stats.inProgressTickets, color: STATUS_COLORS["In Progress"] },
-      { name: "Client Query", value: stats.clientQueryTickets, color: STATUS_COLORS["Client Query"] },
-      { name: "Closed", value: stats.closedTickets, color: STATUS_COLORS["Closed"] },
-    ].filter(item => item.value > 0);
-  }, [stats]);
-
-
-  const rootCauseChartData = useMemo(() => {
-    return [
-      { name: "Software", value: stats.byRootCause.Software, color: ROOT_CAUSE_COLORS["Software"] },
-      { name: "Data", value: stats.byRootCause.Data, color: ROOT_CAUSE_COLORS["Data"] },
-      { name: "Usage", value: stats.byRootCause.Usage, color: ROOT_CAUSE_COLORS["Usage"] },
-      { name: "New Work", value: stats.byRootCause["New Work"], color: ROOT_CAUSE_COLORS["New Work"] },
-      { name: "Unspecified", value: stats.byRootCause.Unspecified, color: ROOT_CAUSE_COLORS["Unspecified"] },
-    ].filter(item => item.value > 0);
-  }, [stats]);
 
   const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || '';
 
@@ -257,36 +220,6 @@ const CustomerDashboard = () => {
     }
   };
 
-  // Custom tooltip for pie charts
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-popover border border-border rounded-lg px-3 py-2 shadow-lg">
-          <p className="font-medium">{data.name}</p>
-          <p className="text-sm text-muted-foreground">{data.value} tickets</p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Custom legend for pie charts
-  const CustomLegend = ({ payload }: any) => {
-    return (
-      <div className="flex flex-wrap justify-center gap-3 mt-2">
-        {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center gap-1.5 text-sm">
-            <div 
-              className="w-3 h-3 rounded-full" 
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-muted-foreground">{entry.value}: {entry.payload.value}</span>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   if (isLoading) {
     return (
@@ -408,80 +341,6 @@ const CustomerDashboard = () => {
           </Card>
         </div>
 
-        {/* Pie Charts Row */}
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          {/* Tickets by Status */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Tickets by Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {statusChartData.length > 0 ? (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={statusChartData}
-                        cx="50%"
-                        cy="45%"
-                        innerRadius={50}
-                        outerRadius={80}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {statusChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend content={<CustomLegend />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  No tickets to display
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Closed Tickets by Root Cause */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Closed Tickets by Root Cause</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {rootCauseChartData.length > 0 ? (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={rootCauseChartData}
-                        cx="50%"
-                        cy="45%"
-                        innerRadius={50}
-                        outerRadius={80}
-                        paddingAngle={2}
-                        dataKey="value"
-                      >
-                        {rootCauseChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<CustomTooltip />} />
-                      <Legend content={<CustomLegend />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  No closed tickets to display
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Issue type breakdown */}
         <Card className="mb-6">
