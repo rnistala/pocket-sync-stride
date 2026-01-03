@@ -21,6 +21,7 @@ interface DashboardEmailRequest {
   contactName: string;
   companyName: string;
   monthLabel: string;
+  customMessage?: string;
   stats: {
     totalTickets: number;
     closedTickets: number;
@@ -74,11 +75,13 @@ const handler = async (req: Request): Promise<Response> => {
       contactName,
       companyName, 
       monthLabel,
+      customMessage,
       stats,
       tickets
     }: DashboardEmailRequest = await req.json();
     
     console.log(`[DASHBOARD EMAIL] Sending report for ${companyName} - ${monthLabel}`);
+    console.log(`[DASHBOARD EMAIL] Custom message: ${customMessage ? 'Yes' : 'No'}`);
     
     // Build ticket rows HTML
     const ticketRows = tickets.map(ticket => {
@@ -125,6 +128,14 @@ const handler = async (req: Request): Promise<Response> => {
         `;
       }).join('<td style="width: 10px;"></td>');
 
+    // Build custom message section if provided
+    const customMessageHtml = customMessage ? `
+      <!-- Custom Message -->
+      <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px 20px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; color: #0369a1; font-style: italic; white-space: pre-wrap;">${customMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+      </div>
+    ` : '';
+
     // Build HTML email body
     const emailBody = `
 <!DOCTYPE html>
@@ -144,6 +155,8 @@ const handler = async (req: Request): Promise<Response> => {
     
     <!-- Main content -->
     <div style="background-color: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+      
+      ${customMessageHtml}
       
       <!-- Summary cards -->
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
