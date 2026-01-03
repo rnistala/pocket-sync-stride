@@ -17,7 +17,7 @@ interface TicketSummary {
 
 interface DashboardEmailRequest {
   userId: string;
-  contactEmail: string;
+  recipients: string[];
   contactName: string;
   companyName: string;
   monthLabel: string;
@@ -71,7 +71,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { 
       userId, 
-      contactEmail, 
+      recipients,
       contactName,
       companyName, 
       monthLabel,
@@ -81,6 +81,7 @@ const handler = async (req: Request): Promise<Response> => {
     }: DashboardEmailRequest = await req.json();
     
     console.log(`[DASHBOARD EMAIL] Sending report for ${companyName} - ${monthLabel}`);
+    console.log(`[DASHBOARD EMAIL] Recipients: ${recipients.join(', ')}`);
     console.log(`[DASHBOARD EMAIL] Custom message: ${customMessage ? 'Yes' : 'No'}`);
     
     // Build ticket rows HTML
@@ -234,20 +235,20 @@ const handler = async (req: Request): Promise<Response> => {
 </html>
 `;
 
-    // Call Opterix email API
-    const emailPayload = [{
+    // Call Opterix email API for each recipient
+    const emailPayloads = recipients.map(recipientEmail => ({
       id: userId,
-      to: contactEmail,
+      to: recipientEmail,
       subject: `[Opterix 360] Monthly Service Report - ${companyName} - ${monthLabel}`,
       body: emailBody
-    }];
+    }));
 
-    console.log(`[DASHBOARD EMAIL] Sending to: ${contactEmail}`);
+    console.log(`[DASHBOARD EMAIL] Sending to ${recipients.length} recipient(s): ${recipients.join(', ')}`);
     
     const response = await fetch(`https://demo.opterix.in/api/public/qmail/${userId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(emailPayload)
+      body: JSON.stringify(emailPayloads)
     });
 
     const responseText = await response.text();

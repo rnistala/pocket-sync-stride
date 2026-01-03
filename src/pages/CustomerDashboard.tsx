@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mail, Ticket as TicketIcon, Clock, CheckCircle, AlertCircle, Loader2, ChevronDown, MessageSquare } from "lucide-react";
+import { ArrowLeft, Mail, Ticket as TicketIcon, Clock, CheckCircle, AlertCircle, Loader2, ChevronDown, MessageSquare, X, Plus, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,9 @@ import opterixLogoLight from "@/assets/opterix-logo-light.png";
 import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formatEffort = (minutes: number): string => {
   if (minutes === 0) return "0h";
@@ -68,6 +71,9 @@ const CustomerDashboard = () => {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
   const [isMessageOpen, setIsMessageOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [additionalRecipients, setAdditionalRecipients] = useState<string[]>([]);
+  const [newRecipientEmail, setNewRecipientEmail] = useState("");
   
   // Month filter from URL or default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -174,9 +180,48 @@ const CustomerDashboard = () => {
   const closedPercentage = stats.totalTickets > 0 ? (stats.closedTickets / stats.totalTickets) * 100 : 0;
   const openPercentage = stats.totalTickets > 0 ? ((stats.openTickets + stats.inProgressTickets + stats.clientQueryTickets) / stats.totalTickets) * 100 : 0;
 
-  const handleSendEmail = async () => {
+  // Email validation regex
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const handleAddRecipient = () => {
+    const email = newRecipientEmail.trim().toLowerCase();
+    if (!email) return;
+    if (!isValidEmail(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    if (email === contact?.email?.toLowerCase()) {
+      toast.error("This is already the primary recipient");
+      return;
+    }
+    if (additionalRecipients.includes(email)) {
+      toast.error("This email is already added");
+      return;
+    }
+    setAdditionalRecipients([...additionalRecipients, email]);
+    setNewRecipientEmail("");
+  };
+
+  const handleRemoveRecipient = (email: string) => {
+    setAdditionalRecipients(additionalRecipients.filter(e => e !== email));
+  };
+
+  const allRecipients = useMemo(() => {
+    const recipients = contact?.email ? [contact.email] : [];
+    return [...recipients, ...additionalRecipients];
+  }, [contact?.email, additionalRecipients]);
+
+  const handleOpenPreview = () => {
     if (!contact?.email) {
       toast.error("No email address found for this customer");
+      return;
+    }
+    setIsPreviewOpen(true);
+  };
+
+  const handleSendEmail = async () => {
+    if (allRecipients.length === 0) {
+      toast.error("No recipients specified");
       return;
     }
 
@@ -191,9 +236,9 @@ const CustomerDashboard = () => {
       const { data, error } = await supabase.functions.invoke('send-dashboard-email', {
         body: {
           userId,
-          contactEmail: contact.email,
-          contactName: contact.name,
-          companyName: contact.company,
+          recipients: allRecipients,
+          contactName: contact?.name,
+          companyName: contact?.company,
           monthLabel: selectedMonthLabel,
           customMessage: customMessage.trim() || undefined,
           stats: {
@@ -219,7 +264,10 @@ const CustomerDashboard = () => {
       if (error) throw error;
       
       if (data?.success) {
-        toast.success("Dashboard report sent to " + contact.email);
+        const recipientCount = allRecipients.length;
+        toast.success(`Report sent to ${recipientCount} recipient${recipientCount > 1 ? 's' : ''}`);
+        setIsPreviewOpen(false);
+        setAdditionalRecipients([]);
       } else {
         throw new Error(data?.error || "Failed to send email");
       }
@@ -229,6 +277,161 @@ const CustomerDashboard = () => {
     } finally {
       setIsSendingEmail(false);
     }
+  };
+
+  // Generate email preview HTML
+  const generatePreviewHtml = () => {
+    const formatEffortPreview = (minutes: number): string => {
+      if (minutes === 0) return "0 hours";
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      if (hours === 0) return `${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
+      if (remainingMinutes === 0) return `${hours} hour${hours !== 1 ? 's' : ''}`;
+      return `${hours} hour${hours !== 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
+    };
+
+    const getIssueTypeColor = (issueType: string): { bg: string; text: string } => {
+      switch (issueType) {
+        case "Problem": return { bg: "#fef2f2", text: "#b91c1c" };
+        case "New Work": return { bg: "#eff6ff", text: "#1d4ed8" };
+        case "Support": return { bg: "#faf5ff", text: "#7c3aed" };
+        case "Meeting": return { bg: "#f3f4f6", text: "#374151" };
+        default: return { bg: "#f3f4f6", text: "#374151" };
+      }
+    };
+
+    const getStatusColor = (status: string): string => {
+      switch (status) {
+        case "CLOSED": return "#16a34a";
+        case "IN PROGRESS": return "#2563eb";
+        case "CLIENT QUERY": return "#ca8a04";
+        default: return "#ea580c";
+      }
+    };
+
+    const ticketRows = customerTickets.map(ticket => {
+      const issueLabel = getIssueTypeLabel(ticket.issueType);
+      const issueColors = getIssueTypeColor(issueLabel);
+      const statusColor = getStatusColor(ticket.status);
+      const truncatedDesc = ticket.description.length > 60 
+        ? ticket.description.substring(0, 60) + '...' 
+        : ticket.description;
+      
+      return `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${ticket.ticketId || `#${ticket.id}`}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
+            <span style="background-color: ${issueColors.bg}; color: ${issueColors.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${issueLabel}</span>
+          </td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; max-width: 250px;">${truncatedDesc}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
+            <span style="color: ${statusColor}; font-weight: 500;">${ticket.status}</span>
+          </td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatEffortPreview(Number(ticket.effort_minutes) || 0)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const issueTypeSummary = Object.entries(stats.byIssueType)
+      .filter(([_, count]) => count > 0)
+      .map(([type, count]) => {
+        const effort = stats.effortByIssueType[type] || 0;
+        const colors = getIssueTypeColor(
+          type === 'BR' ? 'Problem' : 
+          type === 'FR' ? 'New Work' : 
+          type === 'SR' ? 'Support' : 'Meeting'
+        );
+        const label = type === 'BR' ? 'Problem' : 
+                     type === 'FR' ? 'New Work' : 
+                     type === 'SR' ? 'Support' : 'Meeting';
+        return `
+          <td style="padding: 15px; text-align: center; background-color: ${colors.bg}; border-radius: 8px;">
+            <div style="color: ${colors.text}; font-weight: 600;">${label}</div>
+            <div style="font-size: 20px; font-weight: bold; margin: 5px 0;">${count}</div>
+            <div style="font-size: 12px; color: #6b7280;">${formatEffortPreview(effort)}</div>
+          </td>
+        `;
+      }).join('<td style="width: 10px;"></td>');
+
+    const customMessageHtml = customMessage.trim() ? `
+      <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px 20px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; color: #0369a1; font-style: italic; white-space: pre-wrap;">${customMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+      </div>
+    ` : '';
+
+    return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; padding: 20px;">
+        <div style="max-width: 700px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">Monthly Service Report</h1>
+            <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">${contact?.company}</p>
+            <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0; font-size: 14px;">${selectedMonthLabel}</p>
+          </div>
+          
+          <div style="background-color: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+            ${customMessageHtml}
+            
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+              <tr>
+                <td style="padding: 15px; text-align: center; background-color: #f0f9ff; border-radius: 8px;">
+                  <div style="color: #0369a1; font-size: 12px; text-transform: uppercase;">Total Tickets</div>
+                  <div style="font-size: 28px; font-weight: bold; color: #0284c7;">${stats.totalTickets}</div>
+                </td>
+                <td style="width: 10px;"></td>
+                <td style="padding: 15px; text-align: center; background-color: #f0fdf4; border-radius: 8px;">
+                  <div style="color: #166534; font-size: 12px; text-transform: uppercase;">Closed</div>
+                  <div style="font-size: 28px; font-weight: bold; color: #16a34a;">${stats.closedTickets}</div>
+                </td>
+                <td style="width: 10px;"></td>
+                <td style="padding: 15px; text-align: center; background-color: #fff7ed; border-radius: 8px;">
+                  <div style="color: #c2410c; font-size: 12px; text-transform: uppercase;">Open</div>
+                  <div style="font-size: 28px; font-weight: bold; color: #ea580c;">${stats.openTickets + stats.inProgressTickets}</div>
+                </td>
+                <td style="width: 10px;"></td>
+                <td style="padding: 15px; text-align: center; background-color: #faf5ff; border-radius: 8px;">
+                  <div style="color: #7c3aed; font-size: 12px; text-transform: uppercase;">Total Effort</div>
+                  <div style="font-size: 20px; font-weight: bold; color: #7c3aed;">${formatEffortPreview(stats.totalEffortMinutes)}</div>
+                </td>
+              </tr>
+            </table>
+            
+            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Effort by Category</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+              <tr>
+                ${issueTypeSummary || '<td style="text-align: center; color: #6b7280; padding: 20px;">No categorized tickets</td>'}
+              </tr>
+            </table>
+            
+            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Ticket Details</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <thead>
+                <tr style="background-color: #f9fafb;">
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Ticket</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Type</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Description</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Status</th>
+                  <th style="padding: 12px 10px; text-align: right; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Effort</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ticketRows || '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #6b7280;">No tickets for this period</td></tr>'}
+              </tbody>
+            </table>
+            
+            <div style="margin-top: 20px; padding: 15px; background-color: #f0f9ff; border-radius: 8px; text-align: right;">
+              <span style="color: #0369a1; font-weight: 600;">Total Effort This Month:</span>
+              <span style="font-size: 18px; font-weight: bold; color: #0284c7; margin-left: 10px;">${formatEffortPreview(stats.totalEffortMinutes)}</span>
+            </div>
+          </div>
+          
+          <div style="padding: 20px; text-align: center; border-radius: 0 0 12px 12px; background-color: #f3f4f6;">
+            <p style="margin: 0; font-size: 12px; color: #6b7280;">
+              This report was generated by Opterix 360
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
   };
 
 
@@ -265,15 +468,11 @@ const CustomerDashboard = () => {
               </div>
             </div>
             <Button 
-              onClick={handleSendEmail} 
-              disabled={isSendingEmail || !contact.email}
+              onClick={handleOpenPreview} 
+              disabled={!contact.email}
               className="gap-2"
             >
-              {isSendingEmail ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Mail className="h-4 w-4" />
-              )}
+              <Mail className="h-4 w-4" />
               Send Report
             </Button>
           </div>
@@ -476,6 +675,84 @@ const CustomerDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email Preview Dialog */}
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Email Preview
+            </DialogTitle>
+          </DialogHeader>
+          
+          {/* Recipients Section */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Recipients</span>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {contact?.email && (
+                <Badge variant="secondary" className="gap-1 py-1 px-2">
+                  {contact.email}
+                  <span className="text-xs text-muted-foreground ml-1">(primary)</span>
+                </Badge>
+              )}
+              {additionalRecipients.map(email => (
+                <Badge key={email} variant="outline" className="gap-1 py-1 px-2">
+                  {email}
+                  <button 
+                    onClick={() => handleRemoveRecipient(email)}
+                    className="ml-1 hover:text-destructive transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                type="email"
+                placeholder="Add recipient email..."
+                value={newRecipientEmail}
+                onChange={(e) => setNewRecipientEmail(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
+                className="flex-1"
+              />
+              <Button variant="outline" size="sm" onClick={handleAddRecipient} className="gap-1">
+                <Plus className="h-4 w-4" />
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {/* Preview Section */}
+          <div className="flex-1 min-h-0">
+            <p className="text-sm text-muted-foreground mb-2">Preview:</p>
+            <ScrollArea className="h-[400px] border rounded-lg">
+              <div 
+                dangerouslySetInnerHTML={{ __html: generatePreviewHtml() }}
+                className="text-sm"
+              />
+            </ScrollArea>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSendEmail} disabled={isSendingEmail} className="gap-2">
+              {isSendingEmail ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              Send to {allRecipients.length} recipient{allRecipients.length !== 1 ? 's' : ''}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
