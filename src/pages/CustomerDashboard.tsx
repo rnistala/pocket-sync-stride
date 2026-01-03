@@ -74,6 +74,7 @@ const CustomerDashboard = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [additionalRecipients, setAdditionalRecipients] = useState<string[]>([]);
   const [newRecipientEmail, setNewRecipientEmail] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
   
   // Month filter from URL or default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -216,6 +217,8 @@ const CustomerDashboard = () => {
       toast.error("No email address found for this customer");
       return;
     }
+    // Set default subject
+    setEmailSubject(`[Opterix 360] Monthly Performance Summary - ${contact.company} - ${selectedMonthLabel}`);
     setIsPreviewOpen(true);
   };
 
@@ -241,6 +244,7 @@ const CustomerDashboard = () => {
           companyName: contact?.company,
           monthLabel: selectedMonthLabel,
           customMessage: customMessage.trim() || undefined,
+          subject: emailSubject,
           stats: {
             totalTickets: stats.totalTickets,
             closedTickets: stats.closedTickets,
@@ -721,6 +725,17 @@ const CustomerDashboard = () => {
                 Add
               </Button>
             </div>
+          </div>
+
+          {/* Subject Section */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <label className="text-sm font-medium mb-2 block">Subject</label>
+            <Input
+              value={emailSubject}
+              onChange={(e) => setEmailSubject(e.target.value)}
+              placeholder="Email subject..."
+              className="w-full"
+            />
           </div>
 
           {/* Preview Section */}

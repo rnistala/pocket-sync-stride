@@ -21,6 +21,7 @@ interface DashboardEmailRequest {
   companyName: string;
   monthLabel: string;
   customMessage?: string;
+  subject?: string;
   stats: {
     totalTickets: number;
     closedTickets: number;
@@ -67,6 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
       companyName, 
       monthLabel,
       customMessage,
+      subject,
       stats,
       tickets
     }: DashboardEmailRequest = await req.json();
@@ -227,10 +229,11 @@ const handler = async (req: Request): Promise<Response> => {
 `;
 
     // Call Opterix email API for each recipient
+    const emailSubject = subject || `[Opterix 360] Monthly Performance Summary - ${companyName} - ${monthLabel}`;
     const emailPayloads = recipients.map(recipientEmail => ({
       id: userId,
       to: recipientEmail,
-      subject: `[Opterix 360] Monthly Performance Summary - ${companyName} - ${monthLabel}`,
+      subject: emailSubject,
       body: emailBody
     }));
 
