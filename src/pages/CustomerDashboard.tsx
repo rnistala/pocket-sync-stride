@@ -246,14 +246,13 @@ const CustomerDashboard = () => {
             closedTickets: stats.closedTickets,
             openTickets: stats.openTickets + stats.inProgressTickets,
             totalEffortMinutes: stats.totalEffortMinutes,
-            byIssueType: stats.byIssueType,
-            effortByIssueType: stats.effortByIssueType,
+            byRootCause: stats.byRootCause,
+            effortByRootCause: stats.effortByRootCause,
           },
-          tickets: customerTickets.map(t => ({
+          tickets: closedTickets.map(t => ({
             ticketId: t.ticketId || `#${t.id}`,
-            issueType: getIssueTypeLabel(t.issueType),
             description: t.description,
-            status: t.status,
+            rootCause: t.rootCause || "Unspecified",
             effortMinutes: Number(t.effort_minutes) || 0,
             reportedDate: t.reportedDate,
             closedDate: t.closedDate,
@@ -290,68 +289,54 @@ const CustomerDashboard = () => {
       return `${hours} hour${hours !== 1 ? 's' : ''} ${remainingMinutes} minute${remainingMinutes !== 1 ? 's' : ''}`;
     };
 
-    const getIssueTypeColor = (issueType: string): { bg: string; text: string } => {
-      switch (issueType) {
-        case "Problem": return { bg: "#fef2f2", text: "#b91c1c" };
-        case "New Work": return { bg: "#eff6ff", text: "#1d4ed8" };
-        case "Support": return { bg: "#faf5ff", text: "#7c3aed" };
-        case "Meeting": return { bg: "#f3f4f6", text: "#374151" };
-        default: return { bg: "#f3f4f6", text: "#374151" };
+    const getRootCauseColor = (rootCause: string): { bg: string; text: string } => {
+      switch (rootCause) {
+        case "Software": return { bg: "#eff6ff", text: "#1d4ed8" };
+        case "Data": return { bg: "#fff7ed", text: "#c2410c" };
+        case "Usage": return { bg: "#f0fdf4", text: "#166534" };
+        case "New Work": return { bg: "#faf5ff", text: "#7c3aed" };
+        case "Meeting": return { bg: "#f0fdfa", text: "#0d9488" };
+        default: return { bg: "#f3f4f6", text: "#6b7280" };
       }
     };
 
-    const getStatusColor = (status: string): string => {
-      switch (status) {
-        case "CLOSED": return "#16a34a";
-        case "IN PROGRESS": return "#2563eb";
-        case "CLIENT QUERY": return "#ca8a04";
-        default: return "#ea580c";
-      }
-    };
+    const reportDate = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
 
-    const ticketRows = customerTickets.map(ticket => {
-      const issueLabel = getIssueTypeLabel(ticket.issueType);
-      const issueColors = getIssueTypeColor(issueLabel);
-      const statusColor = getStatusColor(ticket.status);
-      const truncatedDesc = ticket.description.length > 60 
-        ? ticket.description.substring(0, 60) + '...' 
-        : ticket.description;
+    // Build closed tickets rows (matching app display)
+    const ticketRows = closedTickets.map(ticket => {
+      const rootCause = ticket.rootCause || "Unspecified";
+      const rootCauseColors = getRootCauseColor(rootCause);
+      const reportedDate = new Date(ticket.reportedDate).toLocaleDateString();
+      const closedDate = ticket.closedDate ? new Date(ticket.closedDate).toLocaleDateString() : '-';
       
       return `
-        <tr>
+        <tr style="vertical-align: top;">
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${ticket.ticketId || `#${ticket.id}`}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">${ticket.description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
-            <span style="background-color: ${issueColors.bg}; color: ${issueColors.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${issueLabel}</span>
-          </td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; max-width: 250px;">${truncatedDesc}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
-            <span style="color: ${statusColor}; font-weight: 500;">${ticket.status}</span>
+            <span style="background-color: ${rootCauseColors.bg}; color: ${rootCauseColors.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${rootCause}</span>
           </td>
           <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatEffortPreview(Number(ticket.effort_minutes) || 0)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${reportedDate}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${closedDate}</td>
         </tr>
       `;
     }).join('');
 
-    const issueTypeSummary = Object.entries(stats.byIssueType)
+    // Build root cause summary (matching app display)
+    const rootCauseSummary = Object.entries(stats.byRootCause)
       .filter(([_, count]) => count > 0)
-      .map(([type, count]) => {
-        const effort = stats.effortByIssueType[type] || 0;
-        const colors = getIssueTypeColor(
-          type === 'BR' ? 'Problem' : 
-          type === 'FR' ? 'New Work' : 
-          type === 'SR' ? 'Support' : 'Meeting'
-        );
-        const label = type === 'BR' ? 'Problem' : 
-                     type === 'FR' ? 'New Work' : 
-                     type === 'SR' ? 'Support' : 'Meeting';
+      .map(([cause, count]) => {
+        const effort = stats.effortByRootCause[cause] || 0;
+        const colors = getRootCauseColor(cause);
         return `
-          <td style="padding: 15px; text-align: center; background-color: ${colors.bg}; border-radius: 8px;">
-            <div style="color: ${colors.text}; font-weight: 600;">${label}</div>
-            <div style="font-size: 20px; font-weight: bold; margin: 5px 0;">${count}</div>
+          <td style="padding: 12px; text-align: center; background-color: ${colors.bg}; border-radius: 8px;">
+            <div style="color: ${colors.text}; font-weight: 600; font-size: 13px;">${cause}</div>
+            <div style="font-size: 18px; font-weight: bold; margin: 4px 0;">${count} tickets</div>
             <div style="font-size: 12px; color: #6b7280;">${formatEffortPreview(effort)}</div>
           </td>
         `;
-      }).join('<td style="width: 10px;"></td>');
+      }).join('<td style="width: 8px;"></td>');
 
     const customMessageHtml = customMessage.trim() ? `
       <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px 20px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
@@ -362,15 +347,30 @@ const CustomerDashboard = () => {
     return `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; padding: 20px;">
         <div style="max-width: 700px; margin: 0 auto;">
-          <div style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">Monthly Service Report</h1>
-            <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px;">${contact?.company}</p>
-            <p style="color: rgba(255,255,255,0.8); margin: 5px 0 0 0; font-size: 14px;">${selectedMonthLabel}</p>
+          <!-- Compact Header -->
+          <div style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); padding: 16px 24px; border-radius: 12px 12px 0 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="vertical-align: middle;">
+                  <img src="https://xitliskomnkgspqgmtud.supabase.co/storage/v1/object/public/assets/opterix-logo-white.png" alt="Opterix 360" style="height: 32px; display: block;" onerror="this.style.display='none'"/>
+                </td>
+                <td style="text-align: right; vertical-align: middle;">
+                  <div style="color: white; font-weight: 600; font-size: 16px;">${contact?.company}</div>
+                  <div style="color: rgba(255,255,255,0.8); font-size: 13px;">Report Date: ${reportDate}</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          
+          <!-- Title Banner -->
+          <div style="background-color: #1e40af; padding: 16px 24px; text-align: center;">
+            <h1 style="color: white; margin: 0; font-size: 22px; font-weight: 600;">Summary of Interactions - ${selectedMonthLabel}</h1>
           </div>
           
           <div style="background-color: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
             ${customMessageHtml}
             
+            <!-- Summary Cards -->
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
               <tr>
                 <td style="padding: 15px; text-align: center; background-color: #f0f9ff; border-radius: 8px;">
@@ -395,26 +395,29 @@ const CustomerDashboard = () => {
               </tr>
             </table>
             
-            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Effort by Category</h3>
+            <!-- Effort by Root Cause -->
+            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Effort by Root Cause (Closed Tickets)</h3>
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
               <tr>
-                ${issueTypeSummary || '<td style="text-align: center; color: #6b7280; padding: 20px;">No categorized tickets</td>'}
+                ${rootCauseSummary || '<td style="text-align: center; color: #6b7280; padding: 20px;">No closed tickets</td>'}
               </tr>
             </table>
             
-            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Ticket Details</h3>
+            <!-- Closed Tickets Table -->
+            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Closed Tickets</h3>
             <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
               <thead>
                 <tr style="background-color: #f9fafb;">
-                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Ticket</th>
-                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Type</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Ticket ID</th>
                   <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Description</th>
-                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Status</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Root Cause</th>
                   <th style="padding: 12px 10px; text-align: right; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Effort</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Reported</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Closed</th>
                 </tr>
               </thead>
               <tbody>
-                ${ticketRows || '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #6b7280;">No tickets for this period</td></tr>'}
+                ${ticketRows || '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #6b7280;">No closed tickets for this period</td></tr>'}
               </tbody>
             </table>
             
