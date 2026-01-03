@@ -38,7 +38,14 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
         setTargetDate(ticket.targetDate.split('T')[0]);
         setStatus(ticket.status);
         setRemarks(ticket.remarks || "");
-        setRootCause(ticket.rootCause || "");
+        // Auto-set root cause based on issue type
+        if (ticket.issueType === "FR" || ticket.issueType === "New Work") {
+          setRootCause("New Work");
+        } else if (ticket.issueType === "MG" || ticket.issueType === "Meeting") {
+          setRootCause("Meeting");
+        } else {
+          setRootCause(ticket.rootCause || "");
+        }
         setScreenshots([]); // Always start fresh - existing images are in existingPhotos
         setPriority(ticket.priority || false);
         setEffortInMinutes(ticket.effort_minutes?.toString() || "");
@@ -322,6 +329,8 @@ export const UpdateTicketForm = ({ ticket, open, onOpenChange }: UpdateTicketFor
                       <SelectItem value="Software">Software</SelectItem>
                       <SelectItem value="Data">Data</SelectItem>
                       <SelectItem value="Usage">Usage</SelectItem>
+                      <SelectItem value="New Work">New Work</SelectItem>
+                      <SelectItem value="Meeting">Meeting</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

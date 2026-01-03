@@ -50,6 +50,8 @@ const getRootCauseBadge = (rootCause: string | undefined) => {
       return <Badge variant="outline" className="border-green-300 text-green-700 dark:border-green-700 dark:text-green-400">{cause}</Badge>;
     case "New Work":
       return <Badge variant="outline" className="border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-400">{cause}</Badge>;
+    case "Meeting":
+      return <Badge variant="outline" className="border-teal-300 text-teal-700 dark:border-teal-700 dark:text-teal-400">{cause}</Badge>;
     default:
       return <Badge variant="outline" className="border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400">{cause}</Badge>;
   }
@@ -119,8 +121,8 @@ const CustomerDashboard = () => {
       totalEffortMinutes: 0,
       byIssueType: { BR: 0, FR: 0, SR: 0, MG: 0 } as Record<string, number>,
       effortByIssueType: { BR: 0, FR: 0, SR: 0, MG: 0 } as Record<string, number>,
-      byRootCause: { Software: 0, Data: 0, Usage: 0, "New Work": 0, Unspecified: 0 } as Record<string, number>,
-      effortByRootCause: { Software: 0, Data: 0, Usage: 0, "New Work": 0, Unspecified: 0 } as Record<string, number>,
+      byRootCause: { Software: 0, Data: 0, Usage: 0, "New Work": 0, Meeting: 0, Unspecified: 0 } as Record<string, number>,
+      effortByRootCause: { Software: 0, Data: 0, Usage: 0, "New Work": 0, Meeting: 0, Unspecified: 0 } as Record<string, number>,
     };
     
     customerTickets.forEach(ticket => {
@@ -352,7 +354,7 @@ const CustomerDashboard = () => {
             <CardTitle className="text-lg">Effort by Root Cause (Closed Tickets)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30">
                 <p className="text-sm font-medium text-blue-700 dark:text-blue-400">Software</p>
                 <p className="text-lg font-bold">{stats.byRootCause.Software} tickets</p>
@@ -372,6 +374,11 @@ const CustomerDashboard = () => {
                 <p className="text-sm font-medium text-purple-700 dark:text-purple-400">New Work</p>
                 <p className="text-lg font-bold">{stats.byRootCause["New Work"]} tickets</p>
                 <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByRootCause["New Work"])}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-teal-50 dark:bg-teal-950/30">
+                <p className="text-sm font-medium text-teal-700 dark:text-teal-400">Meeting</p>
+                <p className="text-lg font-bold">{stats.byRootCause.Meeting} tickets</p>
+                <p className="text-sm text-muted-foreground">{formatEffort(stats.effortByRootCause.Meeting)}</p>
               </div>
               <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-400">Unspecified</p>

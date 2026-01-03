@@ -38,9 +38,11 @@ export default function UpdateTicket() {
         setTargetDate(ticket.targetDate.split('T')[0]);
         setStatus(ticket.status);
         setRemarks(ticket.remarks || "");
-        // Auto-set root cause to "New Work" for FR/New Work issue types
+        // Auto-set root cause based on issue type
         if (ticket.issueType === "FR" || ticket.issueType === "New Work") {
           setRootCause("New Work");
+        } else if (ticket.issueType === "MG" || ticket.issueType === "Meeting") {
+          setRootCause("Meeting");
         } else {
           setRootCause(ticket.rootCause || "");
         }
@@ -409,6 +411,7 @@ export default function UpdateTicket() {
                       <SelectItem value="Data">Data</SelectItem>
                       <SelectItem value="Usage">Usage</SelectItem>
                       <SelectItem value="New Work">New Work</SelectItem>
+                      <SelectItem value="Meeting">Meeting</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
