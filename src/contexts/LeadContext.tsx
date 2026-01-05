@@ -6,12 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { getIssueTypeLabel } from "@/lib/issueTypeUtils";
 
 export const DB_NAME = "LeadManagerDB";
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 const CONTACTS_STORE = "contacts";
 const INTERACTIONS_STORE = "interactions";
 const METADATA_STORE = "metadata";
 const ORDERS_STORE = "orders";
 const TICKETS_STORE = "tickets";
+const INSPIRATIONS_STORE = "inspirations";
 
 export interface Ticket {
   id: number;
@@ -38,6 +39,23 @@ export interface User {
   id: string;
   name: string;
   email?: string;
+}
+
+export interface Inspiration {
+  id: number;
+  inspiration_id?: string;
+  notes: string;
+  source_type: "ticket_remark" | "followup_note" | "direct_entry";
+  source_id?: string;
+  source_context?: string;
+  photo?: any[];
+  screenshots?: string[];
+  created: string;
+  updated?: string;
+  createdby?: string;
+  updatedby?: string;
+  is_used?: boolean;
+  syncStatus: "synced" | "pending" | "local";
 }
 
 class IndexedDBManager {
@@ -81,6 +99,11 @@ class IndexedDBManager {
           const ticketsStore = db.createObjectStore(TICKETS_STORE, { keyPath: "id" });
           ticketsStore.createIndex("contactId", "contactId", { unique: false });
           ticketsStore.createIndex("status", "status", { unique: false });
+        }
+
+        if (!db.objectStoreNames.contains(INSPIRATIONS_STORE)) {
+          const inspirationsStore = db.createObjectStore(INSPIRATIONS_STORE, { keyPath: "id" });
+          inspirationsStore.createIndex("source_type", "source_type", { unique: false });
         }
       };
     });
@@ -276,6 +299,68 @@ class IndexedDBManager {
       request.onerror = () => reject(request.error);
     });
   }
+
+  async getAllInspirations(): Promise<Inspiration[]> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INSPIRATIONS_STORE, "readonly");
+      const store = transaction.objectStore(INSPIRATIONS_STORE);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async saveInspirations(inspirations: Inspiration[]): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INSPIRATIONS_STORE, "readwrite");
+      const store = transaction.objectStore(INSPIRATIONS_STORE);
+
+      store.clear();
+      inspirations.forEach((inspiration) => store.add(inspiration));
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async addInspiration(inspiration: Inspiration): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INSPIRATIONS_STORE, "readwrite");
+      const store = transaction.objectStore(INSPIRATIONS_STORE);
+      const request = store.add(inspiration);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async updateInspiration(inspiration: Inspiration): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INSPIRATIONS_STORE, "readwrite");
+      const store = transaction.objectStore(INSPIRATIONS_STORE);
+      const request = store.put(inspiration);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async deleteInspiration(id: number): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INSPIRATIONS_STORE, "readwrite");
+      const store = transaction.objectStore(INSPIRATIONS_STORE);
+      const request = store.delete(id);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
 const dbManager = new IndexedDBManager();
@@ -299,6 +384,7 @@ interface LeadContextType {
   orders: any[];
   tickets: Ticket[];
   users: User[];
+  inspirations: Inspiration[];
   lastSync: Date | null;
   isLoading: boolean;
   scrollPosition: number;
@@ -334,6 +420,10 @@ interface LeadContextType {
   addTicket: (ticket: Omit<Ticket, "id" | "syncStatus">) => Promise<Ticket | undefined>;
   updateTicket: (ticket: Ticket, previousAssignedTo?: number) => Promise<void>;
   getContactTickets: (contactId: string) => Ticket[];
+  addInspiration: (inspiration: Omit<Inspiration, "id" | "syncStatus">) => Promise<Inspiration | undefined>;
+  deleteInspiration: (id: number) => Promise<void>;
+  toggleInspirationUsed: (id: number) => Promise<void>;
+  fetchInspirations: () => Promise<void>;
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -344,6 +434,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
   const [orders, setOrders] = useState<any[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [inspirations, setInspirations] = useState<Inspiration[]>([]);
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -404,11 +495,12 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           setLastSync(null);
         } else {
           // Load existing data
-          const [loadedContacts, loadedInteractions, loadedOrders, loadedTickets, syncTime] = await Promise.all([
+          const [loadedContacts, loadedInteractions, loadedOrders, loadedTickets, loadedInspirations, syncTime] = await Promise.all([
             dbManager.getAllContacts(),
             dbManager.getAllInteractions(),
             dbManager.getAllOrders(),
             dbManager.getAllTickets(),
+            dbManager.getAllInspirations(),
             dbManager.getMetadata("lastSync"),
           ]);
 
@@ -416,6 +508,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
           setInteractions(loadedInteractions);
           setOrders(loadedOrders);
           setTickets(loadedTickets);
+          setInspirations(loadedInspirations);
           if (syncTime) {
             setLastSync(new Date(syncTime));
           }
@@ -2226,6 +2319,239 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     [tickets],
   );
 
+  // Inspirations functions
+  const fetchInspirations = useCallback(async () => {
+    const userId = localStorage.getItem("userId");
+    const token = localStorage.getItem("userToken");
+
+    if (!userId || !token) {
+      console.error("[INSPIRATIONS] Missing userId or token");
+      return;
+    }
+
+    try {
+      const apiRoot = await getApiRoot();
+      const url = `${apiRoot}/api/public/formwidgetdatahardcode/${userId}/token`;
+      const payload = { id: 558, offset: 0, limit: 0 };
+
+      console.log("[INSPIRATIONS] Fetching from:", url);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("[INSPIRATIONS] Response data:", result);
+
+        if (result.data && result.data[0] && result.data[0].body) {
+          const fetchedInspirations: Inspiration[] = result.data[0].body.map((apiItem: any) => ({
+            id: Number(apiItem.id),
+            inspiration_id: apiItem.inspiration_id,
+            notes: apiItem.notes || "",
+            source_type: apiItem.source_type || "direct_entry",
+            source_id: apiItem.source_id,
+            source_context: apiItem.source_context,
+            photo: apiItem.photo ? (typeof apiItem.photo === "string" ? JSON.parse(apiItem.photo) : apiItem.photo) : [],
+            created: apiItem.created || new Date().toISOString(),
+            updated: apiItem.updated,
+            createdby: apiItem.createdby,
+            updatedby: apiItem.updatedby,
+            is_used: apiItem.is_used === true || apiItem.is_used === "true",
+            syncStatus: "synced" as const,
+          }));
+
+          console.log("[INSPIRATIONS] Fetched count:", fetchedInspirations.length);
+
+          await dbManager.saveInspirations(fetchedInspirations);
+          setInspirations(fetchedInspirations);
+        }
+      }
+    } catch (error) {
+      console.error("[INSPIRATIONS] Failed to fetch:", error);
+    }
+  }, []);
+
+  const addInspiration = useCallback(async (inspiration: Omit<Inspiration, "id" | "syncStatus">): Promise<Inspiration | undefined> => {
+    const userId = localStorage.getItem("userId");
+
+    if (!userId) {
+      console.error("[INSPIRATION] Missing userId");
+      return undefined;
+    }
+
+    try {
+      const apiRoot = await getApiRoot();
+
+      // Upload screenshots first if any
+      let photoMetadata: any[] = [];
+      if (inspiration.screenshots && inspiration.screenshots.length > 0) {
+        const photoData = inspiration.screenshots.map((screenshot, index) => ({
+          name: `inspiration_${Date.now()}_${index}.png`,
+          title: "photo",
+          table: "inspiration",
+          photo: screenshot.startsWith("data:image") ? screenshot : `data:image/png;base64,${screenshot}`,
+        }));
+
+        console.log("[INSPIRATION] Uploading photos:", photoData.length);
+
+        const uploadResponse = await fetch(`${apiRoot}/api/public/image/${userId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(photoData),
+        });
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          photoMetadata = Array.isArray(uploadResult) ? uploadResult : [uploadResult];
+          console.log("[INSPIRATION] Photos uploaded:", photoMetadata);
+        }
+      }
+
+      // Prepare API payload
+      const bodyData: any = {
+        notes: inspiration.notes,
+        source_type: inspiration.source_type,
+        source_id: inspiration.source_id || "",
+        source_context: inspiration.source_context || "",
+        created: inspiration.created,
+        createdby: userId,
+        is_used: false,
+      };
+
+      if (photoMetadata.length > 0) {
+        bodyData.photo = JSON.stringify(photoMetadata);
+      }
+
+      const apiPayload = {
+        meta: {
+          btable: "inspiration",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            head: [],
+            body: [bodyData],
+            dirty: "true",
+          },
+        ],
+      };
+
+      console.log("[INSPIRATION] Creating with payload:", apiPayload);
+
+      const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiPayload),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("[INSPIRATION] Created successfully:", result);
+
+        let serverId = Date.now();
+        let serverInspirationId: string | undefined;
+
+        if (result.Detail && result.Detail[0] && result.Detail[0].body && result.Detail[0].body[0]) {
+          const responseBody = result.Detail[0].body[0];
+          serverId = responseBody.id ? Number(responseBody.id) : serverId;
+          serverInspirationId = responseBody.inspiration_id;
+        }
+
+        const newInspiration: Inspiration = {
+          id: serverId,
+          inspiration_id: serverInspirationId,
+          notes: inspiration.notes,
+          source_type: inspiration.source_type,
+          source_id: inspiration.source_id,
+          source_context: inspiration.source_context,
+          photo: photoMetadata,
+          created: inspiration.created,
+          createdby: userId,
+          is_used: false,
+          syncStatus: "synced",
+        };
+
+        await dbManager.addInspiration(newInspiration);
+        setInspirations((prev) => [newInspiration, ...prev]);
+
+        return newInspiration;
+      }
+    } catch (error) {
+      console.error("[INSPIRATION] Failed to create:", error);
+    }
+
+    return undefined;
+  }, []);
+
+  const deleteInspiration = useCallback(async (id: number) => {
+    try {
+      await dbManager.deleteInspiration(id);
+      setInspirations((prev) => prev.filter((i) => i.id !== id));
+      toast.success("Inspiration deleted");
+    } catch (error) {
+      console.error("[INSPIRATION] Failed to delete:", error);
+      toast.error("Failed to delete inspiration");
+    }
+  }, []);
+
+  const toggleInspirationUsed = useCallback(async (id: number) => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) return;
+
+    const inspiration = inspirations.find((i) => i.id === id);
+    if (!inspiration) return;
+
+    const updatedInspiration: Inspiration = {
+      ...inspiration,
+      is_used: !inspiration.is_used,
+      updated: new Date().toISOString(),
+      updatedby: userId,
+    };
+
+    try {
+      await dbManager.updateInspiration(updatedInspiration);
+      setInspirations((prev) => prev.map((i) => (i.id === id ? updatedInspiration : i)));
+
+      // Sync with API
+      const apiRoot = await getApiRoot();
+      const apiPayload = {
+        meta: {
+          btable: "inspiration",
+          htable: "",
+          parentkey: "",
+          preapi: "",
+          draftid: "",
+        },
+        data: [
+          {
+            head: [],
+            body: [{
+              id: inspiration.id,
+              is_used: updatedInspiration.is_used,
+              updated: updatedInspiration.updated,
+              updatedby: userId,
+            }],
+            dirty: "true",
+          },
+        ],
+      };
+
+      await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(apiPayload),
+      });
+    } catch (error) {
+      console.error("[INSPIRATION] Failed to toggle used:", error);
+    }
+  }, [inspirations]);
+
   const value = useMemo(
     () => ({
       contacts,
@@ -2233,6 +2559,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       orders,
       tickets,
       users,
+      inspirations,
       lastSync,
       isLoading,
       scrollPosition,
@@ -2262,6 +2589,10 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       addTicket,
       updateTicket,
       getContactTickets,
+      addInspiration,
+      deleteInspiration,
+      toggleInspirationUsed,
+      fetchInspirations,
     }),
     [
       contacts,
@@ -2269,6 +2600,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       orders,
       tickets,
       users,
+      inspirations,
       lastSync,
       isLoading,
       scrollPosition,
