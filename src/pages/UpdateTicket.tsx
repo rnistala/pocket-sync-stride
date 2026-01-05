@@ -10,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { Star, ArrowLeft, Upload, X } from "lucide-react";
 import { getApiRoot } from "@/lib/config";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { AddToInspirationButton } from "@/components/AddToInspirationButton";
 
 export default function UpdateTicket() {
   const { id } = useParams<{ id: string }>();
@@ -304,7 +305,15 @@ export default function UpdateTicket() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="remarks">Remarks / Analysis</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="remarks">Remarks / Analysis</Label>
+                <AddToInspirationButton
+                  content={remarks}
+                  sourceType="ticket_remark"
+                  sourceId={ticket?.ticketId || String(ticket?.id)}
+                  sourceContext={`Ticket ${ticket?.ticketId || ticket?.id}`}
+                />
+              </div>
               <Textarea
                 id="remarks"
                 value={remarks}

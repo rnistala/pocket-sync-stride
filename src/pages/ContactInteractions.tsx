@@ -16,6 +16,7 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
+  Lightbulb,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncButton } from "@/components/SyncButton";
@@ -35,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { FeatureTour } from "@/components/FeatureTour";
 import { CompanyResearchDialog } from "@/components/CompanyResearchDialog";
+import { AddToInspirationButton } from "@/components/AddToInspirationButton";
 
 const ContactInteractions = () => {
   const { id } = useParams();
@@ -1437,8 +1439,16 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                       </div>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {format(new Date(interaction.date), "dd-MMM-yyyy")}
+                  <div className="flex items-center gap-2">
+                    <AddToInspirationButton
+                      content={interaction.notes}
+                      sourceType="followup_note"
+                      sourceId={interaction.id}
+                      sourceContext={`${contact?.name} - ${contact?.company}`}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(interaction.date), "dd-MMM-yyyy")}
+                    </span>
                   </div>
                 </div>
                 <p className="text-sm leading-relaxed">{interaction.notes}</p>

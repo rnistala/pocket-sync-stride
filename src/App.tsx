@@ -18,6 +18,7 @@ import FollowUps from "./pages/FollowUps";
 import Marketing from "./pages/Marketing";
 import Dashboard from "./pages/Dashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
+import Inspirations from "./pages/Inspirations";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/follow-ups" element={<FollowUps />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/:id" element={<CustomerDashboard />} />
+              <Route path="/inspirations" element={<Inspirations />} />
               <Route path="/install" element={<Install />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
