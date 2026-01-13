@@ -108,25 +108,44 @@ const CustomerDashboard = () => {
     return contacts.find(c => c.id === contactId);
   }, [contacts, contactId]);
 
-  // Filter tickets for this customer and selected month
-  const customerTickets = useMemo(() => {
+  // Parse selected month boundaries
+  const { startOfMonth, endOfMonth } = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
-    const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
-    
+    return {
+      startOfMonth: new Date(year, month - 1, 1),
+      endOfMonth: new Date(year, month, 0, 23, 59, 59, 999),
+    };
+  }, [selectedMonth]);
+
+  // Filter tickets: "working set" = opened in month + carried over from previous months
+  const customerTickets = useMemo(() => {
     return tickets
       .filter(ticket => {
         if (ticket.contactId !== contactId) return false;
-        const ticketDate = new Date(ticket.reportedDate);
-        return ticketDate >= startOfMonth && ticketDate <= endOfMonth;
+        
+        const reportedDate = new Date(ticket.reportedDate);
+        const closedDate = ticket.closedDate ? new Date(ticket.closedDate) : null;
+        
+        // Case 1: Tickets opened in this month
+        const openedInMonth = reportedDate >= startOfMonth && reportedDate <= endOfMonth;
+        
+        // Case 2: Tickets carried over (reported before this month AND 
+        //         either still open OR closed during/after this month)
+        const carriedOver = reportedDate < startOfMonth && 
+                            (!closedDate || closedDate >= startOfMonth);
+        
+        return openedInMonth || carriedOver;
       })
       .sort((a, b) => new Date(b.reportedDate).getTime() - new Date(a.reportedDate).getTime());
-  }, [tickets, contactId, selectedMonth]);
+  }, [tickets, contactId, startOfMonth, endOfMonth]);
 
-  // Filter only closed tickets
+  // Filter only closed tickets (closed within the selected month)
   const closedTickets = useMemo(() => {
-    return customerTickets.filter(t => t.status === "CLOSED");
-  }, [customerTickets]);
+    return customerTickets.filter(ticket => {
+      const closedDate = ticket.closedDate ? new Date(ticket.closedDate) : null;
+      return closedDate && closedDate >= startOfMonth && closedDate <= endOfMonth;
+    });
+  }, [customerTickets, startOfMonth, endOfMonth]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -146,25 +165,33 @@ const CustomerDashboard = () => {
     customerTickets.forEach(ticket => {
       result.totalEffortMinutes += Number(ticket.effort_minutes) || 0;
       
+      // Count closed/open based on whether closed within selected month
+      const closedDate = ticket.closedDate ? new Date(ticket.closedDate) : null;
+      const closedInMonth = closedDate && 
+                            closedDate >= startOfMonth && 
+                            closedDate <= endOfMonth;
+
+      if (closedInMonth) {
+        result.closedTickets++;
+        // Count root cause and effort only for tickets closed in this month
+        const rootCause = ticket.rootCause || "Unspecified";
+        const ticketEffort = Number(ticket.effort_minutes) || 0;
+        if (rootCause in result.byRootCause) {
+          result.byRootCause[rootCause]++;
+          result.effortByRootCause[rootCause] += ticketEffort;
+        } else {
+          result.byRootCause["Unspecified"]++;
+          result.effortByRootCause["Unspecified"] += ticketEffort;
+        }
+      } else {
+        // Still open or closed after month end
+        result.openTickets++;
+      }
+
+      // Track detailed status for display
       switch (ticket.status) {
-        case "OPEN":
-          result.openTickets++;
-          break;
         case "IN PROGRESS":
           result.inProgressTickets++;
-          break;
-        case "CLOSED":
-          result.closedTickets++;
-          // Count root cause and effort only for closed tickets
-          const rootCause = ticket.rootCause || "Unspecified";
-          const ticketEffort = Number(ticket.effort_minutes) || 0;
-          if (rootCause in result.byRootCause) {
-            result.byRootCause[rootCause]++;
-            result.effortByRootCause[rootCause] += ticketEffort;
-          } else {
-            result.byRootCause["Unspecified"]++;
-            result.effortByRootCause["Unspecified"] += ticketEffort;
-          }
           break;
         case "CLIENT QUERY":
           result.clientQueryTickets++;
@@ -179,7 +206,7 @@ const CustomerDashboard = () => {
     });
     
     return result;
-  }, [customerTickets]);
+  }, [customerTickets, startOfMonth, endOfMonth]);
 
 
   const selectedMonthLabel = monthOptions.find(m => m.value === selectedMonth)?.label || '';
