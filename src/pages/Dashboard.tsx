@@ -255,30 +255,41 @@ const Dashboard = () => {
     try {
       const closedTickets = getClosedTicketsForCustomer(selectedCustomer.contactId);
       
-      // Prepare all recipients
-      const allRecipients = [selectedCustomer.email, ...additionalRecipients].filter(Boolean).join(", ");
+      // Prepare all recipients as an array
+      const allRecipients = [selectedCustomer.email, ...additionalRecipients].filter(Boolean);
       
-      // Prepare tickets for email
+      // Prepare tickets for email (matching edge function interface)
       const ticketSummaries = closedTickets.map(ticket => ({
+        ticketId: ticket.ticketId || '',
         description: ticket.description,
         rootCause: ticket.rootCause || "Unspecified",
-        effort: formatEffort(Number(ticket.effort_minutes) || 0),
-        closedDate: ticket.closedDate ? formatDateShort(ticket.closedDate) : "-",
+        effortMinutes: Number(ticket.effort_minutes) || 0,
+        reportedDate: ticket.reportedDate,
+        closedDate: ticket.closedDate || undefined,
       }));
 
-      const payload = [{
+      // Calculate total effort for closed tickets only
+      const totalEffortMinutes = closedTickets.reduce((sum, t) => sum + (Number(t.effort_minutes) || 0), 0);
+
+      // Build payload matching DashboardEmailRequest interface
+      const payload = {
+        userId: "7", // Required by the external email API
+        recipients: allRecipients,
+        contactName: selectedCustomer.name,
         companyName: selectedCustomer.company,
-        recipientEmail: allRecipients,
-        subject: emailSubject,
-        month: selectedMonthLabel,
-        totalTickets: selectedCustomer.totalTickets,
-        closedTickets: selectedCustomer.closedTickets,
-        openTickets: selectedCustomer.openTickets,
-        totalEffort: formatEffort(selectedCustomer.totalEffortMinutes),
-        effortByRootCause: selectedCustomer.effortByRootCause,
-        tickets: ticketSummaries,
+        monthLabel: selectedMonthLabel,
         customMessage: customMessage.trim() || undefined,
-      }];
+        subject: emailSubject,
+        stats: {
+          totalTickets: selectedCustomer.totalTickets,
+          closedTickets: selectedCustomer.closedTickets,
+          openTickets: selectedCustomer.openTickets,
+          totalEffortMinutes: totalEffortMinutes,
+          byRootCause: selectedCustomer.byRootCause,
+          effortByRootCause: selectedCustomer.effortByRootCause,
+        },
+        tickets: ticketSummaries,
+      };
 
       const { error } = await supabase.functions.invoke('send-dashboard-email', {
         body: payload,
@@ -286,7 +297,7 @@ const Dashboard = () => {
 
       if (error) throw error;
 
-      toast.success(`Report sent to ${allRecipients}`);
+      toast.success(`Report sent to ${allRecipients.join(', ')}`);
       setIsEmailDialogOpen(false);
     } catch (error) {
       console.error('Error sending email:', error);
