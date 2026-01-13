@@ -398,7 +398,7 @@ const Dashboard = () => {
 
         {/* Customer list */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">{totals.customers} Customers with Tickets</h2>
+          <h2 className="text-lg font-semibold">{totals.customers} Customers with Tickets </h2>
           
           {customerStats.length === 0 ? (
             <Card>
