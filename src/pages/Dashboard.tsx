@@ -66,17 +66,32 @@ const Dashboard = () => {
     return options;
   }, []);
 
-  // Filter tickets by selected month
-  const filteredTickets = useMemo(() => {
+  // Parse selected month boundaries
+  const { startOfMonth, endOfMonth } = useMemo(() => {
     const [year, month] = selectedMonth.split('-').map(Number);
-    const startOfMonth = new Date(year, month - 1, 1);
-    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
-    
+    return {
+      startOfMonth: new Date(year, month - 1, 1),
+      endOfMonth: new Date(year, month, 0, 23, 59, 59, 999),
+    };
+  }, [selectedMonth]);
+
+  // Filter tickets: "working set" = opened in month + carried over from previous months
+  const filteredTickets = useMemo(() => {
     return tickets.filter(ticket => {
-      const ticketDate = new Date(ticket.reportedDate);
-      return ticketDate >= startOfMonth && ticketDate <= endOfMonth;
+      const reportedDate = new Date(ticket.reportedDate);
+      const closedDate = ticket.closedDate ? new Date(ticket.closedDate) : null;
+      
+      // Case 1: Tickets opened in this month
+      const openedInMonth = reportedDate >= startOfMonth && reportedDate <= endOfMonth;
+      
+      // Case 2: Tickets carried over (reported before this month AND 
+      //         either still open OR closed during/after this month)
+      const carriedOver = reportedDate < startOfMonth && 
+                          (!closedDate || closedDate >= startOfMonth);
+      
+      return openedInMonth || carriedOver;
     });
-  }, [tickets, selectedMonth]);
+  }, [tickets, startOfMonth, endOfMonth]);
 
   // Aggregate stats per customer
   const customerStats = useMemo(() => {
@@ -107,16 +122,23 @@ const Dashboard = () => {
       stats.totalTickets++;
       stats.totalEffortMinutes += Number(ticket.effort_minutes) || 0;
       
-      // Count by status
+      // Count by status - closed only if closed within selected month
+      const closedDate = ticket.closedDate ? new Date(ticket.closedDate) : null;
+      const closedInMonth = closedDate && 
+                            closedDate >= startOfMonth && 
+                            closedDate <= endOfMonth;
+
+      if (closedInMonth) {
+        stats.closedTickets++;
+      } else {
+        // Still open or closed after month end
+        stats.openTickets++;
+      }
+
+      // Track detailed status for display
       switch (ticket.status) {
-        case "OPEN":
-          stats.openTickets++;
-          break;
         case "IN PROGRESS":
           stats.inProgressTickets++;
-          break;
-        case "CLOSED":
-          stats.closedTickets++;
           break;
         case "CLIENT QUERY":
           stats.clientQueryTickets++;
@@ -133,7 +155,7 @@ const Dashboard = () => {
     
     // Sort by total effort (descending)
     return Array.from(statsMap.values()).sort((a, b) => b.totalEffortMinutes - a.totalEffortMinutes);
-  }, [filteredTickets, contacts]);
+  }, [filteredTickets, contacts, startOfMonth, endOfMonth]);
 
   // Overall totals
   const totals = useMemo(() => {
