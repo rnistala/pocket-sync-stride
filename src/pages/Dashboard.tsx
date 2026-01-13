@@ -3,10 +3,9 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronRight, Ticket, Clock, CheckCircle, AlertCircle, BarChart3, Mail, Loader2, X, Plus, Users, ChevronDown } from "lucide-react";
+import { ArrowLeft, ChevronRight, Ticket, Clock, CheckCircle, AlertCircle, BarChart3, Mail, Loader2, X, Plus, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -66,7 +65,7 @@ const Dashboard = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerStats | null>(null);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
-  const [isMessageOpen, setIsMessageOpen] = useState(false);
+  const [primaryRecipient, setPrimaryRecipient] = useState("");
   const [additionalRecipients, setAdditionalRecipients] = useState<string[]>([]);
   const [newRecipientEmail, setNewRecipientEmail] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
@@ -227,9 +226,9 @@ const Dashboard = () => {
     setSelectedCustomer(customer);
     setEmailSubject(`[Opterix 360] Monthly Performance Summary - ${customer.company} - ${selectedMonthLabel}`);
     setCustomMessage("");
+    setPrimaryRecipient(customer.email || "");
     setAdditionalRecipients([]);
     setNewRecipientEmail("");
-    setIsMessageOpen(false);
     setIsEmailDialogOpen(true);
   };
 
@@ -255,8 +254,14 @@ const Dashboard = () => {
     try {
       const closedTickets = getClosedTicketsForCustomer(selectedCustomer.contactId);
       
+      // Validate message is required
+      if (!customMessage.trim()) {
+        toast.error("Please add a message to the report");
+        return;
+      }
+      
       // Prepare all recipients as an array
-      const allRecipients = [selectedCustomer.email, ...additionalRecipients].filter(Boolean);
+      const allRecipients = [primaryRecipient, ...additionalRecipients].filter(Boolean);
       
       // Prepare tickets for email (matching edge function interface)
       const ticketSummaries = closedTickets.map(ticket => ({
@@ -509,24 +514,19 @@ const Dashboard = () => {
                 />
               </div>
 
-              {/* Custom message */}
-              <Collapsible open={isMessageOpen} onOpenChange={setIsMessageOpen}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between px-0 hover:bg-transparent">
-                    <span className="text-sm font-medium">Add message to report</span>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${isMessageOpen ? 'rotate-180' : ''}`} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <Textarea
-                    value={customMessage}
-                    onChange={(e) => setCustomMessage(e.target.value)}
-                    placeholder="Add a personalized message to include at the top of the report..."
-                    className="mt-2"
-                    rows={3}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
+              {/* Custom message - always visible and mandatory */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Add message to report <span className="text-destructive">*</span>
+                </label>
+                <Textarea
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  placeholder="Add a personalized message to include at the top of the report..."
+                  rows={3}
+                  required
+                />
+              </div>
 
               {/* Recipients */}
               <div className="space-y-2">
@@ -535,10 +535,15 @@ const Dashboard = () => {
                   Recipients
                 </label>
                 <div className="space-y-2">
-                  {/* Primary recipient */}
-                  <div className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded-md">
-                    <span className="flex-1 truncate">{selectedCustomer.email || "No email"}</span>
-                    <span className="text-xs text-muted-foreground">(Primary)</span>
+                  {/* Primary recipient - editable */}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={primaryRecipient}
+                      onChange={(e) => setPrimaryRecipient(e.target.value)}
+                      placeholder="Primary recipient email"
+                      className="flex-1"
+                    />
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">(Primary)</span>
                   </div>
                   
                   {/* Additional recipients */}
