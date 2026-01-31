@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { RefreshCw, Send, ChevronDown, ChevronUp, Users, TrendingUp, UserCheck, Newspaper, Globe } from "lucide-react";
 import { toast } from "sonner";
-import { getApiRoot } from "@/lib/config";
 
 interface ResearchData {
   summary: string;
@@ -60,6 +59,9 @@ export const CompanyResearchDialog = ({
   const [followUpMessages, setFollowUpMessages] = useState<FollowUpMessage[]>([]);
   const [followUpInput, setFollowUpInput] = useState("");
   const [isFollowingUp, setIsFollowingUp] = useState(false);
+
+  // Auto-scroll ref
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const handleResearch = async () => {
     if (!companyName) {
@@ -170,20 +172,32 @@ export const CompanyResearchDialog = ({
     }
   };
 
-
   // Reset all state when company changes
   useEffect(() => {
     setResearchData(null);
     setFollowUpMessages([]);
     setFollowUpInput("");
+    setIsBriefOpen(true);
   }, [companyName, contactId]);
 
-  // Trigger research when dialog opens
+  // Trigger research when panel opens
   useEffect(() => {
     if (isOpen && !researchData && !isResearching) {
       handleResearch();
     }
   }, [isOpen, companyName]);
+
+  // Auto-collapse brief after first follow-up message
+  useEffect(() => {
+    if (followUpMessages.length > 0) {
+      setIsBriefOpen(false);
+    }
+  }, [followUpMessages.length]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [followUpMessages, isFollowingUp]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -193,14 +207,15 @@ export const CompanyResearchDialog = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Company Research: {companyName}</DialogTitle>
-        </DialogHeader>
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
+        <SheetHeader className="p-4 border-b shrink-0">
+          <SheetTitle className="text-left">Company Research: {companyName}</SheetTitle>
+        </SheetHeader>
         
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0" style={{ minHeight: '300px' }}>
-          <ScrollArea className="flex-1 h-full max-h-[50vh] pr-4">
+        {/* Scrollable content area */}
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="p-4 space-y-4">
             {isResearching ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center space-y-3">
@@ -209,16 +224,16 @@ export const CompanyResearchDialog = ({
                 </div>
               </div>
             ) : researchData ? (
-              <div className="space-y-4">
+              <>
                 {/* Collapsible Initial Research Brief */}
                 <Collapsible open={isBriefOpen} onOpenChange={setIsBriefOpen}>
                   <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                    <Button variant="ghost" className="w-full justify-between p-2 h-auto hover:bg-muted/50">
                       <span className="font-semibold text-sm">Research Brief</span>
                       {isBriefOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-3 pt-2">
+                  <CollapsibleContent className="space-y-3 pt-2 px-2">
                     <div>
                       <h3 className="text-sm font-semibold mb-1">Summary</h3>
                       <p className="text-sm text-muted-foreground">{researchData.summary}</p>
@@ -285,17 +300,16 @@ export const CompanyResearchDialog = ({
                   </CollapsibleContent>
                 </Collapsible>
 
-                {/* Conversation Area */}
+                {/* Chat Messages Area */}
                 {followUpMessages.length > 0 && (
-                  <div className="border-t pt-4 space-y-3">
-                    <p className="text-xs text-muted-foreground">Conversation:</p>
+                  <div className="space-y-3 pt-2">
                     {followUpMessages.map((msg, idx) => (
                       <div
                         key={idx}
                         className={`p-3 rounded-lg text-sm ${
                           msg.role === 'user'
                             ? 'bg-primary/10 ml-8'
-                            : 'bg-muted mr-8'
+                            : 'bg-muted mr-4'
                         }`}
                       >
                         <p className="text-xs font-medium mb-1 text-muted-foreground">
@@ -304,67 +318,68 @@ export const CompanyResearchDialog = ({
                         <p className="whitespace-pre-wrap">{msg.content}</p>
                       </div>
                     ))}
-                    {isFollowingUp && (
-                      <div className="bg-muted p-3 rounded-lg mr-8">
-                        <p className="text-xs font-medium mb-1 text-muted-foreground">AI</p>
-                        <div className="flex items-center gap-2">
-                          <RefreshCw className="h-3 w-3 animate-spin" />
-                          <span className="text-sm text-muted-foreground">Researching...</span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )}
-              </div>
-            ) : null}
-          </ScrollArea>
 
-          {/* Quick Actions & Follow-up Input */}
-          {researchData && (
-            <div className="border-t pt-4 mt-4 space-y-3">
-              <div>
-                <p className="text-xs text-muted-foreground mb-2">Dig Deeper:</p>
-                <div className="flex flex-wrap gap-2">
-                  {quickActions.map((action) => (
-                    <Button
-                      key={action.label}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleFollowUp(action.question)}
-                      disabled={isFollowingUp}
-                      className="text-xs"
-                    >
-                      <action.icon className="h-3 w-3 mr-1" />
-                      {action.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Ask a question about this company..."
-                  value={followUpInput}
-                  onChange={(e) => setFollowUpInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  disabled={isFollowingUp}
-                  className="flex-1"
-                />
-                <Button
-                  size="icon"
-                  onClick={() => handleFollowUp(followUpInput)}
-                  disabled={!followUpInput.trim() || isFollowingUp}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+                {/* Loading indicator */}
+                {isFollowingUp && (
+                  <div className="bg-muted p-3 rounded-lg mr-4">
+                    <p className="text-xs font-medium mb-1 text-muted-foreground">AI</p>
+                    <div className="flex items-center gap-2">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span className="text-sm text-muted-foreground">Researching...</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Auto-scroll anchor */}
+                <div ref={messagesEndRef} />
+              </>
+            ) : null}
+          </div>
+        </ScrollArea>
+
+        {/* Fixed footer with quick actions and input */}
+        {researchData && (
+          <div className="border-t p-4 space-y-3 shrink-0 bg-background">
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">Dig Deeper:</p>
+              <div className="flex flex-wrap gap-2">
+                {quickActions.map((action) => (
+                  <Button
+                    key={action.label}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleFollowUp(action.question)}
+                    disabled={isFollowingUp}
+                    className="text-xs"
+                  >
+                    <action.icon className="h-3 w-3 mr-1" />
+                    {action.label}
+                  </Button>
+                ))}
               </div>
             </div>
-          )}
-        </div>
-
-        <div className="flex justify-end pt-4 border-t">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Ask a question about this company..."
+                value={followUpInput}
+                onChange={(e) => setFollowUpInput(e.target.value)}
+                onKeyDown={handleKeyPress}
+                disabled={isFollowingUp}
+                className="flex-1"
+              />
+              <Button
+                size="icon"
+                onClick={() => handleFollowUp(followUpInput)}
+                disabled={!followUpInput.trim() || isFollowingUp}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 };
