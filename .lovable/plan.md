@@ -1,190 +1,107 @@
 
 
-# Enhanced AI Research: "Dig Deeper" Feature
+# UI Improvements for Company Research Dialog
 
-## Current State
-The Company Research dialog provides a one-shot research brief with:
-- Summary, Industry, Products & Services
-- Management Contacts, Address, Phone, Email
-- Company Size, Recent News
+## Issues to Fix
 
-**Limitation**: Users cannot ask follow-up questions or explore specific topics in more detail.
+1. **Quick action buttons not immediately visible**: When users click on the input field, the quick action buttons should be prominently displayed
+2. **Missing scrollbar on results**: When a quick action is clicked and results appear, there's no visible scrollbar, and the text starts mid-content instead of from the top
+3. **Remove Update Contact button**: The footer button should be simplified to just "Close"
 
 ---
 
-## Proposed Solution: Interactive Research Chat
+## Root Cause Analysis
 
-Add a conversational interface that allows users to ask follow-up questions about the company, enabling deeper research on any topic of interest.
+### Scrollbar Issue
+The current `scrollToBottom()` effect automatically scrolls to the end of messages when new content arrives. This is problematic because:
+- Users want to read from the **start** of the AI response, not the end
+- The ScrollArea needs an explicit height constraint to show the scrollbar properly
 
-### Key Features
-
-1. **Follow-up Questions Input**
-   - Add a text input at the bottom of the research dialog
-   - Users can type questions like:
-     - "Tell me more about their recent expansion"
-     - "What are their main competitors?"
-     - "Find more contact details for their sales team"
-     - "What is their financial history?"
-
-2. **Research History**
-   - Display a scrollable conversation showing:
-     - Initial research brief (current data)
-     - Follow-up questions and AI responses
-   - Each response maintains the context of the company
-
-3. **Quick Action Buttons**
-   - Pre-defined "dig deeper" prompts for common needs:
-     - "Competitors" - Find main competitors
-     - "Financials" - Revenue, funding, growth
-     - "Key People" - More management contacts
-     - "Recent News" - Latest developments
-     - "Social Media" - LinkedIn, Twitter presence
+### Quick Actions Visibility
+The quick action buttons are currently hidden inside the ScrollArea below the Research Brief. They should be more prominently placed near the input field.
 
 ---
 
-## Technical Implementation
+## Solution
 
-### 1. New Edge Function: `research-company-followup`
+### Changes to `src/components/CompanyResearchDialog.tsx`
 
-Creates a follow-up research function that maintains conversation context:
+#### 1. Remove auto-scroll-to-bottom behavior
+- Delete the `scrollToBottom()` function and its useEffect
+- Instead, scroll to the **top** of the new message when it arrives
 
-```
-supabase/functions/research-company-followup/index.ts
-```
+#### 2. Reposition Quick Actions
+- Move quick action buttons to appear directly above the input field (in the fixed footer area)
+- This makes them immediately visible when the user focuses on the input
 
-- Accepts: `companyName`, `city`, `question`, `previousContext` (optional)
-- Uses Perplexity API with conversation history
-- Returns: text response with citations
+#### 3. Fix ScrollArea height
+- Ensure the ScrollArea has a proper max-height so the scrollbar appears
+- Add explicit height constraints to the conversation area
 
-### 2. Updated Dialog Component
-
-Modify `src/components/CompanyResearchDialog.tsx`:
-
-**New State Variables:**
-- `followUpMessages`: Array of { role: 'user' | 'assistant', content: string }
-- `followUpInput`: Current user input
-- `isFollowingUp`: Loading state for follow-up requests
-
-**New UI Elements:**
-- Scrollable conversation area below initial research
-- Input field with send button
-- Quick action chips for common questions
-- "Clear Conversation" button to reset
-
-### 3. UI Layout (Updated Dialog)
-
-```
-+------------------------------------------+
-| Company Research: K.K. SERVICES      [X] |
-+------------------------------------------+
-|                                          |
-| [Initial Research Brief - collapsible]   |
-|   Summary: ...                           |
-|   Industry: Consumer Electronics         |
-|   Products: Home Appliance Repair...     |
-|   Management Contacts: ...               |
-|   ...                                    |
-|                                          |
-+------------------------------------------+
-| Quick Actions:                           |
-| [Competitors] [Financials] [Key People]  |
-| [Recent News] [Social Media]             |
-+------------------------------------------+
-|                                          |
-| Conversation:                            |
-| ---------------------------------------- |
-| You: Tell me about their competitors     |
-| ---------------------------------------- |
-| AI: The main competitors of K.K.         |
-|     Services in the consumer electronics |
-|     repair sector include...             |
-| ---------------------------------------- |
-|                                          |
-+------------------------------------------+
-| [Ask a question about this company...  ] |
-| [Send]                                   |
-+------------------------------------------+
-|           [Close]  [Update Contact]      |
-+------------------------------------------+
-```
+#### 4. Remove Update Contact button
+- Simplify the footer to only have the "Close" button
 
 ---
 
-## Files to Create/Modify
+## Technical Changes
 
-### New Files:
-1. **`supabase/functions/research-company-followup/index.ts`**
-   - Edge function for follow-up questions
-   - Maintains company context for accurate responses
-
-### Modified Files:
-1. **`src/components/CompanyResearchDialog.tsx`**
-   - Add conversation state and UI
-   - Add follow-up input and quick actions
-   - Make initial research collapsible
-   - Add scrollable conversation area
-
----
-
-## Detailed Code Changes
-
-### Edge Function: research-company-followup
-
-- Accept `companyName`, `city`, `question`
-- Use Perplexity API with context-aware prompt
-- System prompt includes company context
-- Return markdown response
-
-### Dialog Component Updates
-
-**New State:**
+### Remove `scrollToBottom` and `messagesEndRef`
 ```typescript
-const [followUpMessages, setFollowUpMessages] = useState<Array<{
-  role: 'user' | 'assistant';
-  content: string;
-}>>([]);
-const [followUpInput, setFollowUpInput] = useState("");
-const [isFollowingUp, setIsFollowingUp] = useState(false);
+// DELETE these lines:
+const messagesEndRef = useRef<HTMLDivElement>(null);
+const scrollToBottom = () => {...};
+useEffect(() => { scrollToBottom(); }, [followUpMessages]);
 ```
 
-**Quick Actions Data:**
+### Add scroll-to-top behavior for new messages
 ```typescript
-const quickActions = [
-  { label: "Competitors", question: "Who are the main competitors of this company?" },
-  { label: "Financials", question: "What is known about this company's financials, revenue, or funding?" },
-  { label: "Key People", question: "Find more key people and decision makers at this company" },
-  { label: "Recent News", question: "What are the latest news and developments about this company?" },
-  { label: "Social Media", question: "Find this company's LinkedIn, website, and social media presence" },
-];
+const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+// Scroll conversation area to show start of new assistant message
+useEffect(() => {
+  if (followUpMessages.length > 0) {
+    const lastMessage = followUpMessages[followUpMessages.length - 1];
+    if (lastMessage.role === 'assistant') {
+      // Scroll to show the new message from the top
+      scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }
+}, [followUpMessages]);
 ```
 
-**handleFollowUp Function:**
-- Calls the new edge function
-- Appends question and response to messages array
-- Handles loading state and errors
+### Move Quick Actions to footer area
+The quick actions will be moved from inside the ScrollArea to just above the input field, making them always visible when the research data is loaded.
+
+### Updated Layout Structure
+```
++------------------------------------------+
+| Company Research: COMPANY NAME       [X] |
++------------------------------------------+
+| [ScrollArea - takes available space]     |
+|   - Research Brief (collapsible)         |
+|   - Conversation messages                |
++------------------------------------------+
+| Dig Deeper: [Quick Action Chips]         |  <- Moved here
+| [Input field..................] [Send]   |
++------------------------------------------+
+|                              [Close]     |  <- Simplified
++------------------------------------------+
+```
+
+### ScrollArea Fix
+- Give ScrollArea a minimum height and proper overflow handling
+- Remove the `messagesEndRef` div at the end of messages
+- Let natural scrolling work from the content start
 
 ---
 
-## User Experience Flow
+## Summary of File Changes
 
-1. User opens AI Research dialog - sees initial brief (as today)
-2. Quick action chips appear below the brief
-3. User can either:
-   - Click a quick action (e.g., "Competitors")
-   - Type a custom question
-4. Question appears in conversation area
-5. AI response streams/loads below
-6. User can continue asking questions
-7. Conversation persists until dialog closes
-8. Initial research brief remains collapsible at top
+**File: `src/components/CompanyResearchDialog.tsx`**
 
----
-
-## Benefits
-
-- **Deeper Insights**: Users can explore any aspect of a company in detail
-- **Context-Aware**: Each follow-up understands the company context
-- **Efficient**: Quick actions for common research needs
-- **Flexible**: Custom questions for specific requirements
-- **Sales Ready**: Find the right contacts and talking points before calls
+1. Remove `messagesEndRef`, `scrollToBottom`, and related useEffect
+2. Move quick actions section from inside ScrollArea to the footer input area
+3. Remove the "Update Contact" button from the footer
+4. Ensure ScrollArea has proper height constraints
+5. Remove the `handleUpdateContact` function and related `isUpdating` state (cleanup)
 
