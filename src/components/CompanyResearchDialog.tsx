@@ -207,8 +207,8 @@ export const CompanyResearchDialog = ({
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
+    <Sheet open={isOpen} onOpenChange={onOpenChange} modal={false}>
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0" showOverlay={false}>
         <SheetHeader className="p-4 border-b shrink-0">
           <SheetTitle className="text-left">Company Research: {companyName}</SheetTitle>
         </SheetHeader>
