@@ -1,107 +1,210 @@
 
 
-# UI Improvements for Company Research Dialog
+# Transform Company Research Dialog into Side Panel Chat Interface
 
-## Issues to Fix
+## Problem
 
-1. **Quick action buttons not immediately visible**: When users click on the input field, the quick action buttons should be prominently displayed
-2. **Missing scrollbar on results**: When a quick action is clicked and results appear, there's no visible scrollbar, and the text starts mid-content instead of from the top
-3. **Remove Update Contact button**: The footer button should be simplified to just "Close"
+The current dialog layout has several issues:
+1. Follow-up responses are hidden until the Research Brief is collapsed
+2. No natural chat flow - content doesn't scroll continuously
+3. Fixed dialog doesn't make good use of screen space on desktop
+4. Poor mobile experience with the modal blocking the contact page
 
----
+## Solution: Side Panel Chat Interface
 
-## Root Cause Analysis
-
-### Scrollbar Issue
-The current `scrollToBottom()` effect automatically scrolls to the end of messages when new content arrives. This is problematic because:
-- Users want to read from the **start** of the AI response, not the end
-- The ScrollArea needs an explicit height constraint to show the scrollbar properly
-
-### Quick Actions Visibility
-The quick action buttons are currently hidden inside the ScrollArea below the Research Brief. They should be more prominently placed near the input field.
+Replace the modal dialog with a **Sheet (slide-in panel)** that appears from the right side on desktop and can be toggled on mobile. This creates a true chat-like experience similar to messaging apps.
 
 ---
 
-## Solution
+## Layout Design
+
+### Desktop (768px and above)
+```
++---------------------+------------------------+
+|                     |                        |
+|   Contact Page      |   AI Research Panel    |
+|   (main content)    |   (right side sheet)   |
+|                     |                        |
+|   - Contact info    |   - Brief (collapsed)  |
+|   - Interactions    |   - Chat messages      |
+|   - Actions         |   - Quick actions      |
+|                     |   - Input field        |
+|                     |                        |
++---------------------+------------------------+
+```
+
+### Mobile (below 768px)
+- Panel slides in from the right covering most of the screen
+- An "X" button or swipe gesture closes it
+- User can toggle between contact page and research panel
+
+---
+
+## Technical Implementation
 
 ### Changes to `src/components/CompanyResearchDialog.tsx`
 
-#### 1. Remove auto-scroll-to-bottom behavior
-- Delete the `scrollToBottom()` function and its useEffect
-- Instead, scroll to the **top** of the new message when it arrives
+1. **Rename to `CompanyResearchPanel.tsx`** (optional but clearer)
 
-#### 2. Reposition Quick Actions
-- Move quick action buttons to appear directly above the input field (in the fixed footer area)
-- This makes them immediately visible when the user focuses on the input
+2. **Replace Dialog with Sheet component**
+   - Use the existing Sheet component from `src/components/ui/sheet.tsx`
+   - Sheet slides in from the right with `side="right"`
+   - On desktop: Width set to `sm:max-w-md` (fixed width, doesn't cover full page)
+   - On mobile: Nearly full width with slight margin
 
-#### 3. Fix ScrollArea height
-- Ensure the ScrollArea has a proper max-height so the scrollbar appears
-- Add explicit height constraints to the conversation area
+3. **Restructure the layout**:
+   ```
+   +----------------------------------+
+   | [X] Company Research: COMPANY   |
+   +----------------------------------+
+   | [Research Brief ▼] (collapsed)  |
+   |   (expandable summary section)  |
+   +----------------------------------+
+   |                                  |
+   | Chat Messages Area (ScrollArea) |
+   | - User question bubbles         |
+   | - AI response bubbles           |
+   | - Auto-scroll to new messages   |
+   |                                  |
+   +----------------------------------+
+   | Dig Deeper: [chips...]          |
+   | [Input.................] [Send] |
+   +----------------------------------+
+   ```
 
-#### 4. Remove Update Contact button
-- Simplify the footer to only have the "Close" button
+4. **Chat-style message flow**:
+   - Initial research brief is collapsed by default after first follow-up
+   - All messages flow in a continuous scrollable area
+   - New messages appear at the bottom with auto-scroll
+   - User messages aligned right, AI messages aligned left
+
+5. **Auto-scroll behavior**:
+   - Scroll to bottom when new message arrives
+   - But allow user to scroll up to review earlier content
+
+### Component Structure
+
+```typescript
+// Use Sheet instead of Dialog
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+
+export const CompanyResearchPanel = ({
+  isOpen,
+  onOpenChange,
+  companyName,
+  ...
+}) => {
+  return (
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col p-0">
+        <SheetHeader className="p-4 border-b">
+          <SheetTitle>Company Research: {companyName}</SheetTitle>
+        </SheetHeader>
+        
+        {/* Scrollable content area - takes available space */}
+        <ScrollArea className="flex-1 p-4">
+          {/* Collapsible Research Brief */}
+          <Collapsible>...</Collapsible>
+          
+          {/* Chat Messages */}
+          <div className="space-y-3">
+            {followUpMessages.map(...)}
+          </div>
+          
+          {/* Auto-scroll anchor */}
+          <div ref={messagesEndRef} />
+        </ScrollArea>
+        
+        {/* Fixed footer with input */}
+        <div className="border-t p-4 space-y-3">
+          {/* Quick action chips */}
+          {/* Input + Send button */}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+};
+```
 
 ---
 
-## Technical Changes
+## Updated Usage in ContactInteractions.tsx
 
-### Remove `scrollToBottom` and `messagesEndRef`
+The component is already imported and used correctly. The only change needed is updating the import name if we rename the file (optional).
+
 ```typescript
-// DELETE these lines:
-const messagesEndRef = useRef<HTMLDivElement>(null);
-const scrollToBottom = () => {...};
-useEffect(() => { scrollToBottom(); }, [followUpMessages]);
+// Current usage (no change needed)
+<CompanyResearchDialog
+  isOpen={isResearchDialogOpen}
+  onOpenChange={setIsResearchDialogOpen}
+  companyName={contact.company || ""}
+  city={contact.city}
+  contactId={contact.id}
+/>
 ```
 
-### Add scroll-to-top behavior for new messages
-```typescript
-const scrollAreaRef = useRef<HTMLDivElement>(null);
+---
 
-// Scroll conversation area to show start of new assistant message
-useEffect(() => {
-  if (followUpMessages.length > 0) {
-    const lastMessage = followUpMessages[followUpMessages.length - 1];
-    if (lastMessage.role === 'assistant') {
-      // Scroll to show the new message from the top
-      scrollAreaRef.current?.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-    }
-  }
-}, [followUpMessages]);
-```
+## Detailed Changes
 
-### Move Quick Actions to footer area
-The quick actions will be moved from inside the ScrollArea to just above the input field, making them always visible when the research data is loaded.
+### File: `src/components/CompanyResearchDialog.tsx`
 
-### Updated Layout Structure
-```
-+------------------------------------------+
-| Company Research: COMPANY NAME       [X] |
-+------------------------------------------+
-| [ScrollArea - takes available space]     |
-|   - Research Brief (collapsible)         |
-|   - Conversation messages                |
-+------------------------------------------+
-| Dig Deeper: [Quick Action Chips]         |  <- Moved here
-| [Input field..................] [Send]   |
-+------------------------------------------+
-|                              [Close]     |  <- Simplified
-+------------------------------------------+
-```
+**Changes:**
 
-### ScrollArea Fix
-- Give ScrollArea a minimum height and proper overflow handling
-- Remove the `messagesEndRef` div at the end of messages
-- Let natural scrolling work from the content start
+1. **Replace imports**:
+   - Remove: `Dialog, DialogContent, DialogHeader, DialogTitle`
+   - Add: `Sheet, SheetContent, SheetHeader, SheetTitle` from `@/components/ui/sheet`
+   - Add: `useIsMobile` hook
+
+2. **Add auto-scroll ref and effect**:
+   ```typescript
+   const messagesEndRef = useRef<HTMLDivElement>(null);
+   
+   // Auto-scroll when new messages arrive
+   useEffect(() => {
+     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+   }, [followUpMessages]);
+   ```
+
+3. **Replace Dialog wrapper with Sheet**:
+   - Use `<Sheet>` and `<SheetContent side="right">`
+   - Set width: `className="w-full sm:max-w-md"`
+
+4. **Restructure layout for chat flow**:
+   - Header: Fixed at top with company name
+   - Body: Scrollable area containing:
+     - Collapsible research brief (auto-collapses after first message)
+     - Chat messages in continuous flow
+   - Footer: Fixed at bottom with quick actions and input
+
+5. **Auto-collapse brief after first follow-up**:
+   ```typescript
+   useEffect(() => {
+     if (followUpMessages.length > 0) {
+       setIsBriefOpen(false);
+     }
+   }, [followUpMessages.length]);
+   ```
+
+6. **Message bubble styling** (existing, but ensure proper alignment):
+   - User messages: `bg-primary/10 ml-8` (right-aligned)
+   - AI messages: `bg-muted mr-8` (left-aligned)
+
+---
+
+## Benefits
+
+- **True chat experience**: Messages flow continuously like a messaging app
+- **Better screen real estate**: Side panel on desktop lets users see both contact info and research
+- **Mobile-friendly**: Full-screen panel with easy toggle
+- **Immediate visibility**: Quick actions and input always visible in fixed footer
+- **Natural scrolling**: Auto-scroll to new messages, manual scroll to review history
 
 ---
 
 ## Summary of File Changes
 
-**File: `src/components/CompanyResearchDialog.tsx`**
-
-1. Remove `messagesEndRef`, `scrollToBottom`, and related useEffect
-2. Move quick actions section from inside ScrollArea to the footer input area
-3. Remove the "Update Contact" button from the footer
-4. Ensure ScrollArea has proper height constraints
-5. Remove the `handleUpdateContact` function and related `isUpdating` state (cleanup)
+| File | Action |
+|------|--------|
+| `src/components/CompanyResearchDialog.tsx` | Major update: Convert from Dialog to Sheet, restructure for chat flow |
 
