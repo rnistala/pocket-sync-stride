@@ -163,12 +163,17 @@ export const CompanyResearchDialog = ({
     }
   };
 
-  // Trigger research when dialog opens
+  // Reset research data when company changes (for contact navigation)
+  useEffect(() => {
+    setResearchData(null);
+  }, [companyName, contactId]);
+
+  // Trigger research when dialog opens (with fresh state)
   useEffect(() => {
     if (isOpen && !researchData && !isResearching) {
       handleResearch();
     }
-  }, [isOpen]);
+  }, [isOpen, companyName]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
