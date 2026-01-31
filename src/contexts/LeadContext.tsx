@@ -361,6 +361,18 @@ class IndexedDBManager {
       request.onerror = () => reject(request.error);
     });
   }
+
+  async deleteInteraction(id: string): Promise<void> {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction(INTERACTIONS_STORE, "readwrite");
+      const store = transaction.objectStore(INTERACTIONS_STORE);
+      const request = store.delete(id);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
 }
 
 const dbManager = new IndexedDBManager();
@@ -424,6 +436,7 @@ interface LeadContextType {
   deleteInspiration: (id: number) => Promise<void>;
   toggleInspirationUsed: (id: number) => Promise<void>;
   fetchInspirations: () => Promise<void>;
+  deleteInteraction: (interactionId: string) => Promise<void>;
 }
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
@@ -2552,6 +2565,33 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [inspirations]);
 
+  const deleteInteraction = useCallback(async (interactionId: string) => {
+    const userId = localStorage.getItem("userId");
+    if (!userId) throw new Error("User ID not found");
+
+    const apiRoot = await getApiRoot();
+    
+    // Call the API to delete the interaction
+    const response = await fetch(`${apiRoot}/api/public/deleteobject/${userId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify([{
+        id: interactionId,
+        child: "",
+        parent_id: null,
+        parent: "followup"
+      }]),
+    });
+
+    if (!response.ok) throw new Error("Failed to delete interaction");
+
+    // Remove from local state
+    setInteractions(prev => prev.filter(i => i.id !== interactionId && i.serverId !== interactionId));
+    
+    // Remove from IndexedDB
+    await dbManager.deleteInteraction(interactionId);
+  }, []);
+
   const value = useMemo(
     () => ({
       contacts,
@@ -2593,6 +2633,7 @@ export const LeadProvider = ({ children }: { children: ReactNode }) => {
       deleteInspiration,
       toggleInspirationUsed,
       fetchInspirations,
+      deleteInteraction,
     }),
     [
       contacts,
