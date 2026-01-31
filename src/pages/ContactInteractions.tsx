@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Lightbulb,
+  Trash2,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SyncButton } from "@/components/SyncButton";
@@ -37,6 +38,16 @@ import { toast } from "sonner";
 import { FeatureTour } from "@/components/FeatureTour";
 import { CompanyResearchDialog } from "@/components/CompanyResearchDialog";
 import { AddToInspirationButton } from "@/components/AddToInspirationButton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ContactInteractions = () => {
   const { id } = useParams();
@@ -68,6 +79,7 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     fetchOrders,
     addTicket,
     filteredContactIds,
+    deleteInteraction,
   } = useLeadContext();
 
   // Get fresh contact from context every render
@@ -111,6 +123,8 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
   );
   const [nextFollowUpDateText, setNextFollowUpDateText] = useState("");
   const [isResearchDialogOpen, setIsResearchDialogOpen] = useState(false);
+  const [deleteInteractionId, setDeleteInteractionId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: contact.name || "",
     company: contact.company || "",
@@ -804,6 +818,22 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
     syncData();
   };
 
+  const handleDeleteInteraction = async () => {
+    if (!deleteInteractionId) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteInteraction(deleteInteractionId);
+      toast.success("Interaction deleted");
+      setDeleteInteractionId(null);
+    } catch (error) {
+      console.error("Error deleting interaction:", error);
+      toast.error("Failed to delete interaction");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const tourSteps = [
     {
       target: '[data-tour="quick-actions"]',
@@ -1446,6 +1476,14 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
                       sourceId={interaction.id}
                       sourceContext={`${contact?.name} - ${contact?.company}`}
                     />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setDeleteInteractionId(interaction.serverId || interaction.id)}
+                    >
+                      <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                    </Button>
                     <span className="text-xs text-muted-foreground">
                       {format(new Date(interaction.date), "dd-MMM-yyyy")}
                     </span>
@@ -1456,6 +1494,30 @@ const ContactInteractionsContent = ({ contactId, navigate }: { contactId: string
             ))
           )}
         </div>
+
+        <AlertDialog 
+          open={!!deleteInteractionId} 
+          onOpenChange={(open) => !open && setDeleteInteractionId(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Interaction?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete this interaction. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteInteraction} 
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <footer className="mt-8 pb-4 text-center">
           <p className="text-xs text-muted-foreground">
