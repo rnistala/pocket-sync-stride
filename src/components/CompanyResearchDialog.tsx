@@ -54,23 +54,12 @@ export const CompanyResearchDialog = ({
 }: CompanyResearchDialogProps) => {
   const [isResearching, setIsResearching] = useState(false);
   const [researchData, setResearchData] = useState<ResearchData | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
   const [isBriefOpen, setIsBriefOpen] = useState(true);
   
   // Follow-up conversation state
   const [followUpMessages, setFollowUpMessages] = useState<FollowUpMessage[]>([]);
   const [followUpInput, setFollowUpInput] = useState("");
   const [isFollowingUp, setIsFollowingUp] = useState(false);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [followUpMessages]);
 
   const handleResearch = async () => {
     if (!companyName) {
@@ -181,78 +170,6 @@ export const CompanyResearchDialog = ({
     }
   };
 
-  const handleUpdateContact = async () => {
-    if (!researchData || !contactId) return;
-
-    setIsUpdating(true);
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        toast.error("User ID not found. Please log in again.");
-        return;
-      }
-
-      const updateFields: any = {
-        id: contactId,
-      };
-
-      if (researchData.address && researchData.address !== "Not available") {
-        updateFields.address = researchData.address;
-      }
-      if (researchData.phone && researchData.phone !== "Not available") {
-        updateFields.mobile = researchData.phone;
-      }
-      if (researchData.email && researchData.email !== "Not available") {
-        updateFields.email = researchData.email;
-      }
-      if (researchData.owner && researchData.owner !== "Not available") {
-        updateFields.contact_person = researchData.owner;
-      }
-      if (researchData.industry && researchData.industry !== "Not available") {
-        updateFields.industry = researchData.industry;
-      }
-      if (researchData.summary && researchData.summary !== "Not available") {
-        updateFields.remarks = researchData.summary;
-      }
-
-      const payload = {
-        meta: {
-          btable: "contact",
-          htable: "",
-          parentkey: "",
-          preapi: "",
-          draftid: "",
-        },
-        data: [
-          {
-            body: [updateFields],
-            dirty: "true",
-          },
-        ],
-      };
-
-      const apiRoot = await getApiRoot();
-      const response = await fetch(`${apiRoot}/api/public/tdata/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) throw new Error("Failed to update contact");
-
-      toast.success("Contact updated successfully");
-      onOpenChange(false);
-      
-      if (onUpdate) {
-        onUpdate(researchData);
-      }
-    } catch (error) {
-      console.error("Error updating contact:", error);
-      toast.error("Failed to update contact");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   // Reset all state when company changes
   useEffect(() => {
@@ -368,26 +285,6 @@ export const CompanyResearchDialog = ({
                   </CollapsibleContent>
                 </Collapsible>
 
-                {/* Quick Actions */}
-                <div className="border-t pt-4">
-                  <p className="text-xs text-muted-foreground mb-2">Dig Deeper:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {quickActions.map((action) => (
-                      <Button
-                        key={action.label}
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleFollowUp(action.question)}
-                        disabled={isFollowingUp}
-                        className="text-xs"
-                      >
-                        <action.icon className="h-3 w-3 mr-1" />
-                        {action.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Conversation Area */}
                 {followUpMessages.length > 0 && (
                   <div className="border-t pt-4 space-y-3">
@@ -416,16 +313,33 @@ export const CompanyResearchDialog = ({
                         </div>
                       </div>
                     )}
-                    <div ref={messagesEndRef} />
                   </div>
                 )}
               </div>
             ) : null}
           </ScrollArea>
 
-          {/* Follow-up Input */}
+          {/* Quick Actions & Follow-up Input */}
           {researchData && (
-            <div className="border-t pt-4 mt-4">
+            <div className="border-t pt-4 mt-4 space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">Dig Deeper:</p>
+                <div className="flex flex-wrap gap-2">
+                  {quickActions.map((action) => (
+                    <Button
+                      key={action.label}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleFollowUp(action.question)}
+                      disabled={isFollowingUp}
+                      className="text-xs"
+                    >
+                      <action.icon className="h-3 w-3 mr-1" />
+                      {action.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Input
                   placeholder="Ask a question about this company..."
@@ -447,13 +361,8 @@ export const CompanyResearchDialog = ({
           )}
         </div>
 
-        <div className="flex justify-end gap-2 pt-4 border-t">
+        <div className="flex justify-end pt-4 border-t">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
-          {contactId && researchData && (
-            <Button onClick={handleUpdateContact} disabled={isUpdating}>
-              {isUpdating ? "Updating..." : "Update Contact"}
-            </Button>
-          )}
         </div>
       </DialogContent>
     </Dialog>
