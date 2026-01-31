@@ -199,8 +199,8 @@ export const CompanyResearchDialog = ({
           <DialogTitle>Company Research: {companyName}</DialogTitle>
         </DialogHeader>
         
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          <ScrollArea className="flex-1 pr-4">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0" style={{ minHeight: '300px' }}>
+          <ScrollArea className="flex-1 h-full max-h-[50vh] pr-4">
             {isResearching ? (
               <div className="flex items-center justify-center py-8">
                 <div className="text-center space-y-3">
