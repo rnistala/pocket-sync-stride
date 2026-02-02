@@ -218,22 +218,33 @@ const CustomerDashboard = () => {
   // Email validation regex
   const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+  // Add recipient(s) - supports comma/semicolon/space-separated emails
   const handleAddRecipient = () => {
-    const email = newRecipientEmail.trim().toLowerCase();
-    if (!email) return;
-    if (!isValidEmail(email)) {
-      toast.error("Please enter a valid email address");
-      return;
+    const input = newRecipientEmail.trim();
+    if (!input) return;
+    
+    const emails = input.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
+    const validEmails: string[] = [];
+    const errors: string[] = [];
+    
+    for (const email of emails) {
+      if (!isValidEmail(email)) {
+        errors.push(`"${email}" is not valid`);
+      } else if (email === contact?.email?.toLowerCase()) {
+        errors.push(`"${email}" is already the primary`);
+      } else if (additionalRecipients.includes(email)) {
+        errors.push(`"${email}" already added`);
+      } else {
+        validEmails.push(email);
+      }
     }
-    if (email === contact?.email?.toLowerCase()) {
-      toast.error("This is already the primary recipient");
-      return;
+    
+    if (validEmails.length > 0) {
+      setAdditionalRecipients([...additionalRecipients, ...validEmails]);
     }
-    if (additionalRecipients.includes(email)) {
-      toast.error("This email is already added");
-      return;
+    if (errors.length > 0 && validEmails.length === 0) {
+      toast.error(errors[0]); // Show first error
     }
-    setAdditionalRecipients([...additionalRecipients, email]);
     setNewRecipientEmail("");
   };
 
@@ -257,7 +268,25 @@ const CustomerDashboard = () => {
   };
 
   const handleSendEmail = async () => {
-    if (allRecipients.length === 0) {
+    // Include any email(s) typed but not explicitly added
+    let pendingRecipients = [...additionalRecipients];
+    const pendingInput = newRecipientEmail.trim();
+    if (pendingInput) {
+      const pendingEmails = pendingInput.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
+      for (const email of pendingEmails) {
+        if (isValidEmail(email) && 
+            !pendingRecipients.includes(email) && 
+            email !== contact?.email?.toLowerCase()) {
+          pendingRecipients.push(email);
+        }
+      }
+    }
+    
+    const finalRecipients = contact?.email 
+      ? [contact.email, ...pendingRecipients] 
+      : pendingRecipients;
+    
+    if (finalRecipients.length === 0) {
       toast.error("No recipients specified");
       return;
     }
@@ -273,7 +302,7 @@ const CustomerDashboard = () => {
       const { data, error } = await supabase.functions.invoke('send-dashboard-email', {
         body: {
           userId,
-          recipients: allRecipients,
+          recipients: finalRecipients,
           contactName: contact?.name,
           companyName: contact?.company,
           monthLabel: selectedMonthLabel,
@@ -301,8 +330,9 @@ const CustomerDashboard = () => {
       if (error) throw error;
       
       if (data?.success) {
-        const recipientCount = allRecipients.length;
+        const recipientCount = finalRecipients.length;
         toast.success(`Report sent to ${recipientCount} recipient${recipientCount > 1 ? 's' : ''}`);
+        setNewRecipientEmail("");
         setIsPreviewOpen(false);
         setAdditionalRecipients([]);
       } else {
@@ -734,7 +764,7 @@ const CustomerDashboard = () => {
             <div className="flex gap-2">
               <Input
                 type="email"
-                placeholder="Add recipient email..."
+                placeholder="Add emails (comma-separated)..."
                 value={newRecipientEmail}
                 onChange={(e) => setNewRecipientEmail(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
