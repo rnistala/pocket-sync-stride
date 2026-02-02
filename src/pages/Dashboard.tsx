@@ -242,13 +242,27 @@ const Dashboard = () => {
     setIsEmailDialogOpen(true);
   };
 
-  // Add recipient
+  // Add recipient(s) - supports comma/semicolon/space-separated emails
   const handleAddRecipient = () => {
-    const email = newRecipientEmail.trim();
-    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !additionalRecipients.includes(email)) {
-      setAdditionalRecipients([...additionalRecipients, email]);
-      setNewRecipientEmail("");
+    const input = newRecipientEmail.trim();
+    if (!input) return;
+    
+    // Split by comma, semicolon, or whitespace
+    const emails = input.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
+    const validEmails: string[] = [];
+    
+    for (const email of emails) {
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
+          !additionalRecipients.includes(email) && 
+          email !== primaryRecipient.toLowerCase()) {
+        validEmails.push(email);
+      }
     }
+    
+    if (validEmails.length > 0) {
+      setAdditionalRecipients([...additionalRecipients, ...validEmails]);
+    }
+    setNewRecipientEmail("");
   };
 
   // Remove recipient
@@ -270,8 +284,22 @@ const Dashboard = () => {
         return;
       }
       
+      // Include any email(s) typed but not explicitly added
+      let pendingRecipients = [...additionalRecipients];
+      const pendingInput = newRecipientEmail.trim();
+      if (pendingInput) {
+        const pendingEmails = pendingInput.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
+        for (const email of pendingEmails) {
+          if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
+              !pendingRecipients.includes(email) && 
+              email !== primaryRecipient.toLowerCase()) {
+            pendingRecipients.push(email);
+          }
+        }
+      }
+      
       // Prepare all recipients as an array
-      const allRecipients = [primaryRecipient, ...additionalRecipients].filter(Boolean);
+      const allRecipients = [primaryRecipient, ...pendingRecipients].filter(Boolean);
       
       // Prepare tickets for email (matching edge function interface)
       const ticketSummaries = closedTickets.map(ticket => ({
@@ -313,6 +341,7 @@ const Dashboard = () => {
       if (error) throw error;
 
       toast.success(`Report sent to ${allRecipients.join(', ')}`);
+      setNewRecipientEmail("");
       setIsEmailDialogOpen(false);
     } catch (error) {
       console.error('Error sending email:', error);
@@ -576,7 +605,7 @@ const Dashboard = () => {
                     <Input
                       value={newRecipientEmail}
                       onChange={(e) => setNewRecipientEmail(e.target.value)}
-                      placeholder="Add another email..."
+                      placeholder="Add emails (comma-separated)..."
                       onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
                       className="flex-1"
                     />
