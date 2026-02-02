@@ -701,92 +701,96 @@ const CustomerDashboard = () => {
 
       {/* Email Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
               Email Preview
             </DialogTitle>
           </DialogHeader>
           
-          {/* Recipients Section */}
-          <div className="border rounded-lg p-4 bg-muted/30">
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Recipients</span>
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            <div className="space-y-4 pb-4">
+              {/* Recipients Section */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Recipients</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {contact?.email && (
+                    <Badge variant="secondary" className="gap-1 py-1 px-2">
+                      {contact.email}
+                      <span className="text-xs text-muted-foreground ml-1">(primary)</span>
+                    </Badge>
+                  )}
+                  {additionalRecipients.map(email => (
+                    <Badge key={email} variant="outline" className="gap-1 py-1 px-2">
+                      {email}
+                      <button 
+                        onClick={() => handleRemoveRecipient(email)}
+                        className="ml-1 hover:text-destructive transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Add emails (comma-separated)..."
+                    value={newRecipientEmail}
+                    onChange={(e) => setNewRecipientEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
+                    className="flex-1"
+                  />
+                  <Button variant="outline" size="sm" onClick={handleAddRecipient} className="gap-1">
+                    <Plus className="h-4 w-4" />
+                    Add
+                  </Button>
+                </div>
+              </div>
+
+              {/* Subject Section */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <label className="text-sm font-medium mb-2 block">Subject</label>
+                <Input
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Email subject..."
+                  className="w-full"
+                />
+              </div>
+
+              {/* Message Section - Mandatory */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <label className="text-sm font-medium mb-2 block">
+                  Add message to report <span className="text-destructive">*</span>
+                </label>
+                <Textarea
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  placeholder="Add a personalized message to include at the top of the report..."
+                  rows={3}
+                  required
+                />
+              </div>
+
+              {/* Preview Section */}
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Preview:</p>
+                <div className="border rounded-lg overflow-hidden">
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: generatePreviewHtml() }}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {contact?.email && (
-                <Badge variant="secondary" className="gap-1 py-1 px-2">
-                  {contact.email}
-                  <span className="text-xs text-muted-foreground ml-1">(primary)</span>
-                </Badge>
-              )}
-              {additionalRecipients.map(email => (
-                <Badge key={email} variant="outline" className="gap-1 py-1 px-2">
-                  {email}
-                  <button 
-                    onClick={() => handleRemoveRecipient(email)}
-                    className="ml-1 hover:text-destructive transition-colors"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Add emails (comma-separated)..."
-                value={newRecipientEmail}
-                onChange={(e) => setNewRecipientEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
-                className="flex-1"
-              />
-              <Button variant="outline" size="sm" onClick={handleAddRecipient} className="gap-1">
-                <Plus className="h-4 w-4" />
-                Add
-              </Button>
-            </div>
-          </div>
+          </ScrollArea>
 
-          {/* Subject Section */}
-          <div className="border rounded-lg p-4 bg-muted/30">
-            <label className="text-sm font-medium mb-2 block">Subject</label>
-            <Input
-              value={emailSubject}
-              onChange={(e) => setEmailSubject(e.target.value)}
-              placeholder="Email subject..."
-              className="w-full"
-            />
-          </div>
-
-          {/* Message Section - Mandatory */}
-          <div className="border rounded-lg p-4 bg-muted/30">
-            <label className="text-sm font-medium mb-2 block">
-              Add message to report <span className="text-destructive">*</span>
-            </label>
-            <Textarea
-              value={customMessage}
-              onChange={(e) => setCustomMessage(e.target.value)}
-              placeholder="Add a personalized message to include at the top of the report..."
-              rows={3}
-              required
-            />
-          </div>
-
-          {/* Preview Section */}
-          <div className="flex-1 min-h-0">
-            <p className="text-sm text-muted-foreground mb-2">Preview:</p>
-            <ScrollArea className="h-[300px] border rounded-lg">
-              <div 
-                dangerouslySetInnerHTML={{ __html: generatePreviewHtml() }}
-                className="text-sm"
-              />
-            </ScrollArea>
-          </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
+          <DialogFooter className="flex-shrink-0 gap-2 sm:gap-0 pt-4 border-t">
             <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
               Cancel
             </Button>
