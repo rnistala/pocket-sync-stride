@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mail, Ticket as TicketIcon, Clock, CheckCircle, AlertCircle, Loader2, X, Plus, Users } from "lucide-react";
+import { ArrowLeft, Mail, Ticket as TicketIcon, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +13,7 @@ import { toast } from "sonner";
 import opterixLogoDark from "@/assets/opterix-logo-dark.png";
 import opterixLogoLight from "@/assets/opterix-logo-light.png";
 import { Progress } from "@/components/ui/progress";
-
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { SendReportDialog, SendReportPayload } from "@/components/SendReportDialog";
 
 const formatEffort = (minutes: number): string => {
   if (minutes === 0) return "0h";
@@ -76,11 +72,7 @@ const CustomerDashboard = () => {
   const [searchParams] = useSearchParams();
   const { contacts, tickets, isLoading } = useLeadContext();
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [customMessage, setCustomMessage] = useState("");
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [additionalRecipients, setAdditionalRecipients] = useState<string[]>([]);
-  const [newRecipientEmail, setNewRecipientEmail] = useState("");
-  const [emailSubject, setEmailSubject] = useState("");
   
   // Month filter from URL or default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -214,88 +206,15 @@ const CustomerDashboard = () => {
   const closedPercentage = stats.totalTickets > 0 ? (stats.closedTickets / stats.totalTickets) * 100 : 0;
   const openPercentage = stats.totalTickets > 0 ? ((stats.openTickets + stats.inProgressTickets + stats.clientQueryTickets) / stats.totalTickets) * 100 : 0;
 
-  // Email validation regex
-  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  // Add recipient(s) - supports comma/semicolon/space-separated emails
-  const handleAddRecipient = () => {
-    const input = newRecipientEmail.trim();
-    if (!input) return;
-    
-    const emails = input.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
-    const validEmails: string[] = [];
-    const errors: string[] = [];
-    
-    for (const email of emails) {
-      if (!isValidEmail(email)) {
-        errors.push(`"${email}" is not valid`);
-      } else if (email === contact?.email?.toLowerCase()) {
-        errors.push(`"${email}" is already the primary`);
-      } else if (additionalRecipients.includes(email)) {
-        errors.push(`"${email}" already added`);
-      } else {
-        validEmails.push(email);
-      }
-    }
-    
-    if (validEmails.length > 0) {
-      setAdditionalRecipients([...additionalRecipients, ...validEmails]);
-    }
-    if (errors.length > 0 && validEmails.length === 0) {
-      toast.error(errors[0]); // Show first error
-    }
-    setNewRecipientEmail("");
-  };
-
-  const handleRemoveRecipient = (email: string) => {
-    setAdditionalRecipients(additionalRecipients.filter(e => e !== email));
-  };
-
-  const allRecipients = useMemo(() => {
-    const recipients = contact?.email ? [contact.email] : [];
-    return [...recipients, ...additionalRecipients];
-  }, [contact?.email, additionalRecipients]);
-
   const handleOpenPreview = () => {
     if (!contact?.email) {
       toast.error("No email address found for this customer");
       return;
     }
-    // Set default subject
-    setEmailSubject(`[Opterix 360] Monthly Performance Summary - ${contact.company} - ${selectedMonthLabel}`);
     setIsPreviewOpen(true);
   };
 
-  const handleSendEmail = async () => {
-    // Validate message is required
-    if (!customMessage.trim()) {
-      toast.error("Please add a message to the report");
-      return;
-    }
-
-    // Include any email(s) typed but not explicitly added
-    let pendingRecipients = [...additionalRecipients];
-    const pendingInput = newRecipientEmail.trim();
-    if (pendingInput) {
-      const pendingEmails = pendingInput.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
-      for (const email of pendingEmails) {
-        if (isValidEmail(email) && 
-            !pendingRecipients.includes(email) && 
-            email !== contact?.email?.toLowerCase()) {
-          pendingRecipients.push(email);
-        }
-      }
-    }
-    
-    const finalRecipients = contact?.email 
-      ? [contact.email, ...pendingRecipients] 
-      : pendingRecipients;
-    
-    if (finalRecipients.length === 0) {
-      toast.error("No recipients specified");
-      return;
-    }
-
+  const handleSendEmail = async (payload: SendReportPayload) => {
     const userId = localStorage.getItem("userId");
     if (!userId) {
       toast.error("User not logged in");
@@ -307,12 +226,12 @@ const CustomerDashboard = () => {
       const { data, error } = await supabase.functions.invoke('send-dashboard-email', {
         body: {
           userId,
-          recipients: finalRecipients,
+          recipients: payload.recipients,
           contactName: contact?.name,
           companyName: contact?.company,
           monthLabel: selectedMonthLabel,
-          customMessage: customMessage.trim() || undefined,
-          subject: emailSubject,
+          customMessage: payload.customMessage,
+          subject: payload.subject,
           stats: {
             totalTickets: stats.totalTickets,
             closedTickets: stats.closedTickets,
@@ -335,11 +254,8 @@ const CustomerDashboard = () => {
       if (error) throw error;
       
       if (data?.success) {
-        const recipientCount = finalRecipients.length;
-        toast.success(`Report sent to ${recipientCount} recipient${recipientCount > 1 ? 's' : ''}`);
-        setNewRecipientEmail("");
+        toast.success(`Report sent to ${payload.recipients.length} recipient${payload.recipients.length > 1 ? 's' : ''}`);
         setIsPreviewOpen(false);
-        setAdditionalRecipients([]);
       } else {
         throw new Error(data?.error || "Failed to send email");
       }
@@ -349,148 +265,6 @@ const CustomerDashboard = () => {
     } finally {
       setIsSendingEmail(false);
     }
-  };
-
-  // Generate email preview HTML
-  const generatePreviewHtml = () => {
-    // Using compact formatEffort and formatDateShort helpers defined at module level
-
-    const getRootCauseColor = (rootCause: string): { bg: string; text: string } => {
-      switch (rootCause) {
-        case "Software": return { bg: "#eff6ff", text: "#1d4ed8" };
-        case "Data": return { bg: "#fff7ed", text: "#c2410c" };
-        case "Usage": return { bg: "#f0fdf4", text: "#166534" };
-        case "New Work": return { bg: "#faf5ff", text: "#7c3aed" };
-        case "Meeting": return { bg: "#f0fdfa", text: "#0d9488" };
-        default: return { bg: "#f3f4f6", text: "#6b7280" };
-      }
-    };
-
-    const reportDate = new Date().toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-
-    // Build closed tickets rows (matching app display)
-    const ticketRows = closedTickets.map(ticket => {
-      const rootCause = ticket.rootCause || "Unspecified";
-      const rootCauseColors = getRootCauseColor(rootCause);
-      const closedDate = ticket.closedDate ? formatDateShort(ticket.closedDate) : '-';
-      
-      return `
-        <tr style="vertical-align: top;">
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${ticket.ticketId || `#${ticket.id}`}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">${ticket.description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
-            <span style="background-color: ${rootCauseColors.bg}; color: ${rootCauseColors.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${rootCause}</span>
-          </td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatEffort(Number(ticket.effort_minutes) || 0)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${closedDate}</td>
-        </tr>
-      `;
-    }).join('');
-
-    // Build root cause summary (matching app display)
-    const rootCauseSummary = Object.entries(stats.byRootCause)
-      .filter(([_, count]) => count > 0)
-      .map(([cause, count]) => {
-        const effort = stats.effortByRootCause[cause] || 0;
-        const colors = getRootCauseColor(cause);
-        return `
-          <td style="padding: 12px; text-align: center; background-color: ${colors.bg}; border-radius: 8px;">
-            <div style="color: ${colors.text}; font-weight: 600; font-size: 13px;">${cause}</div>
-            <div style="font-size: 18px; font-weight: bold; margin: 4px 0;">${count} tickets</div>
-            <div style="font-size: 12px; color: #6b7280;">${formatEffort(effort)}</div>
-          </td>
-        `;
-      }).join('<td style="width: 8px;"></td>');
-
-    const customMessageHtml = customMessage.trim() ? `
-      <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px 20px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
-        <p style="margin: 0; color: #0369a1; font-style: italic; white-space: pre-wrap;">${customMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
-      </div>
-    ` : '';
-
-    return `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; padding: 20px;">
-        <div style="max-width: 700px; margin: 0 auto;">
-          <!-- Compact Header -->
-          <div style="background: #f8f9fa; border-bottom: 2px solid #e5e7eb; padding: 16px 24px; border-radius: 12px 12px 0 0;">
-            <table style="width: 100%; border-collapse: collapse;">
-              <tr>
-                <td style="font-size: 18px; font-weight: bold; color: #1a1a1a;">${contact?.company}</td>
-                <td style="text-align: right; font-size: 14px; color: #666666;">Report: ${selectedMonthLabel}</td>
-              </tr>
-              <tr>
-                <td colspan="2" style="font-size: 14px; color: #666666; padding-top: 4px;">Monthly Performance Summary</td>
-              </tr>
-            </table>
-          </div>
-          
-          <div style="background-color: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
-            ${customMessageHtml}
-            
-            <!-- Summary Cards -->
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-              <tr>
-                <td style="padding: 15px; text-align: center; background-color: #f0f9ff; border-radius: 8px;">
-                  <div style="color: #0369a1; font-size: 12px; text-transform: uppercase;">Total Tickets</div>
-                  <div style="font-size: 28px; font-weight: bold; color: #0284c7;">${stats.totalTickets}</div>
-                </td>
-                <td style="width: 10px;"></td>
-                <td style="padding: 15px; text-align: center; background-color: #f0fdf4; border-radius: 8px;">
-                  <div style="color: #166534; font-size: 12px; text-transform: uppercase;">Closed</div>
-                  <div style="font-size: 28px; font-weight: bold; color: #16a34a;">${stats.closedTickets}</div>
-                </td>
-                <td style="width: 10px;"></td>
-                <td style="padding: 15px; text-align: center; background-color: #fff7ed; border-radius: 8px;">
-                  <div style="color: #c2410c; font-size: 12px; text-transform: uppercase;">Open</div>
-                  <div style="font-size: 28px; font-weight: bold; color: #ea580c;">${stats.openTickets + stats.inProgressTickets}</div>
-                </td>
-                <td style="width: 10px;"></td>
-                <td style="padding: 15px; text-align: center; background-color: #faf5ff; border-radius: 8px;">
-                  <div style="color: #7c3aed; font-size: 12px; text-transform: uppercase;">Total Effort</div>
-                  <div style="font-size: 20px; font-weight: bold; color: #7c3aed;">${formatEffort(stats.totalEffortMinutes)}</div>
-                </td>
-              </tr>
-            </table>
-            
-            <!-- Effort by Root Cause -->
-            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Effort by Root Cause (Closed Tickets)</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-              <tr>
-                ${rootCauseSummary || '<td style="text-align: center; color: #6b7280; padding: 20px;">No closed tickets</td>'}
-              </tr>
-            </table>
-            
-            <!-- Closed Tickets Table -->
-            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Closed Tickets</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-              <thead>
-                <tr style="background-color: #f9fafb;">
-                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Ticket ID</th>
-                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Description</th>
-                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Root Cause</th>
-                  <th style="padding: 12px 10px; text-align: right; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Effort</th>
-                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Closed</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${ticketRows || '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #6b7280;">No closed tickets for this period</td></tr>'}
-              </tbody>
-            </table>
-            
-            <div style="margin-top: 20px; padding: 15px; background-color: #f0f9ff; border-radius: 8px; text-align: right;">
-              <span style="color: #0369a1; font-weight: 600;">Total Effort This Month:</span>
-              <span style="font-size: 18px; font-weight: bold; color: #0284c7; margin-left: 10px;">${formatEffort(stats.totalEffortMinutes)}</span>
-            </div>
-          </div>
-          
-          <div style="padding: 20px; text-align: center; border-radius: 0 0 12px 12px; background-color: #f3f4f6;">
-            <p style="margin: 0; font-size: 12px; color: #6b7280;">
-              This report was generated by Opterix 360
-            </p>
-          </div>
-        </div>
-      </div>
-    `;
   };
 
 
@@ -700,111 +474,24 @@ const CustomerDashboard = () => {
       </div>
 
       {/* Email Preview Dialog */}
-      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Email Preview
-            </DialogTitle>
-          </DialogHeader>
-          
-          <ScrollArea className="flex-1 min-h-0 pr-4">
-            <div className="space-y-4 pb-4">
-              {/* Recipients Section */}
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Recipients</span>
-                </div>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {contact?.email && (
-                    <Badge variant="secondary" className="gap-1 py-1 px-2">
-                      {contact.email}
-                      <span className="text-xs text-muted-foreground ml-1">(primary)</span>
-                    </Badge>
-                  )}
-                  {additionalRecipients.map(email => (
-                    <Badge key={email} variant="outline" className="gap-1 py-1 px-2">
-                      {email}
-                      <button 
-                        onClick={() => handleRemoveRecipient(email)}
-                        className="ml-1 hover:text-destructive transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Input
-                    type="email"
-                    placeholder="Add emails (comma-separated)..."
-                    value={newRecipientEmail}
-                    onChange={(e) => setNewRecipientEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
-                    className="flex-1"
-                  />
-                  <Button variant="outline" size="sm" onClick={handleAddRecipient} className="gap-1">
-                    <Plus className="h-4 w-4" />
-                    Add
-                  </Button>
-                </div>
-              </div>
-
-              {/* Subject Section */}
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <label className="text-sm font-medium mb-2 block">Subject</label>
-                <Input
-                  value={emailSubject}
-                  onChange={(e) => setEmailSubject(e.target.value)}
-                  placeholder="Email subject..."
-                  className="w-full"
-                />
-              </div>
-
-              {/* Message Section - Mandatory */}
-              <div className="border rounded-lg p-4 bg-muted/30">
-                <label className="text-sm font-medium mb-2 block">
-                  Add message to report <span className="text-destructive">*</span>
-                </label>
-                <Textarea
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  placeholder="Add a personalized message to include at the top of the report..."
-                  rows={3}
-                  required
-                />
-              </div>
-
-              {/* Preview Section */}
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Preview:</p>
-                <div className="border rounded-lg h-[300px] overflow-y-auto">
-                  <div 
-                    dangerouslySetInnerHTML={{ __html: generatePreviewHtml() }}
-                    className="text-sm"
-                  />
-                </div>
-              </div>
-            </div>
-          </ScrollArea>
-
-          <DialogFooter className="flex-shrink-0 gap-2 sm:gap-0 pt-4 border-t">
-            <Button variant="outline" onClick={() => setIsPreviewOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSendEmail} disabled={isSendingEmail} className="gap-2">
-              {isSendingEmail ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Mail className="h-4 w-4" />
-              )}
-              Send to {allRecipients.length} recipient{allRecipients.length !== 1 ? 's' : ''}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SendReportDialog
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        companyName={contact?.company || ""}
+        primaryEmail={contact?.email || ""}
+        monthLabel={selectedMonthLabel}
+        stats={{
+          totalTickets: stats.totalTickets,
+          closedTickets: stats.closedTickets,
+          openTickets: stats.openTickets + stats.inProgressTickets,
+          totalEffortMinutes: stats.totalEffortMinutes,
+          byRootCause: stats.byRootCause,
+          effortByRootCause: stats.effortByRootCause,
+        }}
+        closedTickets={closedTickets}
+        onSend={handleSendEmail}
+        isSending={isSendingEmail}
+      />
     </div>
   );
 };
