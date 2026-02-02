@@ -1,16 +1,56 @@
 
 
-# Support Multiple Email Addresses in "Add Another Email" Field
+# Make Send Report Dialogs Identical
 
 ## Problem
 
-Currently, the "Add another email..." input field only accepts one email at a time, and users must click the '+' button (or press Enter) to add each email. This is cumbersome when adding multiple recipients.
+The two "Send Report" dialogs have significant differences that cause confusion:
+
+| Feature | Dashboard (Quick Send) | CustomerDashboard |
+|---------|----------------------|-------------------|
+| Dialog title | "Send Report" | "Email Preview" |
+| Message field | Inside dialog, mandatory with asterisk | Outside dialog in collapsible panel |
+| Primary recipient | Editable input field | Non-editable badge |
+| Add button | Icon only (+) | Text button "+ Add" |
+| Preview | Simple text summary | Full HTML email preview |
+| Send button | "Send Report" | "Send to X recipient(s)" |
 
 ## Solution
 
-1. **Support comma/space-separated emails**: Allow users to type multiple emails in the input field, separated by commas, semicolons, or spaces
-2. **Auto-include pending emails on send**: Automatically parse and include any valid emails from the input field when "Send Report" is clicked
-3. **Visual hint**: Update the placeholder to indicate multiple emails are supported
+Standardize both dialogs to use the CustomerDashboard design (with Email Preview), but incorporate the mandatory message requirement. This gives users the best experience:
+- Full preview of what will be sent
+- Mandatory message field inside the dialog
+- Consistent styling and layout
+
+---
+
+## Target Design (Both Dialogs Will Have)
+
+```
++------------------------------------------+
+|  Email Preview                        X  |
++------------------------------------------+
+|  Recipients                              |
+|  [user@example.com] (primary)            |
+|  [extra@email.com] [X]                   |
+|  [Add emails (comma-separated)...] [+Add]|
++------------------------------------------+
+|  Subject                                 |
+|  [________________________________]      |
++------------------------------------------+
+|  Add message to report *                 |
+|  [________________________________]      |
+|  [________________________________]      |
++------------------------------------------+
+|  Preview:                                |
+|  +------------------------------------+  |
+|  |  (Full HTML email preview)         |  |
+|  |                                    |  |
+|  +------------------------------------+  |
++------------------------------------------+
+|  [Cancel]           [Send to X recipients]|
++------------------------------------------+
+```
 
 ---
 
@@ -18,151 +58,80 @@ Currently, the "Add another email..." input field only accepts one email at a ti
 
 ### File: `src/pages/Dashboard.tsx`
 
-#### 1. Update `handleAddRecipient` to support multiple emails
+1. **Change dialog title** from "Send Report" to "Email Preview"
 
-```typescript
-const handleAddRecipient = () => {
-  const input = newRecipientEmail.trim();
-  if (!input) return;
-  
-  // Split by comma, semicolon, or whitespace
-  const emails = input.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
-  const validEmails: string[] = [];
-  
-  for (const email of emails) {
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
-        !additionalRecipients.includes(email) && 
-        email !== primaryRecipient.toLowerCase()) {
-      validEmails.push(email);
-    }
-  }
-  
-  if (validEmails.length > 0) {
-    setAdditionalRecipients([...additionalRecipients, ...validEmails]);
-  }
-  setNewRecipientEmail("");
-};
-```
+2. **Add email preview HTML generation** - copy `generatePreviewHtml()` function from CustomerDashboard
 
-#### 2. Update `handleSendEmail` to auto-include pending emails
+3. **Restructure dialog content**:
+   - Recipients section with badges (primary not editable in this context since it comes from card)
+   - Subject section
+   - Mandatory message field with asterisk
+   - ScrollArea with full HTML preview
 
-Before building `allRecipients`, parse the input field:
+4. **Update dialog size** from `max-w-md` to `max-w-4xl max-h-[90vh] flex flex-col`
 
-```typescript
-// Include any email(s) typed but not explicitly added
-let pendingRecipients = [...additionalRecipients];
-const pendingInput = newRecipientEmail.trim();
-if (pendingInput) {
-  const pendingEmails = pendingInput.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
-  for (const email of pendingEmails) {
-    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && 
-        !pendingRecipients.includes(email) && 
-        email !== primaryRecipient.toLowerCase()) {
-      pendingRecipients.push(email);
-    }
-  }
-}
-
-const allRecipients = [primaryRecipient, ...pendingRecipients].filter(Boolean);
-```
-
-After successful send, clear the input:
-```typescript
-setNewRecipientEmail("");
-```
-
-#### 3. Update placeholder text
-
-```typescript
-placeholder="Add emails (comma-separated)..."
-```
-
----
+5. **Update send button** to show recipient count: "Send to X recipient(s)"
 
 ### File: `src/pages/CustomerDashboard.tsx`
 
-Apply the same three changes:
+1. **Move message field into dialog** - remove the external Collapsible panel and add the message Textarea inside the dialog (between Subject and Preview sections)
 
-#### 1. Update `handleAddRecipient`
+2. **Make message mandatory** - add asterisk indicator and validation
 
-```typescript
-const handleAddRecipient = () => {
-  const input = newRecipientEmail.trim();
-  if (!input) return;
-  
-  const emails = input.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
-  const validEmails: string[] = [];
-  const errors: string[] = [];
-  
-  for (const email of emails) {
-    if (!isValidEmail(email)) {
-      errors.push(`"${email}" is not valid`);
-    } else if (email === contact?.email?.toLowerCase()) {
-      errors.push(`"${email}" is already the primary`);
-    } else if (additionalRecipients.includes(email)) {
-      errors.push(`"${email}" already added`);
-    } else {
-      validEmails.push(email);
-    }
-  }
-  
-  if (validEmails.length > 0) {
-    setAdditionalRecipients([...additionalRecipients, ...validEmails]);
-  }
-  if (errors.length > 0 && validEmails.length === 0) {
-    toast.error(errors[0]); // Show first error
-  }
-  setNewRecipientEmail("");
-};
-```
+3. **Update handleSendEmail** to validate message is not empty (matching Dashboard behavior)
 
-#### 2. Update `handleSendEmail`
-
-Before using `allRecipients`:
-
-```typescript
-// Include any email(s) typed but not explicitly added
-let pendingRecipients = [...additionalRecipients];
-const pendingInput = newRecipientEmail.trim();
-if (pendingInput) {
-  const pendingEmails = pendingInput.split(/[,;\s]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
-  for (const email of pendingEmails) {
-    if (isValidEmail(email) && 
-        !pendingRecipients.includes(email) && 
-        email !== contact?.email?.toLowerCase()) {
-      pendingRecipients.push(email);
-    }
-  }
-}
-
-const finalRecipients = contact?.email 
-  ? [contact.email, ...pendingRecipients] 
-  : pendingRecipients;
-```
-
-Use `finalRecipients` instead of `allRecipients` in the API call.
-
-After successful send:
-```typescript
-setNewRecipientEmail("");
-```
-
-#### 3. Update placeholder text
-
-```typescript
-placeholder="Add emails (comma-separated)..."
-```
+4. **Remove the external Collapsible Card** for the message (lines 560-591)
 
 ---
 
-## User Experience After Change
+## Detailed Changes
 
-1. User types: `alice@example.com, bob@test.com`
-2. User can either:
-   - Press Enter or click '+' to add them to the list immediately
-   - OR just click "Send Report" directly
-3. Both emails are included as recipients
-4. Invalid emails are silently ignored (or error shown if all are invalid)
+### Dashboard.tsx Dialog Updates
+
+Current structure (lines 529-656):
+- DialogContent max-w-md
+- Company name text
+- Subject input
+- Message textarea (mandatory)
+- Recipients with editable primary
+- Summary text
+
+New structure:
+- DialogContent max-w-4xl with flex column
+- Recipients section with badges
+- Subject input
+- Message textarea (mandatory)
+- ScrollArea with HTML preview
+- "Send to X recipients" button
+
+### CustomerDashboard.tsx Dialog Updates
+
+1. Remove external Collapsible message panel (lines 560-591)
+
+2. Add message field inside dialog between Subject and Preview:
+```tsx
+{/* Message Section - Mandatory */}
+<div className="border rounded-lg p-4 bg-muted/30">
+  <label className="text-sm font-medium mb-2 block">
+    Add message to report <span className="text-destructive">*</span>
+  </label>
+  <Textarea
+    value={customMessage}
+    onChange={(e) => setCustomMessage(e.target.value)}
+    placeholder="Add a personalized message to include at the top of the report..."
+    rows={3}
+    required
+  />
+</div>
+```
+
+3. Add validation in handleSendEmail:
+```tsx
+if (!customMessage.trim()) {
+  toast.error("Please add a message to the report");
+  return;
+}
+```
 
 ---
 
@@ -170,6 +139,15 @@ placeholder="Add emails (comma-separated)..."
 
 | File | Changes |
 |------|---------|
-| `src/pages/Dashboard.tsx` | Update `handleAddRecipient` to parse multiple emails, update `handleSendEmail` to auto-include pending, update placeholder |
-| `src/pages/CustomerDashboard.tsx` | Same three changes as Dashboard |
+| `src/pages/Dashboard.tsx` | Redesign dialog to match CustomerDashboard with preview, update title, add HTML preview generation, change button text |
+| `src/pages/CustomerDashboard.tsx` | Move message field into dialog, make it mandatory, remove external collapsible panel, add validation |
+
+---
+
+## Benefits
+
+1. **Consistency** - Users see the same interface regardless of which dialog they open
+2. **Preview** - Both dialogs show exactly what will be sent
+3. **Mandatory message** - Enforced in both places per business requirement
+4. **Recipient visibility** - Clear display of who will receive the email
 
