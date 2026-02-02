@@ -1,6 +1,6 @@
 import { useLeadContext } from "@/contexts/LeadContext";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChevronRight, Ticket, Clock, CheckCircle, AlertCircle, BarChart3, Mail, Loader2, X, Plus, Users } from "lucide-react";
@@ -53,13 +53,23 @@ const formatEffort = (minutes: number): string => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { contacts, tickets, isLoading } = useLeadContext();
   
-  // Month filter - default to current month
-  const [selectedMonth, setSelectedMonth] = useState(() => {
+  // Month filter - read from URL, default to current month
+  const selectedMonth = useMemo(() => {
+    const urlMonth = searchParams.get('month');
+    if (urlMonth) return urlMonth;
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
+  }, [searchParams]);
+
+  // Update URL when month changes
+  const setSelectedMonth = (value: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('month', value);
+    setSearchParams(newParams);
+  };
 
   // Email dialog state
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerStats | null>(null);
