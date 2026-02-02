@@ -780,7 +780,7 @@ const CustomerDashboard = () => {
               {/* Preview Section */}
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Preview:</p>
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg h-[300px] overflow-y-auto">
                   <div 
                     dangerouslySetInnerHTML={{ __html: generatePreviewHtml() }}
                     className="text-sm"
