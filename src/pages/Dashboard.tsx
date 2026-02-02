@@ -230,6 +230,151 @@ const Dashboard = () => {
     return `${day}-${month}`;
   };
 
+  // Generate email preview HTML (matches CustomerDashboard)
+  const generatePreviewHtml = () => {
+    if (!selectedCustomer) return '';
+
+    const closedTickets = getClosedTicketsForCustomer(selectedCustomer.contactId);
+
+    const getRootCauseColor = (rootCause: string): { bg: string; text: string } => {
+      switch (rootCause) {
+        case "Software": return { bg: "#eff6ff", text: "#1d4ed8" };
+        case "Data": return { bg: "#fff7ed", text: "#c2410c" };
+        case "Usage": return { bg: "#f0fdf4", text: "#166534" };
+        case "New Work": return { bg: "#faf5ff", text: "#7c3aed" };
+        case "Meeting": return { bg: "#f0fdfa", text: "#0d9488" };
+        default: return { bg: "#f3f4f6", text: "#6b7280" };
+      }
+    };
+
+    // Build closed tickets rows
+    const ticketRows = closedTickets.map(ticket => {
+      const rootCause = ticket.rootCause || "Unspecified";
+      const rootCauseColors = getRootCauseColor(rootCause);
+      const closedDate = ticket.closedDate ? formatDateShort(ticket.closedDate) : '-';
+      
+      return `
+        <tr style="vertical-align: top;">
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-family: monospace; font-size: 12px;">${ticket.ticketId || `#${ticket.id}`}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; white-space: pre-wrap; word-wrap: break-word;">${ticket.description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">
+            <span style="background-color: ${rootCauseColors.bg}; color: ${rootCauseColors.text}; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${rootCause}</span>
+          </td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right;">${formatEffort(Number(ticket.effort_minutes) || 0)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-size: 12px; color: #6b7280;">${closedDate}</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Build root cause summary
+    const rootCauseSummary = Object.entries(selectedCustomer.byRootCause)
+      .filter(([_, count]) => count > 0)
+      .map(([cause, count]) => {
+        const effort = selectedCustomer.effortByRootCause[cause] || 0;
+        const colors = getRootCauseColor(cause);
+        return `
+          <td style="padding: 12px; text-align: center; background-color: ${colors.bg}; border-radius: 8px;">
+            <div style="color: ${colors.text}; font-weight: 600; font-size: 13px;">${cause}</div>
+            <div style="font-size: 18px; font-weight: bold; margin: 4px 0;">${count} tickets</div>
+            <div style="font-size: 12px; color: #6b7280;">${formatEffort(effort)}</div>
+          </td>
+        `;
+      }).join('<td style="width: 8px;"></td>');
+
+    const customMessageHtml = customMessage.trim() ? `
+      <div style="background-color: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px 20px; margin-bottom: 25px; border-radius: 0 8px 8px 0;">
+        <p style="margin: 0; color: #0369a1; font-style: italic; white-space: pre-wrap;">${customMessage.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
+      </div>
+    ` : '';
+
+    // Calculate total effort for closed tickets
+    const totalEffortMinutes = closedTickets.reduce((sum, t) => sum + (Number(t.effort_minutes) || 0), 0);
+
+    return `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; padding: 20px;">
+        <div style="max-width: 700px; margin: 0 auto;">
+          <!-- Compact Header -->
+          <div style="background: #f8f9fa; border-bottom: 2px solid #e5e7eb; padding: 16px 24px; border-radius: 12px 12px 0 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="font-size: 18px; font-weight: bold; color: #1a1a1a;">${selectedCustomer.company}</td>
+                <td style="text-align: right; font-size: 14px; color: #666666;">Report: ${selectedMonthLabel}</td>
+              </tr>
+              <tr>
+                <td colspan="2" style="font-size: 14px; color: #666666; padding-top: 4px;">Monthly Performance Summary</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div style="background-color: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none;">
+            ${customMessageHtml}
+            
+            <!-- Summary Cards -->
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+              <tr>
+                <td style="padding: 15px; text-align: center; background-color: #f0f9ff; border-radius: 8px;">
+                  <div style="color: #0369a1; font-size: 12px; text-transform: uppercase;">Total Tickets</div>
+                  <div style="font-size: 28px; font-weight: bold; color: #0284c7;">${selectedCustomer.totalTickets}</div>
+                </td>
+                <td style="width: 10px;"></td>
+                <td style="padding: 15px; text-align: center; background-color: #f0fdf4; border-radius: 8px;">
+                  <div style="color: #166534; font-size: 12px; text-transform: uppercase;">Closed</div>
+                  <div style="font-size: 28px; font-weight: bold; color: #16a34a;">${selectedCustomer.closedTickets}</div>
+                </td>
+                <td style="width: 10px;"></td>
+                <td style="padding: 15px; text-align: center; background-color: #fff7ed; border-radius: 8px;">
+                  <div style="color: #c2410c; font-size: 12px; text-transform: uppercase;">Open</div>
+                  <div style="font-size: 28px; font-weight: bold; color: #ea580c;">${selectedCustomer.openTickets}</div>
+                </td>
+                <td style="width: 10px;"></td>
+                <td style="padding: 15px; text-align: center; background-color: #faf5ff; border-radius: 8px;">
+                  <div style="color: #7c3aed; font-size: 12px; text-transform: uppercase;">Total Effort</div>
+                  <div style="font-size: 20px; font-weight: bold; color: #7c3aed;">${formatEffort(totalEffortMinutes)}</div>
+                </td>
+              </tr>
+            </table>
+            
+            <!-- Effort by Root Cause -->
+            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Effort by Root Cause (Closed Tickets)</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+              <tr>
+                ${rootCauseSummary || '<td style="text-align: center; color: #6b7280; padding: 20px;">No closed tickets</td>'}
+              </tr>
+            </table>
+            
+            <!-- Closed Tickets Table -->
+            <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">Closed Tickets</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+              <thead>
+                <tr style="background-color: #f9fafb;">
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Ticket ID</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Description</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Root Cause</th>
+                  <th style="padding: 12px 10px; text-align: right; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Effort</th>
+                  <th style="padding: 12px 10px; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Closed</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${ticketRows || '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #6b7280;">No closed tickets for this period</td></tr>'}
+              </tbody>
+            </table>
+            
+            <div style="margin-top: 20px; padding: 15px; background-color: #f0f9ff; border-radius: 8px; text-align: right;">
+              <span style="color: #0369a1; font-weight: 600;">Total Effort This Month:</span>
+              <span style="font-size: 18px; font-weight: bold; color: #0284c7; margin-left: 10px;">${formatEffort(totalEffortMinutes)}</span>
+            </div>
+          </div>
+          
+          <div style="padding: 20px; text-align: center; border-radius: 0 0 12px 12px; background-color: #f3f4f6;">
+            <p style="margin: 0; font-size: 12px; color: #6b7280;">
+              This report was generated by Opterix 360
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
   // Open email dialog for a customer
   const handleOpenEmailDialog = (customer: CustomerStats, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -528,34 +673,71 @@ const Dashboard = () => {
 
       {/* Email Dialog */}
       <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Send Report
+              Email Preview
             </DialogTitle>
           </DialogHeader>
           
           {selectedCustomer && (
-            <div className="space-y-4">
-              {/* Company name */}
-              <div className="text-sm font-medium text-muted-foreground">
-                Report for: <span className="text-foreground">{selectedCustomer.company}</span>
+            <>
+              {/* Recipients Section */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium">Recipients</span>
+                </div>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {primaryRecipient && (
+                    <span className="inline-flex items-center gap-1 py-1 px-2 bg-secondary text-secondary-foreground rounded-md text-sm">
+                      {primaryRecipient}
+                      <span className="text-xs text-muted-foreground ml-1">(primary)</span>
+                    </span>
+                  )}
+                  {additionalRecipients.map(email => (
+                    <span key={email} className="inline-flex items-center gap-1 py-1 px-2 border rounded-md text-sm">
+                      {email}
+                      <button 
+                        onClick={() => handleRemoveRecipient(email)}
+                        className="ml-1 hover:text-destructive transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="Add emails (comma-separated)..."
+                    value={newRecipientEmail}
+                    onChange={(e) => setNewRecipientEmail(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
+                    className="flex-1"
+                  />
+                  <Button variant="outline" size="sm" onClick={handleAddRecipient} className="gap-1">
+                    <Plus className="h-4 w-4" />
+                    Add
+                  </Button>
+                </div>
               </div>
 
-              {/* Subject */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Subject</label>
+              {/* Subject Section */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <label className="text-sm font-medium mb-2 block">Subject</label>
                 <Input
                   value={emailSubject}
                   onChange={(e) => setEmailSubject(e.target.value)}
-                  placeholder="Email subject"
+                  placeholder="Email subject..."
+                  className="w-full"
                 />
               </div>
 
-              {/* Custom message - always visible and mandatory */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
+              {/* Message Section - Mandatory */}
+              <div className="border rounded-lg p-4 bg-muted/30">
+                <label className="text-sm font-medium mb-2 block">
                   Add message to report <span className="text-destructive">*</span>
                 </label>
                 <Textarea
@@ -567,68 +749,17 @@ const Dashboard = () => {
                 />
               </div>
 
-              {/* Recipients */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Recipients
-                </label>
-                <div className="space-y-2">
-                  {/* Primary recipient - editable */}
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={primaryRecipient}
-                      onChange={(e) => setPrimaryRecipient(e.target.value)}
-                      placeholder="Primary recipient email"
-                      className="flex-1"
-                    />
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">(Primary)</span>
-                  </div>
-                  
-                  {/* Additional recipients */}
-                  {additionalRecipients.map((email) => (
-                    <div key={email} className="flex items-center gap-2 text-sm bg-muted/50 px-3 py-2 rounded-md">
-                      <span className="flex-1 truncate">{email}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => handleRemoveRecipient(email)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {/* Add recipient input */}
-                  <div className="flex gap-2">
-                    <Input
-                      value={newRecipientEmail}
-                      onChange={(e) => setNewRecipientEmail(e.target.value)}
-                      placeholder="Add emails (comma-separated)..."
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddRecipient()}
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleAddRecipient}
-                      disabled={!newRecipientEmail.trim()}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+              {/* Preview Section */}
+              <div className="flex-1 min-h-0">
+                <p className="text-sm text-muted-foreground mb-2">Preview:</p>
+                <ScrollArea className="h-[300px] border rounded-lg">
+                  <div 
+                    dangerouslySetInnerHTML={{ __html: generatePreviewHtml() }}
+                    className="text-sm"
+                  />
+                </ScrollArea>
               </div>
-
-              {/* Summary preview */}
-              <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                <p className="font-medium mb-1">Report Summary</p>
-                <p className="text-muted-foreground">
-                  {selectedCustomer.totalTickets} tickets · {selectedCustomer.closedTickets} closed · {formatEffort(selectedCustomer.totalEffortMinutes)} effort
-                </p>
-              </div>
-            </div>
+            </>
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
@@ -637,19 +768,15 @@ const Dashboard = () => {
             </Button>
             <Button 
               onClick={handleSendEmail} 
-              disabled={isSendingEmail || !selectedCustomer?.email}
+              disabled={isSendingEmail || !primaryRecipient}
+              className="gap-2"
             >
               {isSendingEmail ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Sending...
-                </>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Report
-                </>
+                <Mail className="h-4 w-4" />
               )}
+              Send to {[primaryRecipient, ...additionalRecipients].filter(Boolean).length} recipient{[primaryRecipient, ...additionalRecipients].filter(Boolean).length !== 1 ? 's' : ''}
             </Button>
           </DialogFooter>
         </DialogContent>

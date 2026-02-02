@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Mail, Ticket as TicketIcon, Clock, CheckCircle, AlertCircle, Loader2, ChevronDown, MessageSquare, X, Plus, Users } from "lucide-react";
+import { ArrowLeft, Mail, Ticket as TicketIcon, Clock, CheckCircle, AlertCircle, Loader2, X, Plus, Users } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import opterixLogoDark from "@/assets/opterix-logo-dark.png";
 import opterixLogoLight from "@/assets/opterix-logo-light.png";
 import { Progress } from "@/components/ui/progress";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -77,7 +77,6 @@ const CustomerDashboard = () => {
   const { contacts, tickets, isLoading } = useLeadContext();
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
-  const [isMessageOpen, setIsMessageOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [additionalRecipients, setAdditionalRecipients] = useState<string[]>([]);
   const [newRecipientEmail, setNewRecipientEmail] = useState("");
@@ -268,6 +267,12 @@ const CustomerDashboard = () => {
   };
 
   const handleSendEmail = async () => {
+    // Validate message is required
+    if (!customMessage.trim()) {
+      toast.error("Please add a message to the report");
+      return;
+    }
+
     // Include any email(s) typed but not explicitly added
     let pendingRecipients = [...additionalRecipients];
     const pendingInput = newRecipientEmail.trim();
@@ -557,38 +562,6 @@ const CustomerDashboard = () => {
           </Select>
         </div>
 
-        {/* Custom message panel */}
-        <Card className="mb-6">
-          <Collapsible open={isMessageOpen} onOpenChange={setIsMessageOpen}>
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                    <CardTitle className="text-sm font-medium">Add message to report</CardTitle>
-                    {customMessage.trim() && (
-                      <Badge variant="secondary" className="text-xs">Message added</Badge>
-                    )}
-                  </div>
-                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isMessageOpen ? 'rotate-180' : ''}`} />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0 pb-4">
-                <Textarea
-                  placeholder="Enter a personalized message to include at the top of the email report..."
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  className="min-h-[100px] resize-none"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  This message will appear at the top of the email, before the statistics.
-                </p>
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
 
         {/* Summary cards with progress indicators */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -788,10 +761,24 @@ const CustomerDashboard = () => {
             />
           </div>
 
+          {/* Message Section - Mandatory */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <label className="text-sm font-medium mb-2 block">
+              Add message to report <span className="text-destructive">*</span>
+            </label>
+            <Textarea
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+              placeholder="Add a personalized message to include at the top of the report..."
+              rows={3}
+              required
+            />
+          </div>
+
           {/* Preview Section */}
           <div className="flex-1 min-h-0">
             <p className="text-sm text-muted-foreground mb-2">Preview:</p>
-            <ScrollArea className="h-[400px] border rounded-lg">
+            <ScrollArea className="h-[300px] border rounded-lg">
               <div 
                 dangerouslySetInnerHTML={{ __html: generatePreviewHtml() }}
                 className="text-sm"
