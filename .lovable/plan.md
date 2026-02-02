@@ -1,122 +1,73 @@
 
-# Keep Contact Page Editable While Research Panel is Open
+
+# Persist Month/Year Selection in Effort Dashboard
 
 ## Problem
 
-The current Sheet component includes a `SheetOverlay` with `bg-black/80` that creates a dark overlay covering the entire page when the Company Research panel opens. This blocks all interaction with the Contact Interactions page behind it, preventing users from editing contact details, adding interactions, or navigating while researching.
+When you select a prior month (e.g., January 2026) in the Effort Dashboard and click on a customer to view their details, then navigate back to the Dashboard, the month selection resets to the current month (February 2026). This forces you to re-select the month every time you return.
 
 ## Solution
 
-Modify the Sheet component to support a "non-modal" mode where the overlay is transparent and doesn't block pointer events. This allows the research panel to exist side-by-side with the contact page, with both remaining interactive.
+Store the selected month in the URL query parameter (`?month=2026-01`) so that when you navigate back using the browser's back button, the Dashboard restores the previously selected month. This follows the same pattern already used for the Follow-ups calendar.
 
 ---
 
-## Layout Goal
+## Technical Changes
 
-```
-Desktop (side-by-side, both interactive):
-+----------------------------------+---------------------------+
-|    Contact Interactions Page     |   Company Research Panel  |
-|    (fully interactive)           |   (slide-in sheet)        |
-|                                  |                           |
-|  - Edit status                   |  - Research Brief         |
-|  - Add interactions              |  - Chat messages          |
-|  - Delete interactions           |  - Quick actions          |
-|  - Navigate contacts             |  - Input field            |
-+----------------------------------+---------------------------+
+### File: `src/pages/Dashboard.tsx`
 
-Mobile (toggleable full-screen panels):
-- When research panel is open, it covers the contact page
-- User can close panel to return to contact page
-```
-
----
-
-## Technical Implementation
-
-### Option 1: Create a Non-Modal Sheet Variant (Recommended)
-
-Add an optional `modal` prop to the SheetContent that controls whether the overlay blocks interaction.
-
-**File: `src/components/ui/sheet.tsx`**
-
-1. Add `modal` prop to SheetContent interface
-2. Make overlay transparent and non-blocking when `modal={false}`
-3. Keep the panel positioned correctly on the right side
-
-Changes:
-- Accept `modal?: boolean` prop (default: true for backward compatibility)
-- When `modal={false}`:
-  - Remove or make overlay transparent (`bg-transparent pointer-events-none`)
-  - Sheet content remains interactive
-
-### Option 2: Use the modal prop from Radix
-
-Radix Dialog (which Sheet is built on) has a `modal` prop that controls whether the dialog is modal. When `modal={false}`:
-- The overlay doesn't trap focus
-- Clicking outside doesn't close the dialog
-- Background remains interactive
-
----
-
-## Detailed Changes
-
-### File: `src/components/ui/sheet.tsx`
-
-1. Add `modal` prop to Sheet (passed to SheetPrimitive.Root)
-2. Make overlay conditional based on modal prop
-3. Adjust pointer events for non-modal mode
-
+**Current Implementation:**
 ```typescript
-// Updated Sheet to accept modal prop
-const Sheet = ({ modal = true, ...props }) => (
-  <SheetPrimitive.Root modal={modal} {...props} />
-);
-
-// Updated SheetContent to conditionally render overlay
-interface SheetContentProps ... {
-  showOverlay?: boolean;
-}
-
-const SheetContent = React.forwardRef<...>(
-  ({ side = "right", className, children, showOverlay = true, ...props }, ref) => (
-    <SheetPortal>
-      {showOverlay && <SheetOverlay />}
-      <SheetPrimitive.Content ... >
+// Month filter - default to current month
+const [selectedMonth, setSelectedMonth] = useState(() => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+});
 ```
 
-### File: `src/components/CompanyResearchDialog.tsx`
-
-Pass `modal={false}` to Sheet and `showOverlay={false}` to SheetContent:
-
+**Updated Implementation:**
 ```typescript
-<Sheet open={isOpen} onOpenChange={onOpenChange} modal={false}>
-  <SheetContent 
-    side="right" 
-    className="w-full sm:max-w-md flex flex-col p-0" 
-    showOverlay={false}
-  >
+import { useSearchParams } from "react-router-dom";
+
+// Read month from URL, default to current month
+const [searchParams, setSearchParams] = useSearchParams();
+
+const selectedMonth = useMemo(() => {
+  const urlMonth = searchParams.get('month');
+  if (urlMonth) return urlMonth;
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}, [searchParams]);
+
+// Update URL when month changes
+const setSelectedMonth = (value: string) => {
+  const newParams = new URLSearchParams(searchParams);
+  newParams.set('month', value);
+  setSearchParams(newParams);
+};
 ```
 
----
-
-## Mobile Behavior
-
-On mobile (below sm breakpoint):
-- The sheet will still cover most of the screen (w-full)
-- User can close with the X button
-- This is acceptable UX for mobile since screen space is limited
-
-On desktop (sm and above):
-- Sheet only takes `sm:max-w-md` width (28rem / 448px)
-- Contact page remains visible and interactive on the left
-- Both panels work simultaneously
+**Changes Summary:**
+1. Import `useSearchParams` (already have `useNavigate` and `useParams` patterns in the codebase)
+2. Replace `useState` with URL-based state using `searchParams.get('month')`
+3. When the user selects a different month, update the URL using `setSearchParams`
+4. The navigation to customer details already includes `?month=${selectedMonth}` so that behavior stays the same
 
 ---
 
-## Summary of File Changes
+## User Flow After Change
+
+1. User visits `/dashboard` - URL becomes `/dashboard?month=2026-02` (current month)
+2. User selects January 2026 - URL updates to `/dashboard?month=2026-01`
+3. User clicks on a customer - navigates to `/dashboard/123?month=2026-01`
+4. User clicks browser back button - returns to `/dashboard?month=2026-01`
+5. January 2026 is still selected (persisted via URL)
+
+---
+
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/ui/sheet.tsx` | Add `modal` prop to Sheet component, add `showOverlay` prop to SheetContent |
-| `src/components/CompanyResearchDialog.tsx` | Use `modal={false}` and `showOverlay={false}` to keep contact page interactive |
+| `src/pages/Dashboard.tsx` | Replace `useState` with `useSearchParams` for month selection |
+
