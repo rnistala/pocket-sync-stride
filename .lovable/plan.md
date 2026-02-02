@@ -1,153 +1,175 @@
 
 
-# Make Send Report Dialogs Identical
+# Extract Shared SendReportDialog Component
 
 ## Problem
 
-The two "Send Report" dialogs have significant differences that cause confusion:
-
-| Feature | Dashboard (Quick Send) | CustomerDashboard |
-|---------|----------------------|-------------------|
-| Dialog title | "Send Report" | "Email Preview" |
-| Message field | Inside dialog, mandatory with asterisk | Outside dialog in collapsible panel |
-| Primary recipient | Editable input field | Non-editable badge |
-| Add button | Icon only (+) | Text button "+ Add" |
-| Preview | Simple text summary | Full HTML email preview |
-| Send button | "Send Report" | "Send to X recipient(s)" |
+Both `Dashboard.tsx` and `CustomerDashboard.tsx` contain nearly identical implementations of the Send Report dialog (~150 lines each). This duplication causes:
+- Inconsistent UI/UX when one is updated but not the other
+- Maintenance burden when fixing bugs or adding features
+- The exact issue you encountered: fixing scrolling in one but not the other
 
 ## Solution
 
-Standardize both dialogs to use the CustomerDashboard design (with Email Preview), but incorporate the mandatory message requirement. This gives users the best experience:
-- Full preview of what will be sent
-- Mandatory message field inside the dialog
-- Consistent styling and layout
+Create a single reusable `SendReportDialog` component that both pages import and use.
 
 ---
 
-## Target Design (Both Dialogs Will Have)
+## Component Design
 
-```
-+------------------------------------------+
-|  Email Preview                        X  |
-+------------------------------------------+
-|  Recipients                              |
-|  [user@example.com] (primary)            |
-|  [extra@email.com] [X]                   |
-|  [Add emails (comma-separated)...] [+Add]|
-+------------------------------------------+
-|  Subject                                 |
-|  [________________________________]      |
-+------------------------------------------+
-|  Add message to report *                 |
-|  [________________________________]      |
-|  [________________________________]      |
-+------------------------------------------+
-|  Preview:                                |
-|  +------------------------------------+  |
-|  |  (Full HTML email preview)         |  |
-|  |                                    |  |
-|  +------------------------------------+  |
-+------------------------------------------+
-|  [Cancel]           [Send to X recipients]|
-+------------------------------------------+
-```
+### Props Interface
 
----
+```typescript
+interface SendReportDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  
+  // Customer info
+  companyName: string;
+  primaryEmail: string;
+  
+  // Report data
+  monthLabel: string;
+  stats: {
+    totalTickets: number;
+    closedTickets: number;
+    openTickets: number;
+    totalEffortMinutes: number;
+    byRootCause: Record<string, number>;
+    effortByRootCause: Record<string, number>;
+  };
+  closedTickets: Array<{
+    id: string;
+    ticketId?: string;
+    description: string;
+    rootCause?: string;
+    effort_minutes?: number;
+    closedDate?: string;
+  }>;
+  
+  // Callbacks
+  onSend: (payload: SendReportPayload) => Promise<void>;
+}
 
-## Technical Changes
-
-### File: `src/pages/Dashboard.tsx`
-
-1. **Change dialog title** from "Send Report" to "Email Preview"
-
-2. **Add email preview HTML generation** - copy `generatePreviewHtml()` function from CustomerDashboard
-
-3. **Restructure dialog content**:
-   - Recipients section with badges (primary not editable in this context since it comes from card)
-   - Subject section
-   - Mandatory message field with asterisk
-   - ScrollArea with full HTML preview
-
-4. **Update dialog size** from `max-w-md` to `max-w-4xl max-h-[90vh] flex flex-col`
-
-5. **Update send button** to show recipient count: "Send to X recipient(s)"
-
-### File: `src/pages/CustomerDashboard.tsx`
-
-1. **Move message field into dialog** - remove the external Collapsible panel and add the message Textarea inside the dialog (between Subject and Preview sections)
-
-2. **Make message mandatory** - add asterisk indicator and validation
-
-3. **Update handleSendEmail** to validate message is not empty (matching Dashboard behavior)
-
-4. **Remove the external Collapsible Card** for the message (lines 560-591)
-
----
-
-## Detailed Changes
-
-### Dashboard.tsx Dialog Updates
-
-Current structure (lines 529-656):
-- DialogContent max-w-md
-- Company name text
-- Subject input
-- Message textarea (mandatory)
-- Recipients with editable primary
-- Summary text
-
-New structure:
-- DialogContent max-w-4xl with flex column
-- Recipients section with badges
-- Subject input
-- Message textarea (mandatory)
-- ScrollArea with HTML preview
-- "Send to X recipients" button
-
-### CustomerDashboard.tsx Dialog Updates
-
-1. Remove external Collapsible message panel (lines 560-591)
-
-2. Add message field inside dialog between Subject and Preview:
-```tsx
-{/* Message Section - Mandatory */}
-<div className="border rounded-lg p-4 bg-muted/30">
-  <label className="text-sm font-medium mb-2 block">
-    Add message to report <span className="text-destructive">*</span>
-  </label>
-  <Textarea
-    value={customMessage}
-    onChange={(e) => setCustomMessage(e.target.value)}
-    placeholder="Add a personalized message to include at the top of the report..."
-    rows={3}
-    required
-  />
-</div>
-```
-
-3. Add validation in handleSendEmail:
-```tsx
-if (!customMessage.trim()) {
-  toast.error("Please add a message to the report");
-  return;
+interface SendReportPayload {
+  recipients: string[];
+  subject: string;
+  customMessage: string;
 }
 ```
 
+### Component Features
+
+1. **Internal state management** for:
+   - `customMessage` (text)
+   - `additionalRecipients` (array)
+   - `newRecipientEmail` (input field)
+   - `emailSubject` (with default from props)
+   - `isSending` (loading state)
+
+2. **Unified UI** with:
+   - Recipients section (primary badge + additional badges + input)
+   - Subject input
+   - Mandatory message textarea
+   - Scrollable HTML preview
+   - Send button with recipient count
+
+3. **Consistent scrolling behavior**:
+   - Outer ScrollArea for dialog content
+   - Inner 300px scrollable preview area
+
 ---
 
-## Files to Modify
+## Technical Implementation
 
-| File | Changes |
-|------|---------|
-| `src/pages/Dashboard.tsx` | Redesign dialog to match CustomerDashboard with preview, update title, add HTML preview generation, change button text |
-| `src/pages/CustomerDashboard.tsx` | Move message field into dialog, make it mandatory, remove external collapsible panel, add validation |
+### New File: `src/components/SendReportDialog.tsx`
+
+The component will:
+1. Accept props for customer data, stats, and tickets
+2. Manage its own recipient/subject/message state
+3. Generate the HTML preview using the same function (moved into component)
+4. Call `onSend` with the prepared payload when user clicks send
+5. Handle validation (message required, at least one recipient)
+
+### Changes to `src/pages/Dashboard.tsx`
+
+1. Remove ~100 lines of dialog JSX
+2. Remove `generatePreviewHtml` function (move to component)
+3. Keep state for `selectedCustomer`, `isEmailDialogOpen`, `isSendingEmail`
+4. Render `<SendReportDialog>` with props from `selectedCustomer`
+5. Move API call to `handleSendEmail` (receives payload from dialog)
+
+### Changes to `src/pages/CustomerDashboard.tsx`
+
+1. Remove ~100 lines of dialog JSX
+2. Remove `generatePreviewHtml` function (move to component)
+3. Remove local recipient/subject/message state (handled by component)
+4. Render `<SendReportDialog>` with props from `contact` and `stats`
+5. Keep API call in `handleSendEmail` (receives payload from dialog)
+
+---
+
+## Usage Example
+
+```tsx
+// In Dashboard.tsx
+<SendReportDialog
+  open={isEmailDialogOpen}
+  onOpenChange={setIsEmailDialogOpen}
+  companyName={selectedCustomer?.company || ""}
+  primaryEmail={selectedCustomer?.email || ""}
+  monthLabel={selectedMonthLabel}
+  stats={{
+    totalTickets: selectedCustomer.totalTickets,
+    closedTickets: selectedCustomer.closedTickets,
+    openTickets: selectedCustomer.openTickets,
+    totalEffortMinutes: closedTickets.reduce(...),
+    byRootCause: selectedCustomer.byRootCause,
+    effortByRootCause: selectedCustomer.effortByRootCause,
+  }}
+  closedTickets={closedTickets}
+  onSend={handleSendEmail}
+/>
+```
+
+```tsx
+// In CustomerDashboard.tsx
+<SendReportDialog
+  open={isPreviewOpen}
+  onOpenChange={setIsPreviewOpen}
+  companyName={contact?.company || ""}
+  primaryEmail={contact?.email || ""}
+  monthLabel={selectedMonthLabel}
+  stats={{
+    totalTickets: stats.totalTickets,
+    closedTickets: stats.closedTickets,
+    openTickets: stats.openTickets + stats.inProgressTickets,
+    totalEffortMinutes: stats.totalEffortMinutes,
+    byRootCause: stats.byRootCause,
+    effortByRootCause: stats.effortByRootCause,
+  }}
+  closedTickets={closedTickets}
+  onSend={handleSendEmail}
+/>
+```
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/components/SendReportDialog.tsx` | Create | New shared component with all dialog UI and preview generation |
+| `src/pages/Dashboard.tsx` | Modify | Remove dialog JSX, import and use `SendReportDialog` |
+| `src/pages/CustomerDashboard.tsx` | Modify | Remove dialog JSX, import and use `SendReportDialog` |
 
 ---
 
 ## Benefits
 
-1. **Consistency** - Users see the same interface regardless of which dialog they open
-2. **Preview** - Both dialogs show exactly what will be sent
-3. **Mandatory message** - Enforced in both places per business requirement
-4. **Recipient visibility** - Clear display of who will receive the email
+1. **Single source of truth** - Any fix or enhancement applies to both dialogs
+2. **Reduced code** - Remove ~200 lines of duplicated JSX
+3. **Guaranteed consistency** - Impossible for the dialogs to diverge
+4. **Easier testing** - One component to test instead of two
+5. **Better maintainability** - Changes in one place
 
